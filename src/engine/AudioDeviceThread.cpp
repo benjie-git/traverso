@@ -143,6 +143,22 @@ int AudioDeviceThread::become_realtime( bool realtime )
 }
 
 
+#if defined (__APPLE__)
+typedef struct cpu_set {
+  uint32_t    count;
+} cpu_set_t;
+
+static inline void
+CPU_ZERO(cpu_set_t *cs) { cs->count = 0; }
+
+static inline void
+CPU_SET(int num, cpu_set_t *cs) { cs->count |= (1 << num); }
+
+static inline int
+CPU_ISSET(int num, cpu_set_t *cs) { return (cs->count & (1 << num)); }
+#endif
+
+
 #if defined (Q_OS_UNIX)
 typedef int* (*setaffinity_func_type)(pid_t,unsigned int,cpu_set_t *);
 #endif

@@ -91,9 +91,12 @@ SET(LIBRARY_OUTPUT_PATH ${CMAKE_CURRENT_BINARY_DIR}/lib)
 # Add Mac build paths for DarwinPorts / MacPorts
 # These need to be defined up here, above the include checks
 IF(APPLE)
-        INCLUDE_DIRECTORIES("/opt/local/include")
-        SET (CMAKE_REQUIRED_INCLUDES "/opt/local/include")
-        LINK_DIRECTORIES("/opt/local/lib")
+        INCLUDE_DIRECTORIES("/usr/local/include" "/usr/local/opt/qt5/include")
+        SET (CMAKE_REQUIRED_INCLUDES "/usr/local/include" "/usr/local/opt/qt5/include")
+        LINK_DIRECTORIES("/usr/local/lib" "/usr/local/opt/qt5/lib")
+        SET (WANT_ALSA OFF)
+        SET (WANT_JACK OFF)
+        SET (WANT_PORTAUDIO ON)
 ENDIF(APPLE)
 
 SET(MINIMAL_ALSA_VERSION 1.0.0)
@@ -110,8 +113,13 @@ SET(MINIMAL_PULSAUDIO_VERSION 0.9)
 SET(HAVE_COREAUDIO FALSE)
 SET(HOST_SUPPORTS_SSE FALSE)
 
-SET(CMAKE_CXX_FLAGS_DEBUG "-O0 -ggdb3 -Wall -Wno-unused-local-typedefs ${CXX_FLAGS}")
-SET(CMAKE_CXX_FLAGS_RELEASE "-O2 -Wall -fPIC -Wno-unused-local-typedefs ${CXX_FLAGS}")
+IF(APPLE)
+    SET(CMAKE_CXX_FLAGS_DEBUG "-O0 -std=c++11 -stdlib=libc++ -ggdb3 -Wall -Wno-unused-local-typedefs ${CXX_FLAGS}")
+    SET(CMAKE_CXX_FLAGS_RELEASE "-O2 -std=c++11 -stdlib=libc++ -Wall -fPIC -Wno-unused-local-typedefs ${CXX_FLAGS}")
+ELSE(APPLE)
+    SET(CMAKE_CXX_FLAGS_DEBUG "-O0 -ggdb3 -Wall -Wno-unused-local-typedefs ${CXX_FLAGS}")
+    SET(CMAKE_CXX_FLAGS_RELEASE "-O2 -Wall -fPIC -Wno-unused-local-typedefs ${CXX_FLAGS}")
+ENDIF(APPLE)
 
 # Detect the flags to be used for large file support
 execute_process(

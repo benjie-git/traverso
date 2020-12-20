@@ -4,7 +4,7 @@
 #    This script is used to create a bundle for OS X     #
 ###                                                    ###
 
-QT_PATH=/usr/local/Trolltech/Qt-4.5.0
+QT_PATH= /usr/local/Cellar/qt/5.15.2
 
 mkdir -p traverso.app/Contents/MacOS/
 mkdir -p traverso.app/Contents/Resources/
@@ -17,7 +17,7 @@ mkdir -p traverso.app/Contents/Frameworks/QtCore.framework/Versions/4/
 cp bin/traverso traverso.app/Contents/MacOS/
 cp resources/images/traverso_mac.icns traverso.app/Contents/Resources/Traverso.icns
 cp resources/Info.plist traverso.app/Contents/
-cp /opt/local/bin/cdrdao traverso.app/Contents/MacOS/
+cp /usr/local/bin/cdrdao traverso.app/Contents/MacOS/
 cp /usr/local/bin/sox traverso.app/Contents/MacOS/
 
 cp /usr/local/lib/libsndfile.1.dylib traverso.app/Contents/Frameworks

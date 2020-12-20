@@ -460,8 +460,8 @@ int AudioDevice::create_driver(const QString& driverType, bool capture, bool pla
 #if defined (COREAUDIO_SUPPORT)
     if (driverType == "CoreAudio") {
         m_driver = new CoreAudioDriver(this, m_rate, m_bufferSize);
-        CoreAudioDriver* coreAudioDriver = qojbect_cast<CoreAudioDriver*>(m_driver);
-        if (coreAudioDriver && coreAudiodriver->setup(capture, playback, cardDevice) < 0) {
+        CoreAudioDriver* coreAudioDriver = (CoreAudioDriver*)m_driver;
+        if (coreAudioDriver && coreAudioDriver->setup(capture, playback, cardDevice) < 0) {
             message(tr("Audiodevice: Failed to create the CoreAudio Driver"), WARNING);
             delete m_driver;
             m_driver = nullptr;

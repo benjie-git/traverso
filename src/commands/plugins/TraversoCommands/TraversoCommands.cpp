@@ -76,6 +76,7 @@ TraversoCommands::TraversoCommands()
     tShortCutManager().add_meta_object(&MoveMarker::staticMetaObject);
     tShortCutManager().add_meta_object(&WorkCursorMove::staticMetaObject);
     tShortCutManager().add_meta_object(&PlayHeadMove::staticMetaObject);
+    tShortCutManager().add_meta_object(&PlayHeadMove::staticMetaObject);
     tShortCutManager().add_meta_object(&MoveEdge::staticMetaObject);
     tShortCutManager().add_meta_object(&CropClip::staticMetaObject);
     tShortCutManager().add_meta_object(&FadeRange::staticMetaObject);
@@ -300,6 +301,7 @@ TraversoCommands::TraversoCommands()
     create_and_add_function("PluginView", tr("Move"), "MovePlugin", MovePluginCommand, QStringList(), "MoveBase", true);
 
     create_and_add_function("SheetView", tr("Fold Sheet"), "FoldSheet", MoveClipCommand, QStringList() << "fold_sheet", "", true, true);
+    create_and_add_function("SheetView", tr("Move Play Head"), "PlayHeadMove", PlayHeadMoveCommand);
     create_and_add_function("SheetView", tr("Move Work Cursor"), "WorkCursorMove", WorkCursorMoveCommand);
     create_and_add_function("SheetView", tr("Shuttle"), "Shuttle", ShuttleCommand, QStringList(), "", true, true);
 }
@@ -664,6 +666,17 @@ TCommand* TraversoCommands::create(QObject* obj, const QString& commandName, QVa
             return 0;
         }
         return new WorkCursorMove(view);
+    }
+
+    case PlayHeadMoveCommand:
+    {
+        SheetView* view = qobject_cast<SheetView*>(obj);
+        if (!view) {
+            PERROR("TraversoCommands: Supplied QObject was not an SheetView! "
+                   "PlayHeadMove Command needs an SheetView as argument");
+            return 0;
+        }
+        return new PlayHeadMove(view);
     }
 
     case MoveCurveNodesCommand:
