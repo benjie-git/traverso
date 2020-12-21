@@ -221,6 +221,7 @@ void TShortcutManager::makeShortcutKeyHumanReadable(QString& keyfact, bool forma
         keyfact.replace(QString("PLUS"), "+");
     }
 	keyfact.replace(QString("DELETE"), "Delete");
+	keyfact.replace(QString("BKSPACE"), "Backspace");
 	keyfact.replace(QString("ESC"), "Esc");
 	keyfact.replace(QString("ENTER"), "Enter");
 	keyfact.replace(QString("RETURN"), "Return");
@@ -1562,4 +1563,3 @@ bool TShortcutManager::classInherits(const QString& className, const QString &in
 
 	return false;
 }
-

@@ -59,7 +59,7 @@ TShortcutEditorDialog::TShortcutEditorDialog(QWidget *parent)
 		keys << string;
 	}
 	keys << "Left Arrow|LEFTARROW" << "Right Arrow|RIGHTARROW" << "Up Arrow|UPARROW" << "Down Arrow|DOWNARROW";
-	keys << "Enter|ENTER" << "Home|HOME" << "End|END" << "Delete|DELETE";
+	keys << "Enter|ENTER" << "Home|HOME" << "End|END" << "Delete|DELETE" << "Backspace|BKSPACE";
 	keys << "Page Up|PAGEUP" << "Page Down|PAGEDOWN";
 	keys << "Space Bar|SPACE";
 	keys << "+|PLUS" << "-|MINUS" << "/|/" << "\\|\\" << "[|[" << "]|]" << ",|," << ".|." << ";|;" << "'|'";

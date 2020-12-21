@@ -801,8 +801,9 @@ bool TInputEventDispatcher::check_number_collection(int eventcode)
 	if (eventcode == Qt::Key_Backspace) {
 		if (m_sCollectedNumber.size() > 0) {
 			set_numerical_input(m_sCollectedNumber.left(m_sCollectedNumber.size() - 1));
+            return true;
 		}
-		return true;
+        return false;
 	}
 	if (eventcode == Qt::Key_Minus) {
 		if (m_sCollectedNumber.contains("-")) {
