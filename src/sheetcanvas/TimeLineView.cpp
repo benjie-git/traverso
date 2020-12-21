@@ -132,7 +132,7 @@ void TimeLineView::paint(QPainter* painter, const QStyleOptionGraphicsItem* opti
 		xstart = 0;
 	}
 	
-	painter->setClipRect(m_boundingRect);
+	painter->setClipRect(option->exposedRect);
 	
 	int height = TIMELINE_HEIGHT;
 	
