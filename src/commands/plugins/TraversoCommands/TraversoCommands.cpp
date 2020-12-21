@@ -76,7 +76,6 @@ TraversoCommands::TraversoCommands()
     tShortCutManager().add_meta_object(&MoveMarker::staticMetaObject);
     tShortCutManager().add_meta_object(&WorkCursorMove::staticMetaObject);
     tShortCutManager().add_meta_object(&PlayHeadMove::staticMetaObject);
-    tShortCutManager().add_meta_object(&PlayHeadMove::staticMetaObject);
     tShortCutManager().add_meta_object(&MoveEdge::staticMetaObject);
     tShortCutManager().add_meta_object(&CropClip::staticMetaObject);
     tShortCutManager().add_meta_object(&FadeRange::staticMetaObject);

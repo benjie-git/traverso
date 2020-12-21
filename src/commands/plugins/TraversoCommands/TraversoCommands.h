@@ -60,6 +60,7 @@ private:
 		NormalizeClipCommand,
 		ArrowKeyBrowserCommand,
 		WorkCursorMoveCommand,
+		PlayHeadMoveCommand,
 		MoveEdgeCommand,
 		MoveCurveNodesCommand,
         MoveMarkerCommand,

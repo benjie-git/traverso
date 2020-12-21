@@ -57,14 +57,23 @@ int PlayHeadMove::finish_hold()
 
 int PlayHeadMove::begin_hold()
 {
-    m_playhead->set_active(false);
-    m_origXPos = m_newXPos = int(m_session->get_transport_location() / d->sv->timeref_scalefactor);
-    m_holdCursorSceneY = cpointer().scene_y();
+    int x = cpointer().scene_x();
 
     ClipsViewPort* port = d->sv->get_clips_viewport();
-    cpointer().set_canvas_cursor_pos(QPointF(m_playhead->scenePos().x(), cpointer().mouse_viewport_y()));
-    int x = port->mapFromScene(m_playhead->scenePos()).x();
 
+    m_playhead->set_active(false);
+    m_origXPos = m_newXPos = int(x / d->sv->timeref_scalefactor);
+    m_holdCursorSceneY = cpointer().scene_y();
+
+    m_playhead->setPos(x, 0);
+
+    m_newTransportLocation = TimeRef(x * d->sv->timeref_scalefactor);
+
+    if (m_resync && m_session->is_transport_rolling()) {
+        m_session->set_transport_pos(m_newTransportLocation);
+    }
+
+    x = port->mapFromScene(m_playhead->scenePos()).x();
     if (x < 0 || x > port->width()) {
         d->sv->center_in_view(m_playhead, Qt::AlignHCenter);
     }
