@@ -26,7 +26,7 @@
 #include "SheetView.h"
 #include "TrackPanelView.h"
 #include <ContextPointer.h>
-
+#include <QWheelEvent>
 #include <Debugger.h>
 
 
@@ -41,5 +41,24 @@ TrackPanelViewPort::TrackPanelViewPort(QGraphicsScene* scene, SheetWidget* sw)
         setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 }
 
+void TrackPanelViewPort::wheelEvent ( QWheelEvent * e )
+{
+	SheetView* sv = m_sw->get_sheetview();
+	
+  if (e->orientation() == Qt::Horizontal) {
+  	if (e->delta() > 0) {
+  		sv->scroll_left_by(e->delta());
+  	} else if (e->delta() < 0) {
+  		sv->scroll_right_by(-e->delta());
+  	}
+  }
+  else {
+    if (e->delta() > 0) {
+  		sv->scroll_up_by(e->delta());
+  	} else if (e->delta() < 0) {
+  		sv->scroll_down_by(-e->delta());
+  	}
+  }
+}
 
 //eof

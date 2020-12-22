@@ -210,3 +210,22 @@ void ClipsViewPort::dragMoveEvent( QDragMoveEvent * event )
     event->ignore();
 }
 
+void ClipsViewPort::wheelEvent ( QWheelEvent * e )
+{
+	SheetView* sv = m_sw->get_sheetview();
+	
+  if (e->orientation() == Qt::Horizontal) {
+  	if (e->delta() > 0) {
+  		sv->scroll_left_by(e->delta());
+  	} else if (e->delta() < 0) {
+  		sv->scroll_right_by(-e->delta());
+  	}
+  }
+  else {
+    if (e->delta() > 0) {
+  		sv->scroll_up_by(e->delta());
+  	} else if (e->delta() < 0) {
+  		sv->scroll_down_by(-e->delta());
+  	}
+  }
+}

@@ -33,6 +33,9 @@ public:
 	TrackPanelViewPort(QGraphicsScene* scene, SheetWidget* sw);
 	~TrackPanelViewPort() {};
 
+protected:
+	void wheelEvent ( QWheelEvent * e );
+
 private:
 	SheetWidget*	m_sw;
 };

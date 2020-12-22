@@ -178,9 +178,13 @@ public slots:
 	TCommand* touch_play_cursor();
 	TCommand* center();
 	TCommand* scroll_right();
+	TCommand* scroll_right_by(int delta);
 	TCommand* scroll_left();
+	TCommand* scroll_left_by(int delta);
 	TCommand* scroll_up();
+	TCommand* scroll_up_by(int delta);
 	TCommand* scroll_down();
+	TCommand* scroll_down_by(int delta);
 	TCommand* to_upper_context_level();
 	TCommand* to_lower_context_level();
 	TCommand* browse_to_previous_context_item();

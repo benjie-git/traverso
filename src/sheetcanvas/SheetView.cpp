@@ -710,10 +710,25 @@ TCommand* SheetView::scroll_up( )
     return nullptr;
 }
 
+TCommand* SheetView::scroll_up_by(int delta)
+{
+	PENTER3;
+	set_vscrollbar_value(m_clipsViewPort->verticalScrollBar()->value() - delta);
+
+    return nullptr;
+}
+
 TCommand* SheetView::scroll_down( )
 {
 	PENTER3;
 	set_vscrollbar_value(m_clipsViewPort->verticalScrollBar()->value() + int(m_meanTrackHeight * 0.75));
+    return nullptr;
+}
+
+TCommand* SheetView::scroll_down_by(int delta)
+{
+	PENTER3;
+	set_vscrollbar_value(m_clipsViewPort->verticalScrollBar()->value() + delta);
     return nullptr;
 }
 
@@ -726,11 +741,28 @@ TCommand* SheetView::scroll_right()
 }
 
 
+TCommand* SheetView::scroll_right_by(int delta)
+{
+	PENTER3;
+	stop_follow_play_head();
+	set_hscrollbar_value(m_clipsViewPort->horizontalScrollBar()->value() + delta);
+    return nullptr;
+}
+
+
 TCommand* SheetView::scroll_left()
 {
 	PENTER3;
 	stop_follow_play_head();
 	set_hscrollbar_value(m_clipsViewPort->horizontalScrollBar()->value() - 50);
+    return nullptr;
+}
+
+TCommand* SheetView::scroll_left_by(int delta)
+{
+	PENTER3;
+	stop_follow_play_head();
+	set_hscrollbar_value(m_clipsViewPort->horizontalScrollBar()->value() - delta);
     return nullptr;
 }
 
