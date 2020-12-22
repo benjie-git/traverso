@@ -442,8 +442,9 @@ void MarkerDialog::remove_marker()
 		return;
 	}
 	
-	if (m_marker->get_type() == Marker::ENDMARKER) {
-		info().information(tr("It's not possible to remove the endmarker!!"));
+	if (m_marker->get_type() == Marker::ENDMARKER && 
+      markersTreeWidget->topLevelItemCount() > 1) {
+		info().information(tr("It's not possible to remove the end marker unless it is the only remaining marker."));
 		return;
 	}
 

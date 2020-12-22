@@ -64,6 +64,7 @@ private:
 		MoveEdgeCommand,
 		MoveCurveNodesCommand,
         MoveMarkerCommand,
+				RemoveMarkerCommand,
         MovePluginCommand,
         FadeRangeCommand
 	};

@@ -73,6 +73,8 @@ TraversoCommands::TraversoCommands()
     tShortCutManager().add_meta_object(&MoveCurveNode::staticMetaObject);
     tShortCutManager().add_meta_object(&Zoom::staticMetaObject);
     tShortCutManager().add_meta_object(&TrackPan::staticMetaObject);
+    tShortCutManager().add_meta_object(&MarkerView::staticMetaObject);
+    tShortCutManager().add_meta_object(&Marker::staticMetaObject);
     tShortCutManager().add_meta_object(&MoveMarker::staticMetaObject);
     tShortCutManager().add_meta_object(&WorkCursorMove::staticMetaObject);
     tShortCutManager().add_meta_object(&PlayHeadMove::staticMetaObject);
@@ -251,6 +253,22 @@ TraversoCommands::TraversoCommands()
     add_function(function, MoveMarkerCommand);
 
     function = new TFunction();
+    function->object = "MarkerView";
+    function->setDescription(tr("Remove Marker"));
+    function->commandName = "RemoveMarker";
+    function->useX = true;
+    function->setInheritedBase("DeleteBase");
+    add_function(function, RemoveMarkerCommand);
+
+    function = new TFunction();
+    function->object = "TimeLineView";
+    function->setDescription(tr("Remove Marker"));
+    function->commandName = "TimeLineRemoveMarker";
+    function->useX = true;
+    function->setInheritedBase("DeleteBase");
+    add_function(function, RemoveMarkerCommand);
+
+    function = new TFunction();
     function->object = "Track";
     function->setDescription(tr("Track Pan"));
     function->commandName = "TrackPan";
@@ -296,6 +314,9 @@ TraversoCommands::TraversoCommands()
     create_and_add_function("AudioClip", tr("(De)Select"), "ClipSelectionSelect", ClipSelectionCommand, QStringList() << "toggle_selected");
 
     create_and_add_function("FadeCurveView", tr("Length"), "FadeLength", FadeRangeCommand);
+
+    create_and_add_function("MarkerView", tr("Delete"), "RemoveMarker", RemoveMarkerCommand);
+    create_and_add_function("TimeLineView", tr("Delete Marker"), "RemoveMarker", RemoveMarkerCommand);
 
     create_and_add_function("PluginView", tr("Move"), "MovePlugin", MovePluginCommand, QStringList(), "MoveBase", true);
 
@@ -466,6 +487,25 @@ TCommand* TraversoCommands::create(QObject* obj, const QString& commandName, QVa
             return 0;
         }
         return activeSession->remove_track(track);
+    }
+
+    case RemoveMarkerCommand:
+    {
+      MarkerView* markerView = qobject_cast<MarkerView*>(obj);
+      if (markerView)
+      {
+          Marker* marker = markerView->get_marker();
+          TimeLine* timeline = marker->get_timeline();
+          if (marker->get_type() != Marker::ENDMARKER || timeline->get_markers().length() == 1) {
+            return timeline->remove_marker(marker, true);
+          }
+      }
+      TimeLineView* view = qobject_cast<TimeLineView*>(obj);
+      if (view)
+      {
+          return view->remove_marker();
+      }
+      return 0;
     }
 
     case RemovePluginCommand:
