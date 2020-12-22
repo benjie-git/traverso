@@ -799,7 +799,7 @@ bool TInputEventDispatcher::check_number_collection(int eventcode)
 		return true;
 	}
 	if (eventcode == Qt::Key_Backspace) {
-		if (m_sCollectedNumber.size() > 0) {
+		if (m_holdingCommand || m_sCollectedNumber.size() > 0) {
 			set_numerical_input(m_sCollectedNumber.left(m_sCollectedNumber.size() - 1));
             return true;
 		}
