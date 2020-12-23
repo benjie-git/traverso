@@ -66,6 +66,8 @@ int WorkCursorMove::begin_hold()
 	cpointer().set_canvas_cursor_shape(":/cursorHoldLr");
 	m_origPos = m_session->get_work_location();
 
+    jog();
+    
 	return 1;
 }
 

@@ -65,13 +65,7 @@ int PlayHeadMove::begin_hold()
     m_origXPos = m_newXPos = int(x / d->sv->timeref_scalefactor);
     m_holdCursorSceneY = cpointer().scene_y();
 
-    m_playhead->setPos(x, 0);
-
-    m_newTransportLocation = TimeRef(x * d->sv->timeref_scalefactor);
-
-    if (m_resync && m_session->is_transport_rolling()) {
-        m_session->set_transport_pos(m_newTransportLocation);
-    }
+    jog();
 
     x = port->mapFromScene(m_playhead->scenePos()).x();
     if (x < 0 || x > port->width()) {
