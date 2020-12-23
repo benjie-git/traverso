@@ -59,6 +59,10 @@ int PlayHeadMove::begin_hold()
 {
     int x = cpointer().scene_x();
 
+    if (x < 0) {
+        return 0;
+    }
+
     ClipsViewPort* port = d->sv->get_clips_viewport();
 
     m_playhead->set_active(false);
