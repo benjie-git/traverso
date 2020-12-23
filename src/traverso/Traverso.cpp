@@ -159,6 +159,16 @@ void Traverso::create_interface( )
             return;
         }
     }
+    else {
+        if (config().get_property("Behavior", "OnStartupLoadLastUsedProject", false).toBool()) {
+          QString previous = config().get_property("Project", "current", "").toString();
+          if (!previous.isEmpty() && !previous.isNull()) {
+            if (pm().project_exists(previous)) {
+              pm().load_project(previous);
+            }
+          }
+        }
+    }
 }
 
 void Traverso::shutdown( int signal )
