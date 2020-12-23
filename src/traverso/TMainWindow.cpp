@@ -525,6 +525,8 @@ void TMainWindow::show_session(TSession* session)
 
 	if (session) {
 		pm().get_undogroup()->setActiveStack(session->get_history_stack());
+        // Update scrollbars in order to reset the snapList's range
+        m_currentSheetWidget->get_sheetview()->update_scrollbars();
 //                setWindowTitle(m_project->get_title() + ": Sheet " + session->get_name() + " - Traverso");
 	}
 }
