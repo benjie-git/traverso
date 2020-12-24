@@ -95,7 +95,7 @@ void FadeCurveView::paint(QPainter *painter, const QStyleOptionGraphicsItem *opt
             xstart -= 1;
             pixelcount += 1;
     }
-		pixelcount += 1;
+    pixelcount += 1;
     qreal vector_start = xstart;
     qreal height = m_boundingRect.height();
     auto buffer = QVarLengthArray<float>(pixelcount);
