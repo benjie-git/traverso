@@ -32,6 +32,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA.
 
 #include <Debugger.h>
 
+#define BUS_TRACK_VIEW_HEIGHT 60
+
+
 TBusTrackView::TBusTrackView(SheetView* sv, TBusTrack* group)
         : TrackView(sv, group)
 {
@@ -67,9 +70,19 @@ void TBusTrackView::paint(QPainter* painter, const QStyleOptionGraphicsItem* opt
 
 //        if (m_paintBackground) {
                 QColor color = themer()->get_color("BusTrack:background");
-                painter->fillRect(xstart, m_topborderwidth, pixelcount+1, m_sv->get_track_height(m_track) - m_bottomborderwidth, color);
+                painter->fillRect(xstart, m_topborderwidth, pixelcount+1, m_height - m_bottomborderwidth, color);
 //        }
 }
+
+void TBusTrackView::calculate_bounding_rect()
+{
+        prepareGeometryChange();
+        set_height(BUS_TRACK_VIEW_HEIGHT);
+        m_boundingRect = QRectF(0, 0, MAX_CANVAS_WIDTH, get_total_height());
+        m_panel->calculate_bounding_rect();
+        ViewItem::calculate_bounding_rect();
+}
+
 
 void TBusTrackView::load_theme_data()
 {

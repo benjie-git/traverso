@@ -33,6 +33,8 @@ class TBusTrackView : public TrackView
 public:
         TBusTrackView(SheetView* sv, TBusTrack* group);
         ~TBusTrackView() {}
+        
+        void calculate_bounding_rect();
 
         void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget);
 
