@@ -160,7 +160,7 @@ void Traverso::create_interface( )
         }
     }
     else {
-        if (config().get_property("Behavior", "OnStartupLoadLastUsedProject", false).toBool()) {
+        if (config().get_property("Project", "onopen", "welcome").toString() == "restore") {
           QString previous = config().get_property("Project", "current", "").toString();
           if (!previous.isEmpty() && !previous.isNull()) {
             if (pm().project_exists(previous)) {

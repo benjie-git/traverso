@@ -746,7 +746,12 @@ void BehaviorConfigPage::save_config()
 	config().set_property("AudioClip", "LockByDefault", lockClipsCheckBox->isChecked());
     config().set_property("ShortCuts", "ShowCursorHelp", showShortcutUsageMessagesCheckBox->isChecked());
 
-	QString oncloseaction;
+    if (welcomeRadioButton->isChecked()) {
+        config().set_property("Project", "onopen", "welcome");
+    } else {
+        config().set_property("Project", "onopen", "restore");
+    }
+    
 	if (saveRadioButton->isChecked()) {
 		config().set_property("Project", "onclose", "save");
 	} else if (askRadioButton->isChecked()) {
@@ -758,7 +763,8 @@ void BehaviorConfigPage::save_config()
 
 void BehaviorConfigPage::load_config()
 {
-	QString oncloseaction = config().get_property("Project", "onclose", "save").toString();
+    QString onopenaction = config().get_property("Project", "onopen", "welcome").toString();
+    QString oncloseaction = config().get_property("Project", "onclose", "save").toString();
     int defaultNumTracks = config().get_property("Sheet", "trackCreationCount", 1).toInt();
 	int scrollMode = config().get_property("PlayHead", "Scrollmode", 2).toInt();
 	bool resyncAudio = config().get_property("AudioClip", "SyncDuringDrag", false).toBool();
@@ -771,6 +777,12 @@ void BehaviorConfigPage::load_config()
 	lockClipsCheckBox->setChecked(lockClips);
     showShortcutUsageMessagesCheckBox->setChecked(showShortcutHelpMessages);
 	
+    if (onopenaction == "welcome") {
+        welcomeRadioButton->setChecked(true);
+    } else {
+        restoreRadioButton->setChecked(true);
+    }
+    
 	if (oncloseaction == "save") {
 		saveRadioButton->setChecked(true);
 	} else if (oncloseaction == "ask") {
