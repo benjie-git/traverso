@@ -603,9 +603,10 @@ void Themer::load_defaults()
         m_defaultColors.insert("TrackPanel:slider:border", p.color(QPalette::Window));
         m_defaultColors.insert("TrackPanel:head:active", p.color(QPalette::Highlight));
         m_defaultColors.insert("TrackPanel:head:inactive", p.color(QPalette::Highlight));
-        m_defaultColors.insert("TrackPanel:muteled", QColor(Qt::yellow));
-        m_defaultColors.insert("TrackPanel:sololed", QColor(Qt::green));
-        m_defaultColors.insert("TrackPanel:recled", QColor(Qt::red));
+        m_defaultColors.insert("TrackPanel:Mled", QColor(255, 250, 00, 255));
+        m_defaultColors.insert("TrackPanel:Sled", QColor(10, 150, 10, 255));
+        m_defaultColors.insert("TrackPanel:Rled", QColor(150, 10, 10, 255));
+        m_defaultColors.insert("TrackPanel:Pled", QColor(10, 150, 10, 255));
         m_defaultColors.insert("TrackPanel:led:inactive", p.color(QPalette::Button));
         m_defaultColors.insert("TrackPanel:trackseparation", p.color(QPalette::WindowText));
         m_defaultColors.insert("TrackPanel:led:margin:active", p.color(QPalette::Dark));
