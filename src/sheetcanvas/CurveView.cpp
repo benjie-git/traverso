@@ -423,33 +423,31 @@ TCommand* CurveView::drag_node()
         return ied().failure();
     }
 
-    TimeRef min(qint64(0));
-    TimeRef max(qint64(DBL_MAX));
+    TimeRef min = get_start_offset();
+    TimeRef max = TimeRef(qint64(boundingRect().width() * m_sv->timeref_scalefactor)) + get_start_offset();
     APILinkedList nodeList = m_curve->get_nodes();
 
     int indexFirstNode = nodeList.indexOf(selectedNodes.first());
     int indexLastNode = nodeList.indexOf(selectedNodes.last());
 
     if (indexFirstNode > 0) {
-        min = TimeRef(((CurveNode*)nodeList.at(indexFirstNode-1))->get_when() + 1);
+        TimeRef prevWhen = TimeRef(((CurveNode*)nodeList.at(indexFirstNode-1))->get_when() + 1);
+        if (prevWhen > min) {
+            min = prevWhen;
+        }
     }
 
     if (nodeList.size() > (indexLastNode + 1)) {
-        max = TimeRef(((CurveNode*)nodeList.at(indexLastNode+1))->get_when() - 1);
-    }
-
-    if (boundingRect().width() * m_sv->timeref_scalefactor < max) {
-        max = boundingRect().width() * m_sv->timeref_scalefactor;
-    }
-
-    if ((min - get_start_offset()) < TimeRef()) {
-        min = get_start_offset();
+        TimeRef nextWhen = TimeRef(((CurveNode*)nodeList.at(indexLastNode+1))->get_when() - 1);
+        if (nextWhen < max) {
+            max = nextWhen;
+        }
     }
 
     TimeRef startLocation = TimeRef(selectedNodes.first()->get_when());
     TimeRef endLocation  = TimeRef(selectedNodes.last()->get_when());
     TimeRef minWhenDiff = min - startLocation;
-    TimeRef maxWhenDiff = max - endLocation + m_startoffset;
+    TimeRef maxWhenDiff = max - endLocation;
 
 
     double maxValue = DBL_MIN;
