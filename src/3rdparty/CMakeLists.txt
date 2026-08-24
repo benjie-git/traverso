@@ -1,4 +1,3 @@
-#Subdirectories
-IF(USE_INTERNAL_SLV2_LIB)
-ADD_SUBDIRECTORY(slv2)
-ENDIF(USE_INTERNAL_SLV2_LIB)
+if(USE_INTERNAL_SLV2_LIB)
+    add_subdirectory(slv2)
+endif()

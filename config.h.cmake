@@ -1,5 +1,7 @@
+#ifndef TRAVERSO_CONFIG_H
+#define TRAVERSO_CONFIG_H
 
 #cmakedefine VERSION "${VERSION}"
 #cmakedefine TRAVERSO_DEFINES "${TRAVERSO_DEFINES}"
 
-#cmakedefine BUILD_MAC_BUNDLE
+#endif // TRAVERSO_CONFIG_H

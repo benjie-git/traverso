@@ -710,7 +710,7 @@ void Sheet::solo_track(Track *track)
 int Sheet::process( nframes_t nframes )
 {
 	if (m_startSeek) {
-                printf("process: starting seek\n");
+                // printf("process: starting seek\n");
 		start_seek();
 		return 0;
 	}
@@ -1000,7 +1000,7 @@ int Sheet::transport_control(transport_state_t state)
 		return true;
 	
 	case TransportStarting:
-                printf("TransportStarting\n");
+                // printf("TransportStarting\n");
 		if (state.location != m_transportLocation) {
                         initiate_seek_start(state.location);
                         return false;
@@ -1160,7 +1160,7 @@ void Sheet::set_transport_pos(TimeRef location)
 #if defined (THREAD_CHECK)
 	Q_ASSERT(QThread::currentThreadId() ==  threadId);
 #endif
-        printf("sheet: set transport to: %lld\n", location.universal_frame());
+        // printf("sheet: set transport to: %lld\n", location.universal_frame());
 	audiodevice().transport_seek_to(m_audiodeviceClient, location);
 }
 
@@ -1198,7 +1198,7 @@ void Sheet::seek_finished()
 #endif
 	PMESG2("Sheet :: entering seek_finished");
 	m_transportLocation  = m_newTransportLocation;
-        printf("seek finished, setting transport location to %lld\n", m_transportLocation.universal_frame());
+        // printf("seek finished, setting transport location to %lld\n", m_transportLocation.universal_frame());
 	m_seeking = 0;
 
 	if (m_resumeTransport) {

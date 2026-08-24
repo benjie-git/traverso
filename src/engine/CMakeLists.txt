@@ -1,78 +1,70 @@
-INCLUDE_DIRECTORIES(
-  ${QT_QTGUI_INCLUDE_DIR}
+set(TRAVERSO_ENGINE_SOURCES
+    AudioBus.cpp
+    AudioChannel.cpp
+    AudioDevice.cpp
+    AudioDeviceThread.cpp
+    TAudioDeviceClient.cpp
+    TAudioDriver.cpp
+    memops.cpp
 )
 
-SET(TRAVERSO_ENGINE_MOC_CLASSES
-AudioBus.h
-AudioChannel.h
-AudioDevice.h
-AudioDeviceThread.h
-TAudioDeviceClient.h
+if(HAVE_ALSA)
+    list(APPEND TRAVERSO_ENGINE_SOURCES AlsaDriver.cpp)
+endif()
+
+if(HAVE_JACK)
+    list(APPEND TRAVERSO_ENGINE_SOURCES JackDriver.cpp)
+endif()
+
+if(HAVE_PORTAUDIO)
+    list(APPEND TRAVERSO_ENGINE_SOURCES PADriver.cpp)
+endif()
+
+if(HAVE_PULSEAUDIO)
+    list(APPEND TRAVERSO_ENGINE_SOURCES PulseAudioDriver.cpp)
+endif()
+
+if(HAVE_COREAUDIO)
+    list(APPEND TRAVERSO_ENGINE_SOURCES CoreAudioDriver.cpp)
+endif()
+
+add_library(traversoaudiobackend STATIC ${TRAVERSO_ENGINE_SOURCES})
+
+target_include_directories(traversoaudiobackend
+    PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}
+        ${CMAKE_SOURCE_DIR}/src/common
+    PRIVATE
+        ${PROJECT_BINARY_DIR}
+        ${PROJECT_BINARY_DIR}/src
 )
 
-SET(TRAVERSO_ENGINE_SOURCES
-AudioBus.cpp
-AudioChannel.cpp
-AudioDevice.cpp
-AudioDeviceThread.cpp
-TAudioDeviceClient.cpp
-TAudioDriver.cpp
-memops.cpp
+target_link_libraries(traversoaudiobackend
+    PUBLIC
+        Qt5::Core
+        Qt5::Widgets
 )
 
-IF(HAVE_ALSA)
-	SET(TRAVERSO_ENGINE_SOURCES
-	AlsaDriver.cpp
-	${TRAVERSO_ENGINE_SOURCES}
-	)
-        SET(TRAVERSO_ENGINE_MOC_CLASSES
-        AlsaDriver.h
-        ${TRAVERSO_ENGINE_MOC_CLASSES}
-        )
-ENDIF(HAVE_ALSA)
+if(HAVE_ALSA)
+    target_link_libraries(traversoaudiobackend PUBLIC PkgConfig::ALSA)
+endif()
 
-IF(HAVE_JACK)
-	SET(TRAVERSO_ENGINE_SOURCES
-	JackDriver.cpp
-	${TRAVERSO_ENGINE_SOURCES}
-	)
-	SET(TRAVERSO_ENGINE_MOC_CLASSES
-	JackDriver.h
-	${TRAVERSO_ENGINE_MOC_CLASSES}
-	)
-ENDIF(HAVE_JACK)
+if(HAVE_JACK)
+    target_link_libraries(traversoaudiobackend PUBLIC PkgConfig::JACK)
+endif()
 
-IF(HAVE_PORTAUDIO)
-	SET(TRAVERSO_ENGINE_SOURCES
-	PADriver.cpp
-	${TRAVERSO_ENGINE_SOURCES}
-	)
-        SET(TRAVERSO_ENGINE_MOC_CLASSES
-        PADriver.h
-        ${TRAVERSO_ENGINE_MOC_CLASSES}
-        )
-ENDIF(HAVE_PORTAUDIO)
+if(HAVE_PORTAUDIO)
+    target_link_libraries(traversoaudiobackend PUBLIC PkgConfig::PORTAUDIO)
+endif()
 
-IF(HAVE_PULSEAUDIO)
-	SET(TRAVERSO_ENGINE_SOURCES
-	PulseAudioDriver.cpp
-	${TRAVERSO_ENGINE_SOURCES}
-	)
-ENDIF(HAVE_PULSEAUDIO)
+if(HAVE_PULSEAUDIO)
+    target_link_libraries(traversoaudiobackend PUBLIC PkgConfig::PULSEAUDIO)
+endif()
 
+if(HAVE_COREAUDIO)
+    target_link_libraries(traversoaudiobackend PUBLIC "-framework CoreAudio" "-framework AudioToolbox" "-framework AudioUnit")
+endif()
 
-IF(HAVE_COREAUDIO)
-	SET(TRAVERSO_ENGINE_SOURCES
-	CoreAudioDriver.cpp
-	${TRAVERSO_ENGINE_SOURCES}
-	)
-ENDIF(HAVE_COREAUDIO)
-
-
-SET(TRAVERSO_ENGINE_LIBRARY "traversoaudiobackend")
-
-ADD_LIBRARY(${TRAVERSO_ENGINE_LIBRARY} STATIC ${TRAVERSO_ENGINE_SOURCES} ${TRAVERSO_ENGINE_MOC_SOURCES})
-
-IF(USE_PCH)
-    ADD_DEPENDENCIES(traversoaudiobackend precompiled_headers)
-ENDIF(USE_PCH)
+if(WANT_PCH)
+    target_precompile_headers(traversoaudiobackend PRIVATE "${CMAKE_SOURCE_DIR}/src/precompile.h")
+endif()

@@ -1,44 +1,42 @@
-INCLUDE_DIRECTORIES(
-${CMAKE_SOURCE_DIR}/src/common
-${CMAKE_SOURCE_DIR}/src/core
-${CMAKE_SOURCE_DIR}/src/engine
-${CMAKE_SOURCE_DIR}/src/commands
-${CMAKE_SOURCE_DIR}/src/plugins/native
-${CMAKE_SOURCE_DIR}/src/plugins/LV2
+set(TRAVERSO_PLUGINS_SOURCES
+    PluginChain.cpp
+    Plugin.cpp
+    PluginManager.cpp
+    PluginSlider.cpp
+    native/CorrelationMeter.cpp
+    native/SpectralMeter.cpp
+    native/GainEnvelope.cpp
+    PluginPropertiesDialog.cpp
 )
 
-IF(USE_INTERNAL_SLV2_LIB)
-	INCLUDE_DIRECTORIES(
-	${CMAKE_SOURCE_DIR}/src/3rdparty/slv2
-	)
-ENDIF(USE_INTERNAL_SLV2_LIB)
+if(HAVE_LILV)
+    list(APPEND TRAVERSO_PLUGINS_SOURCES LV2/LV2Plugin.cpp)
+endif()
 
-SET(TRAVERSO_PLUGINS_SOURCES
-PluginChain.cpp
-Plugin.cpp
-PluginManager.cpp
-PluginSlider.cpp
-native/CorrelationMeter.cpp
-native/SpectralMeter.cpp
-native/GainEnvelope.cpp
-PluginPropertiesDialog.cpp
+add_library(traversoplugins STATIC ${TRAVERSO_PLUGINS_SOURCES})
+
+target_include_directories(traversoplugins
+    PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}
+        ${CMAKE_CURRENT_SOURCE_DIR}/native
+        ${CMAKE_CURRENT_SOURCE_DIR}/LV2
+    PRIVATE
+        ${CMAKE_SOURCE_DIR}/src/commands
+        ${CMAKE_SOURCE_DIR}/src/sheetcanvas
+        ${CMAKE_SOURCE_DIR}/src/traverso
+        ${PROJECT_BINARY_DIR}
+        ${PROJECT_BINARY_DIR}/src
 )
 
-IF(HAVE_LILV)
-	SET(TRAVERSO_PLUGINS_SOURCES
-	${TRAVERSO_PLUGINS_SOURCES}
-	LV2/LV2Plugin.cpp
-	)
-	SET(TRAVERSO_PLUGINS_MOC_CLASSES
-	LV2/LV2Plugin.h
-	)
-ENDIF(HAVE_LILV)
+target_link_libraries(traversoplugins
+    PUBLIC
+        traversocore
+)
 
-SET(TRAVERSO_PLUGINS_LIBRARY "traversoplugins")
+if(HAVE_LILV)
+    target_link_libraries(traversoplugins PUBLIC PkgConfig::LIBLILV)
+endif()
 
-
-ADD_LIBRARY(${TRAVERSO_PLUGINS_LIBRARY} STATIC ${TRAVERSO_PLUGINS_SOURCES})
-
-IF(USE_PCH)
-    ADD_DEPENDENCIES(traversoplugins precompiled_headers)
-ENDIF(USE_PCH)
+if(WANT_PCH)
+    target_precompile_headers(traversoplugins PRIVATE "${CMAKE_SOURCE_DIR}/src/precompile.h")
+endif()

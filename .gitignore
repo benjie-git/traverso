@@ -26,4 +26,4 @@ Makefile
 qrc_*
 moc_*.cxx
 ui_*.h
-
+*autogen*

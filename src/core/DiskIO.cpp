@@ -106,23 +106,21 @@ protected:
 
 void DiskIOThread::run()
 {
-#if defined (Q_OS_UNIX)
-    if (IOPRIO_SUPPORT) {
-        // When using the cfq scheduler we are able to set the priority of the io for what it's worth though :-)
-        int ioprio = 0, ioprio_class = IOPRIO_CLASS_RT;
-        int value = syscall(__NR_ioprio_set, IOPRIO_WHO_PROCESS, getpid(), ioprio | ioprio_class << IOPRIO_CLASS_SHIFT);
+#if defined (Q_OS_UNIX) && IOPRIO_SUPPORT
+    // When using the cfq scheduler we are able to set the priority of the io for what it's worth though :-)
+    int ioprio = 0, ioprio_class = IOPRIO_CLASS_RT;
+    int value = syscall(__NR_ioprio_set, IOPRIO_WHO_PROCESS, getpid(), ioprio | ioprio_class << IOPRIO_CLASS_SHIFT);
 
-        if (value == -1) {
-            ioprio_class = IOPRIO_CLASS_BE;
-            value = syscall(__NR_ioprio_set, IOPRIO_WHO_PROCESS, getpid(), ioprio | ioprio_class << IOPRIO_CLASS_SHIFT);
-        }
+    if (value == -1) {
+        ioprio_class = IOPRIO_CLASS_BE;
+        value = syscall(__NR_ioprio_set, IOPRIO_WHO_PROCESS, getpid(), ioprio | ioprio_class << IOPRIO_CLASS_SHIFT);
+    }
 
-        if (value == 0) {
-            ioprio = syscall (__NR_ioprio_get, IOPRIO_WHO_PROCESS, getpid());
-            ioprio_class = ioprio >> IOPRIO_CLASS_SHIFT;
-            ioprio = ioprio & IOPRIO_PRIO_MASK;
-            printf("DiskIOThread: Using prioritized disk I/O using %s prio %d (Only effective with the cfq scheduler)\n", to_prio[ioprio_class], ioprio);
-        }
+    if (value == 0) {
+        ioprio = syscall (__NR_ioprio_get, IOPRIO_WHO_PROCESS, getpid());
+        ioprio_class = ioprio >> IOPRIO_CLASS_SHIFT;
+        ioprio = ioprio & IOPRIO_PRIO_MASK;
+        printf("DiskIOThread: Using prioritized disk I/O using %s prio %d (Only effective with the cfq scheduler)\n", to_prio[ioprio_class], ioprio);
     }
 #endif
     exec();
