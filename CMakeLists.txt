@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.16...3.30)
 
 project(traverso
-    VERSION 0.49.1
+    VERSION 0.50.0
     LANGUAGES C CXX
 )
 

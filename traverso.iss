@@ -1,6 +1,6 @@
 [Setup]
 AppName=Traverso
-AppVerName=Traverso 0.49.1
+AppVerName=Traverso 0.50.0
 DefaultDirName={pf}\Traverso
 DefaultGroupName=Traverso
 PrivilegesRequired=none

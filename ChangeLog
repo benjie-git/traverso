@@ -1,5 +1,5 @@
 xx-xx-2010 Remon Sijrier <remon at traverso-daw dot org>
-        * Released Traverso 0.xx.0
+        * Released Traverso 0.50.0
 
         * Audio Driver settings are stored in the project file now
         * JackDriver: no longer creates ports by default, but in/out ports are created

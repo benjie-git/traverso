@@ -19,7 +19,7 @@ Makefile
 /bin
 /lib
 /build
-
+Traverso.app
 *.[oa]
 
 /src/traverso/qrc_traverso.cxx
