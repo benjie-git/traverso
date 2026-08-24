@@ -595,6 +595,7 @@ void Themer::load_defaults()
         m_defaultColors.insert("Track:clipbottomoffset", p.color(QPalette::Dark));
         m_defaultColors.insert("Track:background", p.color(QPalette::Base));
         m_defaultColors.insert("Track:mousehover", p.color((QPalette::Highlight)));
+        m_defaultColors.insert("Track:laneseperator", p.color((QPalette::Dark)));
         m_defaultColors.insert("TrackPanel:background", p.color(QPalette::Window));
         m_defaultColors.insert("TrackPanel:text", p.color(QPalette::WindowText));
         m_defaultColors.insert("TrackPanel:sliderborder", p.color(QPalette::WindowText));

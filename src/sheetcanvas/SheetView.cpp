@@ -104,9 +104,11 @@ SheetView::SheetView(SheetWidget* sheetwidget,
 
     if (m_session->is_project_session()) {
         m_projectMasterOutView = new TBusTrackView(this, pm().get_project()->get_master_out_bus_track());
+        connect(m_projectMasterOutView, SIGNAL(totalTrackHeightChanged()), this, SLOT(layout_tracks()));
     }
     if (sheet) {
         m_sheetMasterOutView = new TBusTrackView(this, m_session->get_master_out_bus_track());
+        connect(m_sheetMasterOutView, SIGNAL(totalTrackHeightChanged()), this, SLOT(layout_tracks()));
     }
 
 	connect(m_session, SIGNAL(workingPosChanged()), m_workCursor, SLOT(update_position()));

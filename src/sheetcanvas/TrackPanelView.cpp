@@ -279,7 +279,7 @@ void TBusTrackPanelView::paint(QPainter* painter, const QStyleOptionGraphicsItem
         int pixelcount = int(option->exposedRect.width());
 
         QColor color = themer()->get_color("BusTrack:background");
-        painter->fillRect(xstart, m_trackView->m_topborderwidth, pixelcount, m_sv->get_track_height(m_track) - m_trackView->m_bottomborderwidth, color);
+        painter->fillRect(xstart, m_trackView->m_topborderwidth, pixelcount, m_trackView->m_height - m_trackView->m_bottomborderwidth, color);
 
         TrackPanelView::paint(painter, option, widget);
 }
