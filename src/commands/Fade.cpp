@@ -137,6 +137,10 @@ int FadeRange::jog()
 }
 
 
+// Stop Clip Up/Down from triggering (and crashing) while dragging a fade curve
+void FadeRange::move_up() {}
+void FadeRange::move_down() {}
+
 void FadeRange::move_left()
 {
 

@@ -35,7 +35,7 @@
         <item>
          <widget class="QRadioButton" name="mouseMoveRadioButton">
           <property name="text">
-           <string>Mouse moved more then (px):</string>
+           <string>Mouse moved more than (px):</string>
           </property>
          </widget>
         </item>

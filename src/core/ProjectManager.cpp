@@ -515,9 +515,9 @@ void ProjectManager::cleanup_backupfiles_for_project(const QString & projectname
 	QMap<int, QString> map;
 	QStringList entrylist = dir.entryList(QDir::Files);
 	
-	// If there are more then 1000 saves, remove the last 200!
+	// If there are more than 1000 saves, remove the last 200!
 	if (entrylist.size() > 1000) {
-		printf("more then thousand backup files, deleting oldest 200\n");
+		printf("more than one thousand backup files, deleting oldest 200\n");
 		
 		int key;
 		foreach (QString file, dir.entryList(QDir::Files)) {

@@ -1450,7 +1450,7 @@ QString TShortcutManager::createHtmlForClass(const QString& className, QObject* 
 	      ".object {background-color: %1; font-size: 11px;}\n"
 	      ".description {background-color: %2; font-size: 10px; font-weight: bold;}\n"
 	      "</style>\n"
-	      "</head>\n<body>\n").arg(QApplication::palette().color(QPalette::AlternateBase).darker(105).name()).arg(alternateBaseColor);
+	      "</head>\n<body>\n").arg("#888888").arg("#BBBBBB");
 
 	if (object && object->inherits("PCommand")) {
         PCommand* pc = static_cast<PCommand*>(object);
@@ -1490,9 +1490,9 @@ QString TShortcutManager::createHtmlForClass(const QString& className, QObject* 
 
 			QString alternatingColor;
 			if ((j % 2) == 1) {
-				alternatingColor = QString("bgcolor=\"%1\"").arg(baseColor);
+				alternatingColor = QString("bgcolor=\"%1\"").arg("#CCCCCC");
 			} else {
-				alternatingColor = QString("bgcolor=\"%1\"").arg(alternateBaseColor);
+				alternatingColor = QString("bgcolor=\"%1\"").arg("#DDDDDD");
 			}
 			j += 1;
 

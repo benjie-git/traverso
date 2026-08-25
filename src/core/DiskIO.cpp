@@ -369,7 +369,7 @@ int DiskIO::stop( )
     // Exit the diskthreads event loop
     m_diskThread->exit(0);
 
-    // Wait for the Thread to return from it's event loop. 1000 ms should be (more then) enough,
+    // Wait for the Thread to return from it's event loop. 1000 ms should be (more than) enough,
     // if not, terminate this thread and print a warning!
     if ( ! m_diskThread->wait(2000) ) {
         qWarning("DiskIO :: Still running after 2 second wait, terminating!");
@@ -467,7 +467,7 @@ trav_time_t DiskIO::get_cpu_time( )
     m_lastdoWorkReadTime = currentTime;
 
     // 	if (result > 95) {
-    // 		qWarning("DiskIO :: consuming more then 95 Percent CPU !!");
+    // 		qWarning("DiskIO :: consuming more than 95 Percent CPU !!");
     // 	}
 
     return result;

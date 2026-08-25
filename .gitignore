@@ -4,6 +4,7 @@
 .*swp
 #*#
 .project
+.vscode
 
 # cmake products
 CMakeCache.txt
