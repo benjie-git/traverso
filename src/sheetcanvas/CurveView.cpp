@@ -223,6 +223,7 @@ void CurveView::add_curvenode_view(CurveNode* node)
         qSort(m_nodeViews.begin(), m_nodeViews.end(), Curve::smallerNode);
 
         update();
+        emit curveUpdated(0, int(m_boundingRect.width()));
     }
 }
 
@@ -243,6 +244,7 @@ void CurveView::remove_curvenode_view(CurveNode* node)
                 scene()->removeItem(nodeview);
                 delete nodeview;
                 update();
+                emit curveUpdated(0, int(m_boundingRect.width()));
                 return;
             }
         }
@@ -475,6 +477,10 @@ TCommand* CurveView::drag_node()
 
 void CurveView::node_moved( )
 {
+    foreach (CurveNodeView* nodeView, m_nodeViews) {
+        nodeView->update_pos();
+    }
+
     CurveNodeView* prev = nullptr;
     CurveNodeView* next = nullptr;
 
@@ -484,6 +490,7 @@ void CurveView::node_moved( )
         // even though there are no selected nodes, a curve node did move
         // e.g. by an undo action, so at least update the view
         update();
+        emit curveUpdated(0, int(m_boundingRect.width()));
         return;
     }
 
@@ -526,6 +533,7 @@ void CurveView::node_moved( )
 
 
     update(xleft, 0, xright - xleft + 3, m_boundingRect.height());
+    emit curveUpdated(xleft, xright);
 }
 
 void CurveView::load_theme_data()
