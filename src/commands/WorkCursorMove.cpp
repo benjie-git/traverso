@@ -115,8 +115,6 @@ int WorkCursorMove::jog()
 
 void WorkCursorMove::move_left()
 {
-	
-
 	if (m_browseMarkers) {
 		return browse_to_previous_marker();
 	}
