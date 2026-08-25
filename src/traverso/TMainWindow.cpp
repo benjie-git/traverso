@@ -1129,7 +1129,7 @@ QMenu* TMainWindow::create_context_menu(QObject* item, QList<TFunction* >* menul
 	foreach(const QString &key, keys) {
 		QList<TFunction*>* list = submenus.value(key);
 
-		qSort(list->begin(), list->end(), TFunction::smaller);
+		std::sort(list->begin(), list->end(), TFunction::smaller);
 
 		QMenu* subMenu = new QMenu(this);
 		subMenu->setFont(themer()->get_font("ContextMenu:fontscale:actions"));
@@ -1156,7 +1156,7 @@ void TMainWindow::add_function_to_menu(TFunction *function, QMenu *menu)
 #if QT_VERSION >= QT_VERSION_CHECK(5, 10, 0)
     action->setShortcutVisibleInContextMenu(true);
 #endif
-    QVariant v = qVariantFromValue(static_cast<void*>(function));
+    QVariant v = QVariant::fromValue(static_cast<void*>(function));
     action->setData(v);
 }
 

@@ -45,20 +45,33 @@ void TrackPanelViewPort::wheelEvent ( QWheelEvent * e )
 {
 	SheetView* sv = m_sw->get_sheetview();
 	
-  if (e->orientation() == Qt::Horizontal) {
-  	if (e->delta() > 0) {
-  		sv->scroll_left_by(e->delta());
-  	} else if (e->delta() < 0) {
-  		sv->scroll_right_by(-e->delta());
+        if (e->angleDelta().x() > 0) {
+                sv->scroll_left_by(e->angleDelta().x());
+        } else if (e->angleDelta().x() < 0) {
+                sv->scroll_right_by(-e->angleDelta().x());
+        }
+        if (e->angleDelta().y() > 0) {
+  		sv->scroll_up_by(e->angleDelta().y());
+  	} else if (e->angleDelta().y() < 0) {
+  		sv->scroll_down_by(-e->angleDelta().y());
   	}
-  }
-  else {
-    if (e->delta() > 0) {
-  		sv->scroll_up_by(e->delta());
-  	} else if (e->delta() < 0) {
-  		sv->scroll_down_by(-e->delta());
-  	}
-  }
+}
+
+// Catch native Mac trackpad gestures
+bool TrackPanelViewPort::event(QEvent *event)
+{
+    if (event->type() == QEvent::NativeGesture) {
+        QNativeGestureEvent *gestureEvent = static_cast<QNativeGestureEvent*>(event);
+        if (gestureEvent->gestureType() == Qt::ZoomNativeGesture) {
+            qreal zoomFactor = 1 - 2*gestureEvent->value(); 
+            
+            SheetView* sv = m_sw->get_sheetview();
+            sv->hzoom(zoomFactor);
+            
+            return true; // Event handled
+        }
+    }
+    return QWidget::event(event);
 }
 
 //eof

@@ -572,20 +572,17 @@ void TInputEventDispatcher::catch_mousebutton_release( QMouseEvent * e )
 
 void TInputEventDispatcher::catch_scroll(QWheelEvent* e)
 {
-	if (e->orientation() == Qt::Horizontal) {
-		if (e->delta() > 0) {
-		}
-		if (e->delta() < 0) {
-		}
-	} else {
-		if (e->delta() > 0) {
-			process_press_event(MouseScrollVerticalUp);
-			process_release_event(MouseScrollVerticalUp);
-		}
-		if (e->delta() < 0) {
-			process_press_event(MouseScrollVerticalDown);
-			process_release_event(MouseScrollVerticalDown);
-		}
+	if (e->angleDelta().x() > 0) {
+	}
+	if (e->angleDelta().x() < 0) {
+	}
+	if (e->angleDelta().y() > 0) {
+		process_press_event(MouseScrollVerticalUp);
+		process_release_event(MouseScrollVerticalUp);
+	}
+	if (e->angleDelta().y() < 0) {
+		process_press_event(MouseScrollVerticalDown);
+		process_release_event(MouseScrollVerticalDown);
 	}
 }
 

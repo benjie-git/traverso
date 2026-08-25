@@ -257,7 +257,13 @@ qreal TSession::get_hzoom() const
 	if (m_parentSession) {
 		return m_parentSession->get_hzoom();
 	}
-	return m_hzoom;
+
+	// Traverso <= 0.42.0 doesn't store the real zoom factor, but an
+	// index. This currently causes problems as there is no real support
+	// (yet) for zoomlevels other then powers of 2, so we force that for now.
+	// NOTE: Remove those 2 lines when floating point zoomlevel is implemented!
+	int highbit;
+    return nearest_power_of_two(ulong(m_hzoom), highbit);
 }
 
 QPoint TSession::get_scrollbar_xy()
@@ -296,19 +302,11 @@ bool TSession::is_child_session() const
 	return true;
 }
 
-void TSession::set_hzoom( qreal hzoom )
+void TSession::set_hzoom(qreal hzoom )
 {
 	if (m_parentSession) {
 		return m_parentSession->set_hzoom(hzoom);
 	}
-
-	// Traverso <= 0.42.0 doesn't store the real zoom factor, but an
-	// index. This currently causes problems as there is no real support
-	// (yet) for zoomlevels other then powers of 2, so we force that for now.
-	// NOTE: Remove those 2 lines when floating point zoomlevel is implemented!
-	int highbit;
-    hzoom = nearest_power_of_two(ulong(hzoom), highbit);
-
 
 	if (hzoom > Peak::max_zoom_value()) {
 		hzoom = Peak::max_zoom_value();
@@ -318,13 +316,17 @@ void TSession::set_hzoom( qreal hzoom )
 		hzoom = 1.0;
 	}
 
-    if (qFuzzyCompare(m_hzoom, hzoom)) {
-		return;
-	}
-
+	qreal old_hzoom = get_hzoom();
 	m_hzoom = hzoom;
 
-	emit hzoomChanged();
+    if (!qFuzzyCompare(old_hzoom, get_hzoom())) {
+		emit hzoomChanged();
+	}
+}
+
+void TSession::scale_hzoom(qreal scale)
+{
+	this->set_hzoom(m_hzoom * scale);
 }
 
 void TSession::set_work_at(TimeRef location, bool isFolder)

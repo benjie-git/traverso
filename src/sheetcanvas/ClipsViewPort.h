@@ -41,12 +41,13 @@ public:
 	
 
 protected:
-    void resizeEvent(QResizeEvent* e);
-	void paintEvent( QPaintEvent* e);
-	void dragEnterEvent(QDragEnterEvent *event);
-	void dropEvent(QDropEvent *event);
-    void dragMoveEvent(QDragMoveEvent *event);
-    void wheelEvent(QWheelEvent * e);
+    void resizeEvent(QResizeEvent* e) override;
+	void paintEvent( QPaintEvent* e) override;
+	void dragEnterEvent(QDragEnterEvent *event) override;
+	void dropEvent(QDropEvent *event) override;
+    void dragMoveEvent(QDragMoveEvent *event) override;
+    void wheelEvent(QWheelEvent * e) override;
+    bool event(QEvent *event) override;
 
 private:
 	SheetWidget*	m_sw;

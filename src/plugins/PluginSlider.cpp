@@ -126,14 +126,14 @@ void PluginSlider::enterEvent( QEvent * )
 
 void PluginSlider::wheelEvent( QWheelEvent* e )
 {
-	if (e->orientation() == Qt::Vertical) {
-		if (e->delta() > 0) {
+	if (e->angleDelta().y() > 0) {
+		if (e->angleDelta().y() > 0) {
 			m_value += m_stepvalue;
 			if (m_value > m_max) {
 				m_value = m_max;
 			}
 		}
-		if (e->delta() < 0) {
+		if (e->angleDelta().y() < 0) {
 			m_value -= m_stepvalue;
 			if (m_value < m_min) {
 				m_value = m_min;

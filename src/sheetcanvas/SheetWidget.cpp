@@ -269,6 +269,7 @@ SheetView * SheetWidget::get_sheetview() const
 void SheetWidget::zoom_slider_value_changed(int value)
 {
         m_session->set_hzoom(Peak::zoomStep[value]);
+        m_sv->center();
 }
 
 void SheetWidget::sheet_zoom_level_changed()

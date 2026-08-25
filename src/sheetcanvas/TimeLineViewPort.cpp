@@ -47,20 +47,16 @@ PENTERDES;
 
 void TimeLineViewPort::wheelEvent ( QWheelEvent * e )
 {
-  if (e->orientation() == Qt::Horizontal) {
-  	if (e->delta() > 0) {
-  		m_sv->scroll_left_by(e->delta());
-  	} else if (e->delta() < 0) {
-  		m_sv->scroll_right_by(-e->delta());
+  	if (e->angleDelta().x() > 0) {
+  		m_sv->scroll_left_by(e->angleDelta().x());
+  	} else if (e->angleDelta().x() < 0) {
+  		m_sv->scroll_right_by(-e->angleDelta().x());
   	}
-  }
-  else {
-    if (e->delta() > 0) {
-  		m_sv->scroll_up_by(e->delta());
-  	} else if (e->delta() < 0) {
-  		m_sv->scroll_down_by(-e->delta());
+    if (e->angleDelta().y() > 0) {
+  		m_sv->scroll_up_by(e->angleDelta().y());
+  	} else if (e->angleDelta().y() < 0) {
+  		m_sv->scroll_down_by(-e->angleDelta().y());
   	}
-  }
 }
 
 void TimeLineViewPort::set_sheetview( SheetView * view )

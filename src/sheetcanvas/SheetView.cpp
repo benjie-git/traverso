@@ -539,7 +539,7 @@ void SheetView::set_track_height(TrackView *view, int newheight)
 void SheetView::hzoom(qreal factor)
 {
 	PENTER;
-	m_session->set_hzoom(m_session->get_hzoom() * factor);
+	m_session->scale_hzoom(factor);
 	center();
 }
 
