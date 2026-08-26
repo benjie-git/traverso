@@ -83,9 +83,9 @@ target_link_libraries(traversocore
     PUBLIC
         traversoaudiobackend
         traversoaudiofileio
-        Qt5::Core
-        Qt5::Widgets
-        Qt5::Xml
+        Qt6::Core
+        Qt6::Widgets
+        Qt6::Xml
         PkgConfig::FFTW3
         PkgConfig::SAMPLERATE
 )

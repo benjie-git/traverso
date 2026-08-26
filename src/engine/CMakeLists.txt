@@ -41,8 +41,8 @@ target_include_directories(traversoaudiobackend
 
 target_link_libraries(traversoaudiobackend
     PUBLIC
-        Qt5::Core
-        Qt5::Widgets
+        Qt6::Core
+        Qt6::Widgets
 )
 
 if(HAVE_ALSA)

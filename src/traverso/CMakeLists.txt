@@ -71,8 +71,9 @@ target_link_libraries(traverso
         traversoplugins
         tcp_traversocommands
         traversocommands
-        Qt5::Widgets
-        Qt5::Xml
+        Qt6::Core
+        Qt6::Widgets
+        Qt6::Xml
         ${CMAKE_DL_LIBS}
 )
 

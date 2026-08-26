@@ -36,8 +36,8 @@ target_include_directories(traversoaudiofileio
 
 target_link_libraries(traversoaudiofileio
     PUBLIC
-        Qt5::Core
-        Qt5::Widgets
+        Qt6::Core
+        Qt6::Widgets
         PkgConfig::SNDFILE
         PkgConfig::SAMPLERATE
         PkgConfig::WAVPACK

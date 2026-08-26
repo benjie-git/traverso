@@ -12,7 +12,7 @@ set(VERSION_SUFFIX "-git-01-11-2010")
 set(VERSION "${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}${VERSION_SUFFIX}")
 
 # C/C++ standard requirements
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_C_STANDARD 99)
@@ -27,21 +27,25 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/bin")
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/lib")
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/lib")
 
-# Qt5 setup
+# Qt6 setup
 if(APPLE)
-    if(EXISTS "/opt/homebrew/opt/qt@5")
-        list(PREPEND CMAKE_PREFIX_PATH "/opt/homebrew/opt/qt@5")
-    elseif(EXISTS "/usr/local/opt/qt@5")
-        list(PREPEND CMAKE_PREFIX_PATH "/usr/local/opt/qt@5")
-    elseif(EXISTS "/opt/local/libexec/qt5")
-        list(PREPEND CMAKE_PREFIX_PATH "/opt/local/libexec/qt5")
+    if(EXISTS "/opt/homebrew/opt/qt")
+        list(PREPEND CMAKE_PREFIX_PATH "/opt/homebrew/opt/qt")
+    elseif(EXISTS "/opt/homebrew/opt/qt@6")
+        list(PREPEND CMAKE_PREFIX_PATH "/opt/homebrew/opt/qt@6")
+    elseif(EXISTS "/usr/local/opt/qt")
+        list(PREPEND CMAKE_PREFIX_PATH "/usr/local/opt/qt")
+    elseif(EXISTS "/usr/local/opt/qt@6")
+        list(PREPEND CMAKE_PREFIX_PATH "/usr/local/opt/qt@6")
+    elseif(EXISTS "/opt/local/libexec/qt6")
+        list(PREPEND CMAKE_PREFIX_PATH "/opt/local/libexec/qt6")
     endif()
 endif()
 
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTORCC ON)
-find_package(Qt5 5.3.0 REQUIRED COMPONENTS Core Widgets Xml)
+find_package(Qt6 6.0 REQUIRED COMPONENTS Core Widgets Xml)
 
 # Options with platform defaults
 if(APPLE)
