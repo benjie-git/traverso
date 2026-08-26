@@ -401,9 +401,17 @@ TCommand* CurveView::remove_node()
     QString description = tr("Removed %n Node(s)", "", nodesToBeRemoved.size());
     CommandGroup* group = new CommandGroup(m_curve, description);
 
+    int nodes_remaining = m_nodeViews.size();
     foreach(CurveNodeView* nodeView, nodesToBeRemoved) {
-        nodeView->set_hard_selected(false);
-        group->add_command(m_curve->remove_node(nodeView->get_curve_node()));
+        if (--nodes_remaining > 0) {
+            nodeView->set_hard_selected(false);
+            group->add_command(m_curve->remove_node(nodeView->get_curve_node()));
+        }
+        else {
+            CurveNode *only_node = nodeView->get_curve_node();
+            nodeView->set_hard_selected(false);
+            group->add_command(new MoveCurveNode(m_curve, only_node, 1.0, 1.0));
+        }
     }
 
     return group;

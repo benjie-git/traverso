@@ -46,6 +46,10 @@ public:
                   double	minValueDiff,
                   double	maxValueDiff,
                   const QString& des);
+    MoveCurveNode(Curve* curve,
+                  CurveNode* node,
+                  double	when,
+                  double	value);
 
     int prepare_actions();
     int do_action();
@@ -86,6 +90,7 @@ private :
 
     double	m_valueDiff;
     TimeRef	m_whenDiff;
+    bool m_force_move;
 
     QList<CurveNodeData> m_nodeDatas;
 

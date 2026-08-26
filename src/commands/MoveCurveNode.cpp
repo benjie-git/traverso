@@ -53,10 +53,28 @@ MoveCurveNode::MoveCurveNode(Curve* curve,
     mcnd->maxWhenDiff = maxWhenDiff;
     mcnd->minValueDiff = minValueDiff;
     mcnd->maxValueDiff = maxValueDiff;
-        mcnd->scalefactor = scalefactor;
-        mcnd->verticalOnly = false;
+    mcnd->scalefactor = scalefactor;
+    mcnd->verticalOnly = false;
 
     m_valueDiff = 0.0;
+    m_force_move = false;
+}
+
+
+// Used non-interactively when deleting the final node, to move it instead
+MoveCurveNode::MoveCurveNode(Curve* curve, CurveNode* node,
+    double when, double value)
+    : TMoveCommand(nullptr, curve, "Move Curve Node"), mcnd(new MoveCurveNode::MoveCurveNodeData)
+{
+    CurveNodeData curveData{};
+    curveData.node = node;
+    curveData.origValue = node->get_value();
+    curveData.origWhen = node->get_when();
+    m_nodeDatas.append(curveData);
+
+    m_valueDiff = 1.0 - curveData.origValue;
+    m_whenDiff = 1.0 - curveData.origWhen;
+    m_force_move = true;
 }
 
 void MoveCurveNode::toggle_vertical_only()
@@ -75,7 +93,7 @@ void MoveCurveNode::toggle_vertical_only()
 
 int MoveCurveNode::prepare_actions()
 {
-    if (m_whenDiff.universal_frame() == 0 && qFuzzyCompare(m_valueDiff, 0.0)) {
+    if (!m_force_move && m_whenDiff.universal_frame() == 0 && qFuzzyCompare(m_valueDiff, 0.0)) {
         return -1;
     }
 
