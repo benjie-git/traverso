@@ -137,7 +137,7 @@ void Gain::set_new_gain_numerical_input(float newGain)
 int Gain::process_mouse_move(qreal diffY)
 {
     qreal of = 0;
-    audio_sample_t dbFactor = coefficient_to_dB(m_newGain);
+    audio_sample_t dbFactor = coefficient_to_dB(m_origGain);
 
 
     if (dbFactor > -1) {
