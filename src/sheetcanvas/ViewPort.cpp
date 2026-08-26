@@ -229,10 +229,10 @@ void ViewPort::detect_items_below_cursor()
 
 void ViewPort::tabletEvent(QTabletEvent * event)
 {
-	PMESG("ViewPort tablet event:: x, y: %d, %d", (int)event->x(), (int)event->y());
+	PMESG("ViewPort tablet event:: x, y: %d, %d", (int)event->position().x(), (int)event->position().y());
 	PMESG("ViewPort tablet event:: high resolution x, y: %f, %f",
-	      event->hiResGlobalX(), event->hiResGlobalY());
-//	cpointer().store_mouse_cursor_position((int)event->x(), (int)event->y());
+	      event->globalPosition().x(), event->globalPosition().y());
+//	cpointer().store_mouse_cursor_position((int)event->position().x(), (int)event->position().y());
 	
 	QGraphicsView::tabletEvent(event);
 }

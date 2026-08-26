@@ -244,7 +244,9 @@ int Project::load(const QString& projectfile)
 	
 	// Start setting and parsing the content of the xml file
 	QString errorMsg;
-	if (!doc.setContent(&file, &errorMsg)) {
+        QDomDocument::ParseResult result = doc.setContent(&file);
+        if (!result) {
+                errorMsg = result.errorMessage;
 		m_errorString = tr("Project %1: Failed to parse project.tpf file! (Reason: %2)").arg(m_name).arg(errorMsg);
 		info().critical(m_errorString);
 		return SETTING_XML_CONTENT_FAILED;
@@ -467,7 +469,9 @@ int Project::save_from_template_to_project_file(const QString& templateFile, con
 
         // Start setting and parsing the content of the xml file
         QString errorMsg;
-        if (!doc.setContent(&file, &errorMsg)) {
+        QDomDocument::ParseResult result = doc.setContent(&file);
+        if (!result) {
+                errorMsg = result.errorMessage;
                 m_errorString = tr("Project %1: Failed to parse project.tpf file! (Reason: %2)").arg(m_name).arg(errorMsg);
                 info().critical(m_errorString);
                 return SETTING_XML_CONTENT_FAILED;

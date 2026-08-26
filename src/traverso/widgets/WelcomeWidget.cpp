@@ -168,13 +168,13 @@ void WelcomeWidget::on_changeProjectsDirButton_clicked()
 
 
         if (dir.exists(newPath)) {
-// 		QMessageBox::information( interface, tr("Traverso - Information"), tr("Using existing Project directory: %1\n").arg(newPath), "OK", 0 );
+// 		QMessageBox::information( interface, tr("Traverso - Information"), tr("Using existing Project directory: %1\n").arg(newPath), QMessageBox::Ok, 0 );
         } else if (!dir.mkpath(newPath)) {
                 QMessageBox::warning( this, tr("Traverso - Warning"), tr("Unable to create Project directory! \n") +
                                 tr("Please check permission for this directory: %1").arg(newPath) );
                 return;
         } else {
-                QMessageBox::information( this, tr("Traverso - Information"), tr("Created new Project directory for you here: %1\n").arg(newPath), "OK", 0 );
+                QMessageBox::information( this, tr("Traverso - Information"), tr("Created new Project directory for you here: %1\n").arg(newPath), QMessageBox::Ok);
         }
 
         pm().set_current_project_dir(newPath);

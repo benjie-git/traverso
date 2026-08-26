@@ -84,7 +84,9 @@ void ProjectConverter::set_project(const QString & rootdir, const QString & name
 		
 	// Start setting and parsing the content of the xml file
 	QString errorMsg;
-	if (!doc.setContent(&file, &errorMsg)) {
+	QDomDocument::ParseResult result = doc.setContent(&file);
+	if (!result) {
+		errorMsg = result.errorMessage;
 		QString error = tr("Project %1: Failed to parse project.tpf file! (Reason: %2)").arg(m_projectname).arg(errorMsg);
 		printf("%s\n", QS_C(error));
 		return;
@@ -310,8 +312,9 @@ QString ProjectConverter::get_conversion_description()
 	switch(m_projectfileversion) {
 		case 2 : {
 			QFile file(":/project_conversion_description_2_3");
-			file.open(QIODevice::ReadOnly);
-			return file.readAll();
+			if (file.open(QIODevice::ReadOnly)) {
+				return file.readAll();
+			}
 		}
 	}
 	return tr("No conversion description available!");

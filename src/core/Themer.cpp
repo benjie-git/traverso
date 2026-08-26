@@ -235,8 +235,12 @@ void Themer::load( )
                 return;
 	}
 
+
+
 	QString errorMsg;
-	if (!doc.setContent(&file, &errorMsg)) {
+        QDomDocument::ParseResult result = doc.setContent(&file);
+        if (!result) {
+                errorMsg = result.errorMessage;
 		file.close();
                 printf("Cannot set Content of XML file (%s)\n", QS_C(errorMsg));
                 return;
