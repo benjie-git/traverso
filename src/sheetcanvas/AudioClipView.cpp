@@ -128,7 +128,7 @@ void AudioClipView::paint(QPainter* painter, const QStyleOptionGraphicsItem *opt
     painter->save();
     painter->setClipRect(m_boundingRect);
 
-    QRectF fillRect = QRectF(xstart, 0.0, pixelcount, qreal(m_height));
+    QRectF fillRect = QRectF(xstart, 0.0, pixelcount+1, qreal(m_height));
 
     if (m_clip->is_readsource_invalid()) {
         painter->fillRect(fillRect, themer()->get_color("AudioClip:invalidreadsource"));
@@ -191,7 +191,7 @@ void AudioClipView::paint(QPainter* painter, const QStyleOptionGraphicsItem *opt
 
         } else if (m_clip->recording_state() == AudioClip::NO_RECORDING) {
             //                        PROFILE_START;
-            draw_peaks(painter, option->exposedRect.x(), pixelcount);
+            draw_peaks(painter, option->exposedRect.x(), pixelcount-1);
             //                        PROFILE_END("draw peaks");
         }
     }
@@ -205,7 +205,7 @@ void AudioClipView::paint(QPainter* painter, const QStyleOptionGraphicsItem *opt
 
     // Draw the contour
     painter->setPen(themer()->get_color("AudioClip:contour"));
-    painter->drawRect(m_boundingRect.adjusted(0, 0, -1.5, -1));
+    painter->drawRect(m_boundingRect.adjusted(0, 0, -0.5, -1));
 
     // Paint a pixmap if the clip is locked
     if (m_clip->is_locked()) {
