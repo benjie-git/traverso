@@ -27,6 +27,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA.
 #include "Utils.h"
 #include <AddRemove.h>
 #include "AudioDevice.h"
+#include <algorithm>
+#include <QRegularExpression>
 
 #include "Debugger.h"
 
@@ -48,7 +50,7 @@ QDomNode TimeLine::get_state(QDomDocument doc)
 	QDomNode markersNode = doc.createElement("Markers");
 	domNode.appendChild(markersNode);
 
-	foreach (Marker *marker, m_markers) {
+	for (Marker *marker : m_markers) {
 		markersNode.appendChild(marker->get_state(doc));
 	}
 
@@ -124,7 +126,7 @@ void TimeLine::private_remove_marker(Marker * marker)
 
 Marker * TimeLine::get_marker(qint64 id)
 {
-	foreach(Marker* marker, m_markers) {
+	for (Marker* marker : m_markers) {
 		if (marker->get_id() == id) {
 			return marker;
 		}
@@ -135,7 +137,7 @@ Marker * TimeLine::get_marker(qint64 id)
 
 bool TimeLine::get_end_location(TimeRef& location)
 {
-	foreach(Marker* marker, m_markers) {
+	for (Marker* marker : m_markers) {
 		if (marker->get_type() == Marker::ENDMARKER) {
 			location = marker->get_when();
 			return true;
@@ -158,7 +160,7 @@ bool TimeLine::get_start_location(TimeRef & location)
 
 bool TimeLine::has_end_marker()
 {
-	foreach(Marker* marker, m_markers) {
+	for (Marker* marker : m_markers) {
 		if (marker->get_type() == Marker::ENDMARKER) {
 			return true;
 		}
@@ -170,7 +172,7 @@ bool TimeLine::has_end_marker()
 
 Marker* TimeLine::get_end_marker()
 {
-	foreach(Marker* marker, m_markers) {
+	for (Marker* marker : m_markers) {
 		if (marker->get_type() == Marker::ENDMARKER) {
 			return marker;
 		}
@@ -192,7 +194,7 @@ void TimeLine::marker_position_changed()
 
 void TimeLine::index_markers()
 {
-	qSort(m_markers.begin(), m_markers.end(), smallerMarker);
+	std::sort(m_markers.begin(), m_markers.end(), smallerMarker);
 	// let the markers know about their position (index)
 	for (int i = 0; i < m_markers.size(); i++) {
 		m_markers.at(i)->set_index(i+1);
@@ -206,7 +208,7 @@ QList<Marker*> TimeLine::get_cd_layout(bool & endmarker)
         QList<Marker*> list;
         endmarker = false;
 
-        foreach(Marker* marker, m_markers) {
+        for (Marker* marker : m_markers) {
                 if (marker->get_type() == Marker::CDTRACK) {
                         list.append(marker);
                 }
@@ -241,7 +243,7 @@ QString TimeLine::format_cdtrack_name(Marker *marker, int i)
                 name += "-" + song;
         }
 
-        name.replace(QRegExp("\\s"), "_");
+        name.replace(QRegularExpression("\\s"), "_");
         return name;
 }
 

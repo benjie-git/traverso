@@ -23,6 +23,8 @@
 #include "ProjectManager.h"
 #include <QTreeWidgetItem>
 #include <QDateTime>
+#include <algorithm>
+#include <functional>
 
 #include "Information.h"
 
@@ -47,7 +49,7 @@ void RestoreProjectBackupDialog::accept()
 	
 	if (sucess) {
 		pm().load_project(m_projectname);
-		info().information(tr("Succesfully restored backup from %1").arg(QDateTime::fromTime_t(restoretime).toString()));
+		info().information(tr("Succesfully restored backup from %1").arg(QDateTime::fromSecsSinceEpoch(restoretime).toString()));
 		hide();
 	}
 	
@@ -65,12 +67,12 @@ void RestoreProjectBackupDialog::populate_treeview()
 	currentDateLable->setText(QDateTime::currentDateTime ().toString("dd-MM-yy hh:mm:ss"));
 	
 	QList<uint> list = pm().get_backup_date_times(m_projectname);
-	qSort(list.begin(), list.end(), qGreater<int>());
+	std::sort(list.begin(), list.end(), std::greater<uint>());
 	
 	QDateTime datetime;
-	foreach(uint time, list) {
+	for (uint time : list) {
 		QTreeWidgetItem* item = new QTreeWidgetItem(dateTreeWidget);
-		datetime.setTime_t(time);
+		datetime.setSecsSinceEpoch(time);
 		item->setText(0, datetime.toString("dd-MM-yy"));
 		item->setText(1, datetime.toString("hh:mm:ss"));
 		item->setData(0, Qt::UserRole, time);

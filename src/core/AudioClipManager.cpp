@@ -52,7 +52,7 @@ QDomNode AudioClipManager::get_state(QDomDocument doc, bool /*istemplate*/)
 	QDomElement globalSelection = doc.createElement("GlobalSelection");
 	
 	QStringList selectedClips;
-	foreach(AudioClip* clip, m_clipselection) {
+	for (AudioClip* clip : m_clipselection) {
 		selectedClips << QString::number(clip->get_id());
 	}
 	
@@ -71,7 +71,7 @@ int AudioClipManager::set_state(const QDomNode & node)
 	
 	for (int i=0; i<selectionList.size(); ++i) {
 		qint64 id = selectionList.at(i).toLongLong();
-		foreach(AudioClip* clip, m_clips) {
+		for (AudioClip* clip : m_clips) {
 			if (clip->get_id() == id) {
 				add_to_selection(clip);
 			}
@@ -122,7 +122,7 @@ void AudioClipManager::update_last_frame( )
 	
 	m_lastLocation = TimeRef();
 	
-	foreach(AudioClip* clip, m_clips) {
+	for (AudioClip* clip : m_clips) {
 		if (clip->get_track_end_location() >= m_lastLocation)
 			m_lastLocation = clip->get_track_end_location();
 	}
@@ -137,7 +137,7 @@ TimeRef AudioClipManager::get_last_location() const
 
 void AudioClipManager::get_selected_clips( QList< AudioClip * > & list )
 {
-	foreach(AudioClip* clip, m_clipselection) {
+	for (AudioClip* clip : m_clipselection) {
 		list.append(clip);
 	}
 }
@@ -173,7 +173,7 @@ void AudioClipManager::select_clip(AudioClip* clip)
 {
 	PENTER;
 	
-	foreach(AudioClip* c, m_clips) {
+	for (AudioClip* c : m_clips) {
 		remove_from_selection(c);
 	}
 	

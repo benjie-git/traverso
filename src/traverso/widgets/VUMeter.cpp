@@ -76,7 +76,7 @@ VUMeter::VUMeter(QWidget* parent, AudioBus* bus)
 	levelLedLayout = new QHBoxLayout(levelLedLayoutwidget);
 	
 	levelLedLayout->setSpacing(0);
-	levelLedLayout->setMargin(0);
+	levelLedLayout->setContentsMargins(0, 0, 0, 0);
 	levelLedLayout->addSpacing(m_vulayoutspacing);
 	
 	levelLedLayoutwidget->setLayout(levelLedLayout);
@@ -86,7 +86,7 @@ VUMeter::VUMeter(QWidget* parent, AudioBus* bus)
 	for (int i = 0; i < bus->get_channel_count(); ++i) {
         QWidget* widget = new QWidget(this);
 		QVBoxLayout* levellayout = new QVBoxLayout(widget);
-		levellayout->setMargin(0);
+		levellayout->setContentsMargins(0, 0, 0, 0);
 		levellayout->setSpacing(0);
 			
 		VUMeterOverLed* led = new VUMeterOverLed(levelLedLayoutwidget);
@@ -133,7 +133,7 @@ VUMeter::VUMeter(QWidget* parent, AudioBus* bus)
 	mainlayout->addSpacing(5);
 	mainlayout->addWidget(levelLedLayoutwidget, 5);
 	mainlayout->addWidget(channelNameLabel);
-	mainlayout->setMargin(m_mainlayoutmargin);
+	mainlayout->setContentsMargins(m_mainlayoutmargin, m_mainlayoutmargin, m_mainlayoutmargin, m_mainlayoutmargin);
 	mainlayout->setSpacing(m_mainlayoutspacing);
 	m_minSpace += mainlayout->spacing();
 	
@@ -215,7 +215,7 @@ void VUMeter::peak_monitoring_started()
 
 void VUMeter::reset()
 {
-	foreach(VUMeterLevel* level, m_levels) {
+	for (VUMeterLevel* level : m_levels) {
 		level->reset();
 	}
 }
@@ -227,7 +227,7 @@ void VUMeter::load_theme_data()
 	m_mainlayoutmargin = themer()->get_property("VUMeter:layout:mainlayoutmargin", 1).toInt();
 	m_mainlayoutspacing = themer()->get_property("VUMeter:layout:mainlayoutspacing", 2).toInt();
 
-	mainlayout->setMargin(m_mainlayoutmargin);
+	mainlayout->setContentsMargins(m_mainlayoutmargin, m_mainlayoutmargin, m_mainlayoutmargin, m_mainlayoutmargin);
 	mainlayout->setSpacing(m_mainlayoutspacing);
 	
 	m_chanNameFont = themer()->get_font("VUMeter:fontscale:label");
@@ -257,8 +257,8 @@ VUMeterRuler::VUMeterRuler(QWidget* parent)
 	setAutoFillBackground(false);
 
 	QFontMetrics fm(themer()->get_font("VUMeter:fontscale:label"));
-	setMinimumWidth(fm.width("-XX")+TICK_LINE_LENGTH + 3);
-	setMaximumWidth(fm.width("-XX")+TICK_LINE_LENGTH + 4);
+	setMinimumWidth(fm.horizontalAdvance("-XX")+TICK_LINE_LENGTH + 3);
+	setMaximumWidth(fm.horizontalAdvance("-XX")+TICK_LINE_LENGTH + 4);
 
 	// labels
 	presetMark.push_back(6);
@@ -341,7 +341,7 @@ void VUMeterRuler::paintEvent( QPaintEvent*  )
 		}
 
 		deltaY = (int) ( VUMeter::vumeter_lut()->at(idx)/115.0  * levelRange );
-		spm.sprintf("%2i", presetMark[j]);
+		spm = QString::asprintf("%2i", presetMark[j]);
 
 		markRect.setY(height() - deltaY - m_fontLabelAscent/2 - 1);
 		markRect.setHeight(m_fontLabelAscent);
@@ -357,8 +357,8 @@ void VUMeterRuler::load_theme_data()
 {
 	m_font = themer()->get_font("VUMeter:fontscale:label");
 	QFontMetrics fm(m_font);
-	setMinimumWidth(fm.width("-XX")+TICK_LINE_LENGTH + 3);
-	setMaximumWidth(fm.width("-XX")+TICK_LINE_LENGTH + 4);
+	setMinimumWidth(fm.horizontalAdvance("-XX")+TICK_LINE_LENGTH + 3);
+	setMaximumWidth(fm.horizontalAdvance("-XX")+TICK_LINE_LENGTH + 4);
 	m_fontLabelAscent = fm.ascent();
 
 	m_colorActive = themer()->get_color("VUMeter:font:active");

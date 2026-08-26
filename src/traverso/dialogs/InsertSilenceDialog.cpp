@@ -63,7 +63,7 @@ void InsertSilenceDialog::accept()
     if (m_track){
         AudioTrack*	foundTrack = nullptr;
 
-        foreach(AudioTrack* track, tracks) {
+        for (AudioTrack* track : tracks) {
             if (track == m_track) {
                 foundTrack = track;
             }
@@ -75,7 +75,7 @@ void InsertSilenceDialog::accept()
         if (!m_track){
             AudioTrack*	shortestTrack = (AudioTrack*)tracks.first();
 
-            foreach(AudioTrack* track, tracks) {
+            for (AudioTrack* track : tracks) {
                 if ( ! (track->get_end_location() > shortestTrack->get_end_location()) ) {
                     shortestTrack = track;
                 }

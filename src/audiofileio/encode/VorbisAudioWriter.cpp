@@ -49,14 +49,14 @@ public:
 		bitrateNominal(-1),
 		bitrateLower(-1),
 		sampleRate(0),
-		oggStream(0),
-		oggPage(0),
-		oggPacket(0),
-		vorbisInfo(0),
-		vorbisComment(0),
-		vorbisDspState(0),
-		vorbisBlock(0),
-		fid(0),
+		oggStream(nullptr),
+		oggPage(nullptr),
+		oggPacket(nullptr),
+		vorbisInfo(nullptr),
+		vorbisComment(nullptr),
+		vorbisDspState(nullptr),
+		vorbisBlock(nullptr),
+		fid(nullptr),
 		headersWritten(false) {
 	}
 	
@@ -237,7 +237,6 @@ bool VorbisAudioWriter::writeOggHeaders()
 	// This ensures the actual
 	// audio data will start on a new page, as per spec
 	//
-	QByteArray data;
 	while (ogg_stream_flush(d->oggStream, d->oggPage)) {
 		fwrite((char*)d->oggPage->header, 1, d->oggPage->header_len, d->fid);
 		fwrite((char*)d->oggPage->body, 1, d->oggPage->body_len, d->fid);
@@ -325,42 +324,42 @@ void VorbisAudioWriter::cleanup()
 	if (d->oggStream) {
 		ogg_stream_clear(d->oggStream);
 		delete d->oggStream;
-		d->oggStream = 0;
+		d->oggStream = nullptr;
 	}
 	if (d->vorbisBlock) {
 		vorbis_block_clear(d->vorbisBlock);
 		delete d->vorbisBlock;
-		d->vorbisBlock = 0;
+		d->vorbisBlock = nullptr;
 	}
 	if (d->vorbisDspState) {
 		vorbis_dsp_clear(d->vorbisDspState);
 		delete d->vorbisDspState;
-		d->vorbisDspState = 0;
+		d->vorbisDspState = nullptr;
 	}
 	if (d->vorbisComment) {
 		vorbis_comment_clear(d->vorbisComment);
 		delete d->vorbisComment;
-		d->vorbisComment = 0;
+		d->vorbisComment = nullptr;
 	}
 	if (d->vorbisInfo) {
 		vorbis_info_clear(d->vorbisInfo);
 		delete d->vorbisInfo;
-		d->vorbisInfo = 0;
+		d->vorbisInfo = nullptr;
 	}
 	
 	// ogg_page and ogg_packet structs always point to storage in
 	// libvorbis.  They're never freed or manipulated directly
 	if (d->oggPage) {
 		delete d->oggPage;
-		d->oggPage = 0;
+		d->oggPage = nullptr;
 	}
 	if (d->oggPacket) {
 		delete d->oggPacket;
-		d->oggPacket = 0;
+		d->oggPacket = nullptr;
 	}
 	if (d->fid) {
 		fclose(d->fid);
-		d->fid = 0;
+		d->fid = nullptr;
 	}
 	
 	d->headersWritten = false;

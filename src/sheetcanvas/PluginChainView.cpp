@@ -64,7 +64,7 @@ void PluginChainView::add_plugin( Plugin * plugin )
     PluginView* view = new PluginView(this, m_pluginchain, plugin, m_pluginViews.size());
 
     int x = 6;
-    foreach(PluginView* view, m_pluginViews) {
+    for (PluginView* view : m_pluginViews) {
         x += int(view->boundingRect().width()) + 6;
     }
 
@@ -79,7 +79,8 @@ void PluginChainView::add_plugin( Plugin * plugin )
 
 void PluginChainView::remove_plugin( Plugin * plugin )
 {
-    foreach(PluginView* view, m_pluginViews) {
+    auto pluginViewsCopy = m_pluginViews;
+    for (PluginView* view : pluginViewsCopy) {
         if (view->get_plugin() == plugin) {
             m_pluginViews.removeAll(view);
             delete view;
@@ -91,7 +92,7 @@ void PluginChainView::remove_plugin( Plugin * plugin )
     }
 
     int x = 6;
-    foreach(PluginView* view, m_pluginViews) {
+    for (PluginView* view : m_pluginViews) {
         view->setPos(x, m_boundingRect.height() - view->boundingRect().height());
         x += int(view->boundingRect().width()) + 6;
     }

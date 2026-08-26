@@ -409,7 +409,7 @@ void ProjectManager::set_current_project_dir(const QString & path)
 	QStringList list = newdir.entryList(QDir::Dirs | QDir::NoDotAndDotDot);
 	m_projectDirs.clear();
 	
-	foreach(const QString &string, list) {
+	for (const QString &string : list) {
 		m_projectDirs += path + "/" + string;
 	}
 	
@@ -430,7 +430,7 @@ void ProjectManager::project_dir_rename_detected(const QString & dirname)
 	QStringList list = dir.entryList(QDir::Dirs | QDir::NoDotAndDotDot);
 	
 	bool startwhining = false;
-	foreach(const QString &string, list) {
+	for (const QString &string : list) {
 		if (!m_projectDirs.contains(path + "/" + string)) {
 			startwhining = true;
 			break;
@@ -479,7 +479,7 @@ void ProjectManager::start_incremental_backup(Project* project)
 	}
 	
 	QDateTime time = QDateTime::currentDateTime();
-	QString writelocation = backupdir + "/" + time.toString() + "__" + QString::number(time.toTime_t());
+	QString writelocation = backupdir + "/" + time.toString() + "__" + QString::number(time.toSecsSinceEpoch());
 	QFile compressedWriter(writelocation);
 	
 	if (!compressedWriter.open( QIODevice::WriteOnly ) ) {
@@ -520,7 +520,7 @@ void ProjectManager::cleanup_backupfiles_for_project(const QString & projectname
 		printf("more than one thousand backup files, deleting oldest 200\n");
 		
 		int key;
-		foreach (QString file, dir.entryList(QDir::Files)) {
+		for (const QString& file : dir.entryList(QDir::Files)) {
 			key = file.right(10).toUInt();
 			map.insert(key, file);
 		}
@@ -560,7 +560,7 @@ int ProjectManager::restore_project_from_backup(const QString& projectname, uint
 	QDir dir(backupDir);
 	QString backupfile;
 	
-	foreach (QString backup, dir.entryList(QDir::Files)) {
+	for (const QString& backup : dir.entryList(QDir::Files)) {
 		if (backup.right(10).toUInt() == restoretime) {
 			backupfile = backupDir + "/" + backup;
 			printf("backupfile %s\n", QS_C(backupfile));
@@ -607,7 +607,7 @@ QList< uint > ProjectManager::get_backup_date_times(const QString& projectname)
 	QList<uint> dateList;
 	QDir dir(backupDir);
 	
-	foreach (QString filename, dir.entryList(QDir::Files)) {
+	for (const QString& filename : dir.entryList(QDir::Files)) {
 		bool ok;
 		uint date = filename.right(10).toUInt(&ok);
 		if (ok) {
@@ -647,7 +647,7 @@ QStringList ProjectManager::get_projects_list()
         QStringList list = dir.entryList(QDir::Dirs | QDir::NoDotAndDotDot);
         QStringList projects;
 
-        foreach(const QString &dirname, list) {
+        for (const QString &dirname : list) {
                 QString fileToOpen = path + "/" + dirname + "/project.tpf";
 
                 QFile file(fileToOpen);

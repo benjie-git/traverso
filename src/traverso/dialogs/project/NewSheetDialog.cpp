@@ -122,7 +122,7 @@ void NewSheetDialog::update_template_combo()
 {
 	templateComboBox->clear();
 	
-	foreach(Sheet* sheet, m_project->get_sheets()) {
+	for (Sheet* sheet : m_project->get_sheets()) {
 		QString text = "Sheet " + QString::number(m_project->get_sheet_index(sheet->get_id())) +
                                 " " + sheet->get_name();
 		

@@ -70,7 +70,7 @@ int TAudioDriver::_read( nframes_t  )
 
 int TAudioDriver::_write( nframes_t nframes )
 {
-        foreach(AudioChannel* chan, m_playbackChannels) {
+        for (AudioChannel* chan : m_playbackChannels) {
                 chan->silence_buffer(nframes);
         }
 
@@ -131,7 +131,7 @@ AudioChannel* TAudioDriver::add_playback_channel(const QString& chanName)
 
 AudioChannel* TAudioDriver::get_capture_channel_by_name(const QString& name)
 {
-        foreach(AudioChannel* chan, m_captureChannels) {
+        for (AudioChannel* chan : m_captureChannels) {
                 if (chan->get_name() == name) {
                         return chan;
                 }
@@ -142,7 +142,7 @@ AudioChannel* TAudioDriver::get_capture_channel_by_name(const QString& name)
 
 AudioChannel* TAudioDriver::get_playback_channel_by_name(const QString& name)
 {
-        foreach(AudioChannel* chan, m_playbackChannels) {
+        for (AudioChannel* chan : m_playbackChannels) {
                 if (chan->get_name() == name) {
                         return chan;
                 }

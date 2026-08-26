@@ -23,10 +23,11 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA.
 #define TSESSIONTABWIDGET_H
 
 #include <QPushButton>
+#include <QList>
+#include <QEnterEvent>
 
 class QLabel;
 class QHBoxLayout;
-class QVBoxLayout;
 class QToolBar;
 class TSession;
 
@@ -40,7 +41,7 @@ public:
 
 protected:
         void leaveEvent( QEvent* );
-        void enterEvent( QEvent* );
+        void enterEvent( QEnterEvent* );
 
 private:
         TSession*       m_session;

@@ -143,7 +143,7 @@ QDomNode TSession::get_state(QDomDocument doc)
 
 	QDomNode tracksNode = doc.createElement("Tracks");
 
-	foreach(Track* track, get_tracks()) {
+	for (Track* track : get_tracks()) {
 		QDomElement trackNode = doc.createElement("Track");
 
 		trackNode.setAttribute("id", track->get_id() );
@@ -173,10 +173,10 @@ TBusTrack* TSession::get_master_out_bus_track() const
 QList<Track*> TSession::get_tracks() const
 {
 	QList<Track*> list;
-	foreach(AudioTrack* track, m_audioTracks) {
+	for (AudioTrack* track : m_audioTracks) {
 		list.append(track);
 	}
-	foreach(TBusTrack* track, m_busTracks) {
+	for (TBusTrack* track : m_busTracks) {
 		list.append(track);
 	}
 
@@ -391,11 +391,11 @@ TCommand* TSession::toggle_solo()
 
 	QList<Track*> tracks= get_tracks();
 
-	foreach(Track* track, tracks) {
+	for (Track* track : tracks) {
 		if (track->is_solo()) hasSolo = true;
 	}
 
-	foreach(Track* track, tracks) {
+	for (Track* track : tracks) {
 		track->set_solo(!hasSolo);
 		track->set_muted_by_solo(false);
 	}
@@ -410,11 +410,11 @@ TCommand* TSession::toggle_mute()
 	}
 
 	bool hasMute = false;
-	foreach(AudioTrack* track, m_audioTracks) {
+	for (AudioTrack* track : m_audioTracks) {
 		if (track->is_muted()) hasMute = true;
 	}
 
-	foreach(AudioTrack* track, m_audioTracks) {
+	for (AudioTrack* track : m_audioTracks) {
 		track->set_muted(!hasMute);
 	}
 
@@ -428,11 +428,11 @@ TCommand* TSession::toggle_arm()
 	}
 
 	bool hasArmed = false;
-	foreach(AudioTrack* track, m_audioTracks) {
+	for (AudioTrack* track : m_audioTracks) {
 		if (track->armed()) hasArmed = true;
 	}
 
-	foreach(AudioTrack* track, m_audioTracks) {
+	for (AudioTrack* track : m_audioTracks) {
 		if (hasArmed) {
 			track->disarm();
 		} else {

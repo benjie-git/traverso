@@ -118,9 +118,9 @@ void AudioClipView::paint(QPainter* painter, const QStyleOptionGraphicsItem *opt
     //        printf("AudioClipView:: %s PAINT :: exposed rect is: x=%f, y=%f,? w=%f, h=%f\n", QS_C(m_clip->get_name()), option->exposedRect.x(), option->exposedRect.y(), option->exposedRect.width(), option->exposedRect.height());
 
     //	printf("x, w %f, %f\n", option->exposedRect.x(), option->exposedRect.width());
-    qreal xstart = option->exposedRect.x();
-    qreal pixelcount = option->exposedRect.width()+1;
-    if (pixelcount < 0.5) {
+    qreal xstart = option->exposedRect.x()-1;
+    qreal pixelcount = option->exposedRect.width()+2;
+    if (pixelcount < 3) {
         // apparently this function can be called with no pixelcount to go with
         // so return here nothing to be done
         return;
@@ -128,7 +128,7 @@ void AudioClipView::paint(QPainter* painter, const QStyleOptionGraphicsItem *opt
     painter->save();
     painter->setClipRect(m_boundingRect);
 
-    QRectF fillRect = QRectF(xstart, 0.0, pixelcount+1, qreal(m_height));
+    QRectF fillRect = QRectF(xstart+1, 0.0, pixelcount-1, qreal(m_height));
 
     if (m_clip->is_readsource_invalid()) {
         painter->fillRect(fillRect, themer()->get_color("AudioClip:invalidreadsource"));
@@ -391,7 +391,7 @@ void AudioClipView::draw_peaks(QPainter* p, qreal xstart, int pixelcount)
             }
 
             ytrans = height * chan;
-            p->setMatrix(matrix().translate(xstart, ytrans), true);
+            p->translate(xstart, ytrans);
             p->drawLine(0, 0, pixelcount, 0);
             p->restore();
         }
@@ -412,7 +412,7 @@ void AudioClipView::draw_peaks(QPainter* p, qreal xstart, int pixelcount)
                 ytrans = (height / 2) + (chan * height);
             }
 
-            p->setMatrix(matrix().translate(xstart, ytrans), true);
+            p->translate(xstart, ytrans);
 
             if (m_clip->is_selected()) {
                 p->setPen(themer()->get_color("AudioClip:channelseperator:selected"));
@@ -471,7 +471,7 @@ void AudioClipView::draw_peaks(QPainter* p, qreal xstart, int pixelcount)
                     ytrans = (height / 2) + (chan * height);
                 }
 
-                p->setMatrix(matrix().translate(xstart, ytrans), true);
+                p->translate(xstart, ytrans);
 
                 m_polygon.clear();
                 m_polygon.reserve(pixelcount*2);
@@ -505,7 +505,7 @@ void AudioClipView::draw_peaks(QPainter* p, qreal xstart, int pixelcount)
                     scaleFactor *= channels;
                 }
 
-                p->setMatrix(matrix().translate(xstart, ytrans), true);
+                p->translate(xstart, ytrans);
 
                 m_polygon.clear();
                 m_polygon.reserve(pixelcount + 2);
@@ -559,7 +559,7 @@ void AudioClipView::draw_db_lines(QPainter* p, qreal xstart, int pixelcount)
     if (m_classicView || microView) { // classicView = non-rectified
 
         // translate the painter to set the first channel center line to 0
-        p->setMatrix(matrix().translate(0, height / 2), true);
+        p->translate(0, height / 2.0);
 
         // determine the distance of the db line from the center line
         int zeroDb = 0.9 * height / 2;
@@ -581,12 +581,12 @@ void AudioClipView::draw_db_lines(QPainter* p, qreal xstart, int pixelcount)
             }
 
 
-            p->setMatrix(matrix().translate(0, height), true);
+            p->translate(0, height);
         }
     } else {  // rectified
 
         // translate the painter to set the first channel base line to 0
-        p->setMatrix(matrix().translate(0, height), true);
+        p->translate(0, height);
 
         // determine the distance of the db line from the center line
         int zeroDb = 0.95 * height;
@@ -603,7 +603,7 @@ void AudioClipView::draw_db_lines(QPainter* p, qreal xstart, int pixelcount)
                 p->drawText(0.0, -msixDb + m_lineVOffset, " -6 dB");
             }
 
-            p->setMatrix(matrix().translate(0, height), true);
+            p->translate(0, height);
         }
     }
 
@@ -804,7 +804,7 @@ void AudioClipView::load_theme_data()
 
     QFont dblfont = themer()->get_font("AudioClip:fontscale:dblines");
     QFontMetrics fm(dblfont);
-    m_lineOffset = fm.width(" -6 dB ");
+    m_lineOffset = fm.horizontalAdvance(" -6 dB ");
     m_lineVOffset = fm.ascent()/2;
 
     create_brushes();

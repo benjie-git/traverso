@@ -110,7 +110,7 @@ int JackDriver::setup(QList<AudioChannel* > channels)
                 return -1;
         }
 
-	foreach(AudioChannel* channel, channels) {
+	for (AudioChannel* channel : channels) {
 		add_channel(channel);
 	}
 
@@ -161,7 +161,7 @@ void JackDriver::private_add_port_channel_pair(PortChannelPair *pair)
 void JackDriver::remove_channel(AudioChannel* channel)
 {
         PENTER;
-        foreach(PortChannelPair* pcpair, m_outputs) {
+        for (PortChannelPair* pcpair : m_outputs) {
 
                 if (pcpair->channel == channel) {
                         pcpair->unregister = true;
@@ -169,7 +169,7 @@ void JackDriver::remove_channel(AudioChannel* channel)
                 }
         }
 
-        foreach(PortChannelPair* pcpair, m_inputs) {
+        for (PortChannelPair* pcpair : m_inputs) {
 
                 if (pcpair->channel == channel) {
                         pcpair->unregister = true;

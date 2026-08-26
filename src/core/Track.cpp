@@ -342,7 +342,7 @@ void Track::add_pre_send(qint64 busId)
 void Track::remove_post_sends(QList<qint64> sendIds)
 {
         QList<TSend*> sendsToBeRemoved;
-        foreach(qint64 id, sendIds) {
+        for (qint64 id : sendIds) {
                 apill_foreach(TSend* send, TSend*, m_postSends) {
                         if (send->get_id() == id) {
                                 sendsToBeRemoved.append(send);
@@ -350,7 +350,7 @@ void Track::remove_post_sends(QList<qint64> sendIds)
                 }
         }
 
-        foreach(TSend* send, sendsToBeRemoved) {
+        for (TSend* send : sendsToBeRemoved) {
             remove_post_send(send);
         }
 }
@@ -375,7 +375,7 @@ void Track::remove_all_post_sends()
 void Track::remove_pre_sends(QList<qint64> sendIds)
 {
         QList<TSend*> sendsToBeRemoved;
-        foreach(qint64 id, sendIds) {
+        for (qint64 id : sendIds) {
                 apill_foreach(TSend* send, TSend*, m_preSends) {
                         if (send->get_id() == id) {
                                 sendsToBeRemoved.append(send);
@@ -383,7 +383,7 @@ void Track::remove_pre_sends(QList<qint64> sendIds)
                 }
         }
 
-        foreach(TSend* send, sendsToBeRemoved) {
+        for (TSend* send : sendsToBeRemoved) {
                 if (!m_session || (m_session && m_session->is_transport_rolling())) {
                         THREAD_SAVE_INVOKE_AND_EMIT_SIGNAL(this, send, private_remove_pre_send(TSend*), routingConfigurationChanged())
                 } else {

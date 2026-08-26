@@ -33,10 +33,10 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA.
 WPAudioWriter::WPAudioWriter()
  : AbstractAudioWriter()
 {
-	m_wp = 0;
-	m_firstBlock = 0;
+	m_wp = nullptr;
+	m_firstBlock = nullptr;
 	m_firstBlockSize = 0;
-	m_tmp_buffer = 0;
+	m_tmp_buffer = nullptr;
 	m_tmpBufferSize = 0;
 	m_configFlags = 0;
 }
@@ -108,7 +108,7 @@ bool WPAudioWriter::open_private()
 		return false;
 	}
 	
-	m_wp = WavpackOpenFileOutput(WPAudioWriter::write_block, (void *)this, NULL);
+	m_wp = WavpackOpenFileOutput(WPAudioWriter::write_block, (void *)this, nullptr);
 	if (!m_wp) {
 		fclose(m_file);
 		return false;
@@ -128,11 +128,11 @@ bool WPAudioWriter::open_private()
 	if (!WavpackPackInit(m_wp)) {
 		fclose(m_file);
 		WavpackCloseFile(m_wp);
-		m_wp = 0;
+		m_wp = nullptr;
 		return false;
 	}
 	
-	m_firstBlock = 0;
+	m_firstBlock = nullptr;
 	m_firstBlockSize = 0;
 	
 	return true;
@@ -167,14 +167,14 @@ int WPAudioWriter::write_block(void *id, void *data, int32_t length)
 	uint32_t bcount;
 	
 	if (writer && writer->m_file && data && length) {
-		if (writer->m_firstBlock == 0) {
+		if (writer->m_firstBlock == nullptr) {
 			writer->m_firstBlock = new char[length];
 			memcpy(writer->m_firstBlock, data, length);
 			writer->m_firstBlockSize = length;
 		}
 		if (!writer->write_to_file(data, (uint32_t)length, (uint32_t*)&bcount) || bcount != (uint32_t)length) {
 			fclose(writer->m_file);
-			writer->m_wp = 0;
+			writer->m_wp = nullptr;
 			return false;
 		}
 	}
@@ -252,20 +252,20 @@ bool WPAudioWriter::close_private()
 	}
 	
 	WavpackCloseFile(m_wp);
-	m_wp = 0;
+	m_wp = nullptr;
 	
 	fclose(m_file);
-	m_file = 0;
+	m_file = nullptr;
 
 	if (m_tmp_buffer) {
 		delete [] m_tmp_buffer;
-		m_tmp_buffer = 0;
+		m_tmp_buffer = nullptr;
 	}
 	m_tmpBufferSize = 0;
 
 	if (m_firstBlock) {
 		delete [] m_firstBlock;
-		m_firstBlock = 0;
+		m_firstBlock = nullptr;
 		m_firstBlockSize = 0;
 	}
 	

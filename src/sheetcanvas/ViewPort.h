@@ -24,6 +24,7 @@
 
 #include <QGraphicsView>
 #include <QGraphicsItem>
+#include <QEnterEvent>
 #include "ContextItem.h"
 #include "AbstractViewPort.h"
 
@@ -66,7 +67,7 @@ public :
 
 protected:
     virtual bool event(QEvent *event);
-    virtual void enterEvent ( QEvent * );
+    virtual void enterEvent ( QEnterEvent * );
     virtual void leaveEvent ( QEvent * );
     virtual void paintEvent( QPaintEvent* e);
     virtual void mouseMoveEvent(QMouseEvent* e);

@@ -22,6 +22,7 @@
 #include "CDWritingDialog.h"
 
 #include <QMessageBox>
+#include <QRegularExpression>
 
 #include "Export.h"
 #include "TConfig.h"
@@ -231,7 +232,7 @@ void CDWritingDialog::start_burn_process()
 	cd_render();
 	
 	int index = cdDeviceComboBox->currentIndex();
-	if (index != -1 && cdDeviceComboBox->itemData(index) != QVariant::Invalid) {
+	if (index != -1 && cdDeviceComboBox->itemData(index).isValid()) {
 		config().set_property("Cdrdao", "drive", cdDeviceComboBox->itemData(index));
 	}
 }
@@ -488,7 +489,7 @@ void CDWritingDialog::read_standard_output()
 		QByteArray output = m_burnprocess->readAllStandardOutput();
 		QList<QByteArray> lines = output.split('\n');
 		
-		foreach(QByteArray data, lines) {
+		for (const QByteArray& data : lines) {
 			
 			if (data.isEmpty()) {
 				continue;
@@ -506,11 +507,11 @@ void CDWritingDialog::read_standard_output()
 				return;
 			}
 #if defined (Q_OS_WIN)
-			if (QString(data).contains(QRegExp("[0-9],[0-9],[0-9]"))) {
+			if (QString(data).contains(QRegularExpression("[0-9],[0-9],[0-9]"))) {
 #else
 			if (data.contains("/dev/") || data.contains("dev=")) {
 #endif
-				QStringList strlist = QString(data).split(QRegExp("\\s+"));
+				QStringList strlist = QString(data).split(QRegularExpression("\\s+"));
 				QString deviceName = "No Device Available";
 				QString device = "/no/device/detected";
 				
@@ -601,7 +602,7 @@ void CDWritingDialog::read_standard_output()
 	}
 	
 	if (sout.contains("Writing track")) {
-		QStringList strlist = sout.split(QRegExp("\\s+"));
+		QStringList strlist = sout.split(QRegularExpression("\\s+"));
 		if (strlist.size() > 3) {
 			QString text = strlist.at(0) + " " + strlist.at(1) + " " + strlist.at(2);
 			update_cdburn_status(text, NORMAL_MESSAGE);
@@ -610,7 +611,7 @@ void CDWritingDialog::read_standard_output()
 	}	
 	
 	if (sout.contains("%") && sout.contains("(") && sout.contains(")")) {
-		QStringList strlist = sout.split(QRegExp("\\s+"));
+		QStringList strlist = sout.split(QRegularExpression("\\s+"));
 		if (strlist.size() > 7) {
 			int written = strlist.at(1).toInt();
 			int total = strlist.at(3).toInt();

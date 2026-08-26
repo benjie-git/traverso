@@ -92,7 +92,7 @@ void BusMonitor::create_vu_meters( )
     if (m_layout) delete m_layout;
 
     m_layout = new QHBoxLayout(this);
-    m_layout->setMargin(0);
+    m_layout->setContentsMargins(0, 0, 0, 0);
     setLayout(m_layout);
 
     while( ! inMeters.isEmpty() ) {
@@ -238,7 +238,7 @@ void BusMonitor::show_menu()
     m_menu->exec(QCursor::pos());
 }
 
-void BusMonitor::enterEvent(QEvent *)
+void BusMonitor::enterEvent(QEnterEvent *)
 {
     setFocus();
 }

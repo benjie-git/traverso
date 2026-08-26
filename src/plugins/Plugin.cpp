@@ -47,13 +47,13 @@ QDomNode Plugin::get_state(QDomDocument doc)
 	node.setAttribute("bypassed", is_bypassed());
 	
 	QDomNode controlPortsNode = doc.createElement("ControlPorts");
-	foreach(PluginControlPort* port, m_controlPorts) {
+	for (PluginControlPort* port : m_controlPorts) {
 		controlPortsNode.appendChild(port->get_state(doc));
 	}
 	
 	if (!m_audioInputPorts.empty()) {
 		QDomNode audioInputPortsNode = doc.createElement("AudioInputPorts");
-		foreach(AudioInputPort* port, m_audioInputPorts) {
+		for (AudioInputPort* port : m_audioInputPorts) {
 			audioInputPortsNode.appendChild(port->get_state(doc));
 		}
 		node.appendChild(audioInputPortsNode);
@@ -61,7 +61,7 @@ QDomNode Plugin::get_state(QDomDocument doc)
 	
 	if (!m_audioOutputPorts.empty()) {
 		QDomNode audioOutputPortsNode = doc.createElement("AudioOutputPorts");
-		foreach(AudioOutputPort* port, m_audioOutputPorts) {
+		for (AudioOutputPort* port : m_audioOutputPorts) {
 			audioOutputPortsNode.appendChild(port->get_state(doc));
 		}
 		node.appendChild(audioOutputPortsNode);
@@ -92,7 +92,7 @@ TCommand* Plugin::toggle_bypass( )
 
 PluginControlPort* Plugin::get_control_port_by_index(int index) const
 {
-	foreach(PluginControlPort* port, m_controlPorts) {
+	for (PluginControlPort* port : m_controlPorts) {
 		if (port->get_index() == index) {
 			return port;
 		}

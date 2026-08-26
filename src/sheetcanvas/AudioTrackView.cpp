@@ -70,7 +70,7 @@ AudioTrackView::AudioTrackView(SheetView* sv, AudioTrack * track)
     connect(m_track, SIGNAL(audioClipRemoved(AudioClip*)), this, SLOT(remove_audioclipview(AudioClip*)));
     connect(m_curveView, SIGNAL(curveUpdated(int, int)), this, SLOT(update_clips_in_range(int, int)));
 
-    foreach(AudioClip* clip, m_track->get_audioclips()) {
+    for (AudioClip* clip : m_track->get_audioclips()) {
         add_new_audioclipview(clip);
     }
 
@@ -107,7 +107,7 @@ void AudioTrackView::add_new_audioclipview( AudioClip * clip )
 void AudioTrackView::remove_audioclipview( AudioClip * clip )
 {
     PENTER;
-    foreach(AudioClipView* view, m_clipViews) {
+    for (AudioClipView* view : m_clipViews) {
         if (view->get_clip() == clip) {
             m_clipViews.removeAll(view);
             scene()->removeItem(view);
@@ -138,7 +138,7 @@ TCommand* AudioTrackView::insert_silence()
 
 void AudioTrackView::to_front(AudioClipView * view)
 {
-    foreach(AudioClipView* clipview, m_clipViews) {
+    for (AudioClipView* clipview : m_clipViews) {
         clipview->setZValue(zValue() + 1);
     }
 
@@ -155,7 +155,7 @@ AudioClipView* AudioTrackView::get_nearest_audioclip_view(TimeRef location) cons
     AudioClipView* nearestClipView = nullptr;
     TimeRef shortestDistance(LONG_LONG_MAX);
 
-    foreach(AudioClipView* clipview, m_clipViews) {
+    for (AudioClipView* clipview : m_clipViews) {
         AudioClip* clip = clipview->get_clip();
 
         // check if location is in the clipviews start/end range
@@ -200,11 +200,11 @@ TCommand* AudioTrackView::show_track_gain_curve()
 void AudioTrackView::automation_visibility_changed()
 {
     if (m_track->show_clip_volume_automation()) {
-        foreach(AudioClipView* acView, m_clipViews) {
+        for (AudioClipView* acView : m_clipViews) {
             acView->get_gain_curve_view()->set_ignore_context(false);
         }
     } else {
-        foreach(AudioClipView* acView, m_clipViews) {
+        for (AudioClipView* acView : m_clipViews) {
             acView->get_gain_curve_view()->set_ignore_context(true);
         }
     }
@@ -217,7 +217,7 @@ void AudioTrackView::automation_visibility_changed()
 
 void AudioTrackView::update_clips_in_range(int xleft, int xright)
 {
-    foreach(AudioClipView* clipView, m_clipViews) {
+    for (AudioClipView* clipView : m_clipViews) {
         int clipStart = int(clipView->pos().x());
         int clipEnd = int(clipStart + clipView->boundingRect().width());
         if (xright >= clipStart && xleft <= clipEnd) {

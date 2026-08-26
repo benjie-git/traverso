@@ -64,7 +64,7 @@ TShortcutEditorDialog::TShortcutEditorDialog(QWidget *parent)
 	keys << "Space Bar|SPACE";
 	keys << "+|PLUS" << "-|MINUS" << "/|/" << "\\|\\" << "[|[" << "]|]" << ",|," << ".|." << ";|;" << "'|'";
 
-	foreach(QString string, keys)
+	for (const QString& string : keys)
 	{
 		QStringList list = string.split("|");
         ui->keyComboBox1->addItem(list.at(0), list.at(1));
@@ -73,7 +73,7 @@ TShortcutEditorDialog::TShortcutEditorDialog(QWidget *parent)
     keys << "|";
     keys << "Left Button|MOUSEBUTTONLEFT" << "Right Button|MOUSEBUTTONRIGHT";
     keys << "Scroll Up|MOUSESCROLLVERTICALUP" << "Scroll Down|MOUSESCROLLVERTICALDOWN";
-    foreach(QString string, keys)
+    for (const QString& string : keys)
     {
         QStringList list = string.split("|");
         ui->keyComboBox2->addItem(list.at(0), list.at(1));
@@ -84,7 +84,7 @@ TShortcutEditorDialog::TShortcutEditorDialog(QWidget *parent)
     QMap<QString, QString> baseClassNamesMap;
     QMap<QString, QString> commandClassNamesMap;
 
-	foreach(QString className, tShortCutManager().getClassNames()) {
+	for (const QString& className : tShortCutManager().getClassNames()) {
         if (tShortCutManager().isCommandClass(className)) {
             commandClassNamesMap.insert(tShortCutManager().get_translation_for(className), className);
 		}
@@ -95,16 +95,16 @@ TShortcutEditorDialog::TShortcutEditorDialog(QWidget *parent)
 		}
 	}
 
-	foreach(QString className, classNamesMap.values()) {
+	for (const QString& className : classNamesMap.values()) {
 		ui->objectsComboBox->addItem(classNamesMap.key(className), className);
 	}
 
-    foreach(QString className, baseClassNamesMap)
+    for (const QString& className : baseClassNamesMap)
     {
         ui->objectsComboBox->addItem(baseClassNamesMap.key(className) + " " + tr("(Common Shortcut)"), className);
     }
 
-    foreach(QString className, commandClassNamesMap)
+    for (const QString& className : commandClassNamesMap)
     {
         ui->objectsComboBox->addItem(commandClassNamesMap.key(className) + " " + tr("(Additional keys)"), className);
     }
@@ -154,11 +154,11 @@ void TShortcutEditorDialog::objects_combo_box_activated(int index)
 
 	QList<TFunction* > functionsList = tShortCutManager().getFunctionsFor(className);
 
-	foreach(TFunction* function, functionsList)
+	for (TFunction* function : functionsList)
 	{
 		QTreeWidgetItem* item;
 		item = new QTreeWidgetItem(QStringList() << function->getLongDescription() << function->getKeySequence());
-		QVariant v = qVariantFromValue((void*) function);
+		QVariant v = QVariant::fromValue((void*) function);
 		item->setData(0, Qt::UserRole, v);
 		ui->shortcutsTreeWidget->addTopLevelItem(item);
 	}
@@ -231,13 +231,13 @@ void TShortcutEditorDialog::key1_combo_box_activated(int /*index*/)
 		return;
 	}
 
-	foreach(TFunction* function, shortCut->getFunctions())
+	for (TFunction* function : shortCut->getFunctions())
 	{
 		QString translatedObjectName = tShortCutManager().get_translation_for(function->getObject());
 		QStringList stringlist;
 		stringlist << translatedObjectName << function->getLongDescription() << function->getKeySequence();
 		QTreeWidgetItem* item = new QTreeWidgetItem(stringlist);
-		QVariant v = qVariantFromValue((void*) function);
+		QVariant v = QVariant::fromValue((void*) function);
 		item->setData(0, Qt::UserRole, v);
 
         ui->shortcutsTreeWidget->addTopLevelItem(item);

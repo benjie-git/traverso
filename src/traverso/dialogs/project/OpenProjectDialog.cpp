@@ -73,7 +73,7 @@ void OpenProjectDialog::update_projects_list()
 
 	QStringList list = dir.entryList(QDir::Dirs | QDir::NoDotAndDotDot);
 	
-	foreach(const QString &dirname, list) {
+	for (const QString &dirname : list) {
 	
 		/************ FROM HERE ****************/
 		QDomDocument doc("Project");
@@ -217,19 +217,14 @@ void OpenProjectDialog::on_deleteProjectbutton_clicked( )
 		return;
 	}
 
-	switch (QMessageBox::information(this,
+	if (QMessageBox::question(this,
 		tr("Traverso - Question"),
-		   tr("Are you sure that you want to remove the project %1 ? It's not possible to undo it !").arg(title).toLatin1().data(),
-		      "Yes", "No", QString::null, 1, -1)) {
-			      case 0:
-				      pm().remove_project(title);
-				      update_projects_list();
-				      break;
-			      default:
-				      return;
-				      break;
-		      }
-		      return;
+		tr("Are you sure that you want to remove the project %1 ? It's not possible to undo it !").arg(title),
+		QMessageBox::Yes | QMessageBox::No, QMessageBox::No) == QMessageBox::Yes) {
+		pm().remove_project(title);
+		update_projects_list();
+	}
+	return;
 }
 
 

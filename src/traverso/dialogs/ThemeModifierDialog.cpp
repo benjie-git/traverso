@@ -26,6 +26,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA.
 
 #include <QColorDialog>
 #include <QListWidgetItem>
+#include <algorithm>
 
 ThemeModifierDialog::ThemeModifierDialog(QWidget* parent)
         : QDialog(parent)
@@ -41,9 +42,9 @@ ThemeModifierDialog::ThemeModifierDialog(QWidget* parent)
                                   QColorDialog::DontUseNativeDialog);
 
         QList<QString> colors = themer()->get_colors();
-        qSort(colors.begin(), colors.end());
+        std::sort(colors.begin(), colors.end());
 
-        foreach(const QString& color, colors) {
+        for (const QString& color : colors) {
                 listWidget->addItem(color);
         }
 

@@ -26,7 +26,7 @@
 #include <QStringList>
 #include <QDateTime>
 #include <QPixmapCache>
-#include <QRegExp>
+#include <QRegularExpression>
 #include <QLocale>
 #include <QChar>
 #include <QTranslator>
@@ -36,7 +36,7 @@
 TimeRef msms_to_timeref(QString str)
 {
 	TimeRef out;
-	QStringList lst = str.simplified().split(QRegExp("[;,.:]"), QString::SkipEmptyParts);
+	QStringList lst = str.simplified().split(QRegularExpression("[;,.:]"), Qt::SkipEmptyParts);
 
 	if (lst.size() >= 1) out += TimeRef(lst.at(0).toInt() * ONE_MINUTE_UNIVERSAL_SAMPLE_RATE);
 	if (lst.size() >= 2) out += TimeRef(lst.at(1).toInt() * UNIVERSAL_SAMPLE_RATE);
@@ -48,7 +48,7 @@ TimeRef msms_to_timeref(QString str)
 TimeRef cd_to_timeref(QString str)
 {
 	TimeRef out;
-	QStringList lst = str.simplified().split(QRegExp("[;,.:]"), QString::SkipEmptyParts);
+	QStringList lst = str.simplified().split(QRegularExpression("[;,.:]"), Qt::SkipEmptyParts);
 
 	if (lst.size() >= 1) out += TimeRef(lst.at(0).toInt() * ONE_MINUTE_UNIVERSAL_SAMPLE_RATE);
 	if (lst.size() >= 2) out += TimeRef(lst.at(1).toInt() * UNIVERSAL_SAMPLE_RATE);
@@ -60,7 +60,7 @@ TimeRef cd_to_timeref(QString str)
 TimeRef cd_to_timeref_including_hours(QString str)
 {
 	TimeRef out;
-	QStringList lst = str.simplified().split(QRegExp("[;,.:]"), QString::SkipEmptyParts);
+	QStringList lst = str.simplified().split(QRegularExpression("[;,.:]"), Qt::SkipEmptyParts);
 
 	if (lst.size() >= 1) out += TimeRef(lst.at(0).toInt() * ONE_HOUR_UNIVERSAL_SAMPLE_RATE);
 	if (lst.size() >= 2) out += TimeRef(lst.at(1).toInt() * ONE_MINUTE_UNIVERSAL_SAMPLE_RATE);
@@ -97,7 +97,7 @@ qint64 create_id( )
 {
 	int r = rand();
 	QDateTime time = QDateTime::currentDateTime();
-	uint timeValue = time.toTime_t();
+	qint64 timeValue = time.toSecsSinceEpoch();
 	qint64 id = timeValue;
 	id *= 1000000000;
 	id += r;
@@ -107,16 +107,14 @@ qint64 create_id( )
 
 QDateTime extract_date_time(qint64 id)
 {
-	QDateTime time;
-	time.setTime_t(id / 1000000000);
-	return time;
+	return QDateTime::fromSecsSinceEpoch(id / 1000000000);
 }
 
 QPixmap find_pixmap ( const QString & pixname )
 {
 	QPixmap pixmap;
 
-	if ( ! QPixmapCache::find ( pixname, pixmap ) )
+	if ( ! QPixmapCache::find ( pixname, &pixmap ) )
 	{
 		pixmap = QPixmap ( pixname );
 		QPixmapCache::insert ( pixname, pixmap );
@@ -137,7 +135,7 @@ QString timeref_to_hms(const TimeRef& ref)
 	mins = (int) (remainder / ( ONE_MINUTE_UNIVERSAL_SAMPLE_RATE ));
 	remainder -= mins * ONE_MINUTE_UNIVERSAL_SAMPLE_RATE;
 	secs = (int) (remainder / UNIVERSAL_SAMPLE_RATE);
-	return QString().sprintf("%02d:%02d:%02d", hours, mins, secs);
+	return QString::asprintf("%02d:%02d:%02d", hours, mins, secs);
 }
 
 QString timeref_to_ms(const TimeRef& ref)
@@ -150,13 +148,12 @@ QString timeref_to_ms(const TimeRef& ref)
 	mins = (int) (universalframe / ( ONE_MINUTE_UNIVERSAL_SAMPLE_RATE ));
 	remainder = (long unsigned int) (universalframe - (mins * ONE_MINUTE_UNIVERSAL_SAMPLE_RATE));
 	secs = (int) (remainder / UNIVERSAL_SAMPLE_RATE);
-	return QString().sprintf("%02d:%02d", mins, secs);
+	return QString::asprintf("%02d:%02d", mins, secs);
 }
 
 // TimeRef to MM:SS.99 (hundredths)
 QString timeref_to_ms_2 (const TimeRef& ref)
 {
-	QString spos;
 	qint64 remainder;
 	int mins, secs, frames;
 
@@ -167,15 +164,14 @@ QString timeref_to_ms_2 (const TimeRef& ref)
 	secs = remainder / UNIVERSAL_SAMPLE_RATE;
 	remainder -= secs * UNIVERSAL_SAMPLE_RATE;
 	frames = remainder * 100 / UNIVERSAL_SAMPLE_RATE;
-	spos.sprintf ( " %02d:%02d%c%02d", mins, secs, QLocale::system().decimalPoint().toLatin1(), frames );
-
-	return spos;
+	QString decPoint = QLocale::system().decimalPoint();
+	char dp = decPoint.isEmpty() ? '.' : decPoint.toLatin1().at(0);
+	return QString::asprintf(" %02d:%02d%c%02d", mins, secs, dp, frames);
 }
 
 // TimeRef to MM:SS.999 (ms)
 QString timeref_to_ms_3(const TimeRef& ref)
 {
-	QString spos;
 	qint64 remainder;
 	int mins, secs, frames;
 
@@ -186,15 +182,14 @@ QString timeref_to_ms_3(const TimeRef& ref)
 	secs = remainder / UNIVERSAL_SAMPLE_RATE;
 	remainder -= secs * UNIVERSAL_SAMPLE_RATE;
 	frames = remainder * 1000 / UNIVERSAL_SAMPLE_RATE;
-	spos.sprintf ( " %02d:%02d%c%03d", mins, secs, QLocale::system().decimalPoint().toLatin1(), frames );
-
-	return spos;
+	QString decPoint = QLocale::system().decimalPoint();
+	char dp = decPoint.isEmpty() ? '.' : decPoint.toLatin1().at(0);
+	return QString::asprintf(" %02d:%02d%c%03d", mins, secs, dp, frames);
 }
 
 // Frame to MM:SS:75 (75ths of a second, for CD burning)
 QString timeref_to_cd (const TimeRef& ref)
 {
-	QString spos;
 	qint64 remainder;
 	int mins, secs, frames;
 
@@ -205,15 +200,12 @@ QString timeref_to_cd (const TimeRef& ref)
 	secs = remainder / UNIVERSAL_SAMPLE_RATE;
 	remainder -= secs * UNIVERSAL_SAMPLE_RATE;
 	frames = remainder * 75 / UNIVERSAL_SAMPLE_RATE;
-	spos.sprintf ( " %02d:%02d:%02d", mins, secs, frames );
-
-	return spos;
+	return QString::asprintf(" %02d:%02d:%02d", mins, secs, frames);
 }
 
 // Frame to HH:MM:SS,75 (75ths of a second, for CD burning)
 QString timeref_to_cd_including_hours (const TimeRef& ref)
 {
-	QString spos;
 	qint64 remainder;
 	int hours, mins, secs, frames;
 
@@ -226,9 +218,7 @@ QString timeref_to_cd_including_hours (const TimeRef& ref)
 	secs = (int) (remainder / UNIVERSAL_SAMPLE_RATE);
 	remainder -= secs * UNIVERSAL_SAMPLE_RATE;
 	frames = remainder * 75 / UNIVERSAL_SAMPLE_RATE;
-	spos.sprintf("%02d:%02d:%02d,%02d", hours, mins, secs, frames );
-
-	return spos;
+	return QString::asprintf("%02d:%02d:%02d,%02d", hours, mins, secs, frames);
 }
 
 QString timeref_to_text(const TimeRef & ref, qint64 scalefactor)
@@ -256,7 +246,9 @@ QStringList find_qm_files()
 QString language_name_from_qm_file(const QString& lang)
 {
 	QTranslator translator;
-	translator.load(lang);
+	if (!translator.load(lang)) {
+		return QString();
+	}
 	return translator.translate("LanguageName", "English", "The name of this Language, e.g. German would be Deutch");
 }
 
@@ -281,7 +273,7 @@ bool t_KeyStringToKeyValue(int &variable, const QString &text)
 	variable = 0;
 	QString s;
 	int x  = 0;
-	if ((text != QString::null) && (text.length() > 0) ) {
+	if (!text.isEmpty()) {
 		s="ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 		x = s.indexOf(text);
 		if (x>=0) {
@@ -316,7 +308,7 @@ bool t_KeyStringToKeyValue(int &variable, const QString &text)
 						} else if (text == "MOUSEBUTTONRIGHT") {
 							variable = Qt::RightButton;
 						} else if (text == "MOUSEBUTTONMIDDLE") {
-							variable = Qt::MidButton;
+							variable = Qt::MiddleButton;
 						} else if (text == "MOUSEBUTTONX1") {
 							variable = Qt::XButton1;
 						} else if (text == "MOUSEBUTTONX2") {

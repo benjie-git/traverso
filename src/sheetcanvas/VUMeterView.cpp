@@ -129,7 +129,7 @@ void VUMeterView::set_bounding_rect(QRectF rect)
         int vertPos = 0;
         int horizontalPos = 0;
     m_vulevelspacing = 2;
-        foreach(VUMeterLevelView* level, m_levels) {
+        for (VUMeterLevelView* level : m_levels) {
                 if (m_orientation == Qt::Vertical) {
                         level->set_bounding_rect(QRectF(0, 0, m_boundingRect.width() / m_levels.size(), m_boundingRect.height()));
                         level->setPos(horizontalPos, 0);
@@ -147,7 +147,7 @@ void VUMeterView::set_bounding_rect(QRectF rect)
 void VUMeterView::update_orientation()
 {
         m_orientation = static_cast<Qt::Orientation>(config().get_property("Themer", "VUOrientation", Qt::Vertical).toInt());
-        foreach(VUMeterLevelView* level, m_levels) {
+        for (VUMeterLevelView* level : m_levels) {
                 level->set_orientation(m_orientation);
         }
 }
@@ -171,7 +171,7 @@ void VUMeterView::calculate_lut_data()
 
 void VUMeterView::reset()
 {
-        foreach(VUMeterLevelView* level, m_levels) {
+        for (VUMeterLevelView* level : m_levels) {
                 level->reset();
         }
 }
@@ -246,7 +246,7 @@ void VUMeterRulerView::paint(QPainter *painter, const QStyleOptionGraphicsItem *
         }
 
         deltaY = int( VUMeterView::VUMeterView_lut()->at(idx)/115.0  * levelRange );
-        spm.sprintf("%2i", m_presetMark[j]);
+        spm = QString::asprintf("%2i", m_presetMark[j]);
 
         painter->drawText(deltaY - m_fontLabelAscent + 2, m_fontLabelAscent + 3, spm);
         painter->drawLine(deltaY, - 6, deltaY, TICK_LINE_LENGTH - 6);

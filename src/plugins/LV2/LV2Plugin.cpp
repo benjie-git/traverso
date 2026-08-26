@@ -369,7 +369,7 @@ LV2ControlPort::LV2ControlPort( LV2Plugin * plugin, const QDomNode node )
 
 void LV2ControlPort::init()
 {
-	foreach(const QString &string, get_hints()) {
+	for (const QString &string : get_hints()) {
 		if (string == "http://lv2plug.in/ns/lv2core#logarithmic") {
 			m_hint = LOG_CONTROL;
 		} else  if (string == "http://lv2plug.in/ns/lv2core#integer") {

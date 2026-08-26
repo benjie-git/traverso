@@ -204,7 +204,7 @@ void TrackView::layout_lanes()
 	int verticalposition = m_cliptopmargin;
 	m_visibleLanes = 0;
 
-	foreach(TTrackLaneView* lane, m_laneViews) {
+	for (TTrackLaneView* lane : m_laneViews) {
 		if (lane->isVisible()) {
 			lane->move_to(0, verticalposition);
 			verticalposition += lane->get_height() + m_laneSpacing;
@@ -216,7 +216,7 @@ void TrackView::layout_lanes()
 int TrackView::get_total_height()
 {
 	int totalHeight = 0;
-	foreach(TTrackLaneView* lane, m_laneViews) {
+	for (TTrackLaneView* lane : m_laneViews) {
 		if (lane->isVisible()) {
 			totalHeight += lane->get_height() + m_laneSpacing;
 		}

@@ -79,7 +79,7 @@ TSessionTabWidget::TSessionTabWidget(QToolBar* toolBar, TSession *session)
         m_childLayout->addStretch(1);
         m_childLayout->addWidget(m_arrowButton);
         m_childLayout->addSpacing(4);
-        m_childLayout->setMargin(0);
+        m_childLayout->setContentsMargins(0, 0, 0, 0);
 
         QAction* action;
 
@@ -122,7 +122,7 @@ TSessionTabWidget::TSessionTabWidget(QToolBar* toolBar, TSession *session)
                 m_nameLabel->setStyleSheet("color: black; border: none; background-color: none; font-size: 12px;");
         }
 
-        foreach(TSession* session, m_session->get_child_sessions()) {
+        for (TSession* session : m_session->get_child_sessions()) {
                 child_session_added(session);
         }
 
@@ -169,7 +169,7 @@ TSessionTabWidget::TSessionTabWidget(QToolBar* toolBar, TSession *session)
 void TSessionTabWidget::toolbar_orientation_changed(Qt::Orientation orientation)
 {
         if ( ! m_session->is_child_session()) {
-                foreach(TSessionTabWidget* tabWidget, m_childTabWidgets) {
+                for (TSessionTabWidget* tabWidget : m_childTabWidgets) {
                         layout()->removeWidget(tabWidget);
                 }
 
@@ -182,17 +182,17 @@ void TSessionTabWidget::toolbar_orientation_changed(Qt::Orientation orientation)
 
                 if (orientation == Qt::Vertical) {
                         QVBoxLayout* vLayout = new QVBoxLayout();
-                        vLayout->setMargin(0);
+                        vLayout->setContentsMargins(0, 0, 0, 0);
                         setLayout(vLayout);
                 } else {
                         QHBoxLayout* hLayout = new QHBoxLayout();
-                        hLayout->setMargin(0);
+                        hLayout->setContentsMargins(0, 0, 0, 0);
                         setLayout(hLayout);
                 }
 
                 layout()->addWidget(m_mainWidget);
 
-                foreach(TSessionTabWidget* tabWidget, m_childTabWidgets) {
+                for (TSessionTabWidget* tabWidget : m_childTabWidgets) {
                         layout()->addWidget(tabWidget);
                 }
 
@@ -217,7 +217,7 @@ void TSessionTabWidget::child_session_added(TSession *session)
 
 void TSessionTabWidget::child_session_removed(TSession *session)
 {
-        foreach(TSessionTabWidget* tabWidget, m_childTabWidgets) {
+        for (TSessionTabWidget* tabWidget : m_childTabWidgets) {
                 if (tabWidget->get_session() == session) {
                         layout()->removeWidget(tabWidget);
                         m_childTabWidgets.removeAll(tabWidget);
@@ -240,7 +240,7 @@ void TSessionTabWidget::calculate_size()
                 } else {
                         setFixedSize(TAB_WIDTH + 4 + m_session->get_child_sessions().count() * (TAB_WIDTH + 4), HOR_BUTTON_HEIGHT);
                 }
-                foreach(TSessionTabWidget* tabWidget, m_childTabWidgets) {
+                for (TSessionTabWidget* tabWidget : m_childTabWidgets) {
                         if (m_toolBar->orientation() == Qt::Vertical) {
                                 tabWidget->setMinimumSize(TAB_WIDTH - 4, VER_BUTTON_HEIGHT);
                                 tabWidget->setStyleSheet("margin-left: 2px; margin-right: 2px;");
@@ -312,7 +312,7 @@ void TSessionTabWidget::arrow_button_clicked()
 
 void TSessionTabWidget::shortcut_click()
 {
-        animateClick(120);
+        animateClick();
 }
 
 void TSessionTabWidget::leaveEvent( QEvent * )
@@ -320,7 +320,7 @@ void TSessionTabWidget::leaveEvent( QEvent * )
         m_arrowButton->setStyleSheet("background-color: none; border: none;");
 }
 
-void TSessionTabWidget::enterEvent( QEvent * /*e*/)
+void TSessionTabWidget::enterEvent( QEnterEvent * /*e*/)
 {
         if (pm().get_project()->get_current_session() == m_session) {
                 m_arrowButton->setStyleSheet("background-color: lightblue; margin: 0; margin-right: 2;");

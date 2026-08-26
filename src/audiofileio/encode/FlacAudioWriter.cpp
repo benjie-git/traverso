@@ -48,9 +48,9 @@ class FlacAudioWriter::Private
 {
 public:
 	Private()
-		: encoder(0),
+		: encoder(nullptr),
 		quality(5),
-		buffer(0),
+		buffer(nullptr),
 		bufferSize(0) {
 	}
 	~Private() {
@@ -200,7 +200,7 @@ void FlacAudioWriter::cleanup()
 #else
 		FLAC__stream_encoder_delete(d->encoder);
 #endif
-		d->encoder = 0;
+		d->encoder = nullptr;
 	}
 }
 

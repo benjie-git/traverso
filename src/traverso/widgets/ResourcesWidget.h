@@ -33,7 +33,7 @@ class ReadSource;
 class SourceTreeItem;
 class QShowEvent;
 class QListView;
-class QDirModel;
+class QFileSystemModel;
 class QComboBox;
 
 class FileWidget : public QWidget
@@ -53,7 +53,7 @@ private slots:
 
 private:
 	QListView* m_dirView;
-	QDirModel* m_dirModel;
+	QFileSystemModel* m_dirModel;
 	QComboBox* m_box;
 };
 

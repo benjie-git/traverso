@@ -150,7 +150,7 @@ void ViewPort::mouseMoveEvent(QMouseEvent* event)
       cpointer().set_current_viewport(this);
     }
     
-    cpointer().update_mouse_positions(event->pos(), event->globalPos());
+    cpointer().update_mouse_positions(event->position().toPoint(), event->globalPosition().toPoint());
 
     if (cpointer().keyboard_only_input()) {
         event->accept();
@@ -161,12 +161,12 @@ void ViewPort::mouseMoveEvent(QMouseEvent* event)
     // since a mouse move event generates a jog() call for the
     // active holding command, this has a number of nasty side effects :-(
     // For now, we ignore such events....
-    if (event->pos() == m_oldMousePos) {
+    if (event->position().toPoint() == m_oldMousePos) {
         event->accept();
         return;
     }
 
-    m_oldMousePos = event->pos();
+    m_oldMousePos = event->position().toPoint();
 
     if (ied().is_holding()) {
         // cpointer().update_mouse_positions() will instruct ied() to update holdcommand
@@ -196,7 +196,7 @@ void ViewPort::detect_items_below_cursor()
 
     if (!itemsUnderCursor.isEmpty())
     {
-        foreach(QGraphicsItem* item, itemsUnderCursor)
+        for (QGraphicsItem* item : itemsUnderCursor)
         {
             if (ViewItem::is_viewitem(item))
             {
@@ -237,7 +237,7 @@ void ViewPort::tabletEvent(QTabletEvent * event)
 	QGraphicsView::tabletEvent(event);
 }
 
-void ViewPort::enterEvent(QEvent* e)
+void ViewPort::enterEvent(QEnterEvent* e)
 {
     if (ied().is_holding()) {
         // we allready have viewport so do nothing

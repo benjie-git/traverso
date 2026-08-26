@@ -48,7 +48,7 @@ QDomNode GainEnvelope::get_state(QDomDocument doc)
 
 int GainEnvelope::set_state(const QDomNode & node)
 {
-	foreach(PluginControlPort* port, m_controlPorts) {
+	for (PluginControlPort* port : m_controlPorts) {
 		delete port;
 	}
 	m_controlPorts.clear();

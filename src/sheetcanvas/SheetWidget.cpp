@@ -177,7 +177,7 @@ SheetWidget::SheetWidget(TSession* sheet, QWidget* parent)
 	m_mainLayout->addWidget(m_hScrollBar, 2, 1);
 	m_mainLayout->addWidget(m_vScrollBar, 1, 2);
 	
-	m_mainLayout->setMargin(0);
+	m_mainLayout->setContentsMargins(0, 0, 0, 0);
 	m_mainLayout->setSpacing(0);
 
 	setLayout(m_mainLayout);

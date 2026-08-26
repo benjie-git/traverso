@@ -521,7 +521,7 @@ int AudioDevice::shutdown( )
 
         QList<AudioChannel*> channels = m_driver->get_capture_channels();
         channels.append(m_driver->get_playback_channels());
-        foreach(AudioChannel* chan, channels) {
+        for (AudioChannel* chan : channels) {
             m_channels.removeAll(chan);
         }
 
@@ -535,7 +535,7 @@ int AudioDevice::shutdown( )
 QStringList AudioDevice::get_capture_channel_names() const
 {
     QStringList names;
-    foreach(AudioChannel* chan, m_driver->get_capture_channels()) {
+    for (AudioChannel* chan : m_driver->get_capture_channels()) {
         names.append(chan->get_name());
     }
     return names;
@@ -544,7 +544,7 @@ QStringList AudioDevice::get_capture_channel_names() const
 QStringList AudioDevice::get_playback_channel_names() const
 {
     QStringList names;
-    foreach(AudioChannel* chan, m_driver->get_playback_channels()) {
+    for (AudioChannel* chan : m_driver->get_playback_channels()) {
         names.append(chan->get_name());
     }
     return names;

@@ -769,13 +769,13 @@ TCommand* TraversoCommands::create(QObject* obj, const QString& commandName, QVa
             }
             QList<AudioClip* > selection;
             clip->get_sheet()->get_audioclip_manager()->get_selected_clips(selection);
-            foreach(AudioClip* selected, selection) {
+            for (AudioClip* selected : selection) {
                 normfactor = std::min(selected->calculate_normalization_factor(d), normfactor);
             }
 
             CommandGroup* group = new CommandGroup(clip, tr("Normalize Selected Clips"));
 
-            foreach(AudioClip* selected, selection) {
+            for (AudioClip* selected : selection) {
                 group->add_command(new PCommand(selected, "set_gain", normfactor, selected->get_gain(), tr("AudioClip: Normalize")));
             }
 

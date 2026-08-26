@@ -125,7 +125,7 @@ void TTrackManagerDialog::create_routing_input_menu()
         m_routingInputMenu = new QMenu;
 
         if (m_track->get_type() == Track::AUDIOTRACK) {
-                foreach(AudioBus* bus, pm().get_project()->get_hardware_buses()) {
+                for (AudioBus* bus : pm().get_project()->get_hardware_buses()) {
                         if (bus->is_input() && bus->is_valid()) {
                                 QAction* action = m_routingInputMenu->addAction(bus->get_name());
                                 action->setData(bus->get_id());
@@ -137,7 +137,7 @@ void TTrackManagerDialog::create_routing_input_menu()
         Sheet* sheet = qobject_cast<Sheet*>(m_track->get_session());
         bool isProjectBus = false;
 
-        foreach(TBusTrack* track, project->get_bus_tracks()) {
+        for (TBusTrack* track : project->get_bus_tracks()) {
                 if (track == m_track) {
                         isProjectBus = true;
                         break;
@@ -150,27 +150,27 @@ void TTrackManagerDialog::create_routing_input_menu()
                         tracks = project->get_tracks();
                         tracks.append(project->get_sheet_tracks());
                 } else if (isProjectBus) {
-                        foreach(Sheet* sheet, project->get_sheets()) {
-                                foreach(AudioTrack* track, sheet->get_audio_tracks()) {
+                        for (Sheet* sheet : project->get_sheets()) {
+                                for (AudioTrack* track : sheet->get_audio_tracks()) {
                                         tracks.append(track);
                                 }
-                                foreach(TBusTrack* track, sheet->get_bus_tracks()) {
+                                for (TBusTrack* track : sheet->get_bus_tracks()) {
                                         tracks.append(track);
                                 }
                                 tracks.append(sheet->get_master_out_bus_track());
 
                         }
                 } else if (sheet){
-                        foreach(AudioTrack* at, sheet->get_audio_tracks()) {
+                        for (AudioTrack* at : sheet->get_audio_tracks()) {
                                 tracks.append(at);
                         }
                         if (m_track == sheet->get_master_out_bus_track()) {
-                                foreach(TBusTrack* sg, sheet->get_bus_tracks()) {
+                                for (TBusTrack* sg : sheet->get_bus_tracks()) {
                                         tracks.append(sg);
                                 }
                         }
                 }
-                foreach(Track* track, tracks) {
+                for (Track* track : tracks) {
                         QAction* action = m_routingInputMenu->addAction(track->get_name());
                         action->setData(track->get_id());
                 }
@@ -237,7 +237,7 @@ QMenu* TTrackManagerDialog::create_sends_menu()
                 QList<TBusTrack*> busTracks = sheet->get_bus_tracks();
                 // FIXME: this doesn't make sense at all
                 if (!(m_track->get_type() == Track::BUS) && busTracks.size()) {
-                        foreach(TBusTrack* busTrack, busTracks) {
+                        for (TBusTrack* busTrack : busTracks) {
                                 action = menu->addAction(busTrack->get_name());
                                 action->setData(busTrack->get_id());
                         }
@@ -247,7 +247,7 @@ QMenu* TTrackManagerDialog::create_sends_menu()
 
         if (project) {
                 QList<TBusTrack*> busTracks = project->get_bus_tracks();
-                foreach(TBusTrack* busTrack, busTracks) {
+                for (TBusTrack* busTrack : busTracks) {
                         action = menu->addAction(busTrack->get_name());
                         action->setData(busTrack->get_id());
                 }
@@ -256,7 +256,7 @@ QMenu* TTrackManagerDialog::create_sends_menu()
 
 
 
-        foreach(AudioBus* bus, pm().get_project()->get_hardware_buses()) {
+        for (AudioBus* bus : pm().get_project()->get_hardware_buses()) {
                 if (bus->is_output() && bus->is_valid()) {
                         action = menu->addAction(bus->get_name());
                         action->setData(bus->get_id());
@@ -327,7 +327,7 @@ void TTrackManagerDialog::update_routing_input_output_widget_view()
 
         if (m_track->get_type() == Track::BUS) {
                 QList<TSend*> inputs = pm().get_project()->get_inputs_for_bus_track(qobject_cast<TBusTrack*>(m_track));
-                foreach(TSend* send, inputs) {
+                for (TSend* send : inputs) {
                         QListWidgetItem* item = new QListWidgetItem(routingInputListWidget);
                         item->setText(send->get_from_name());
                         item->setData(Qt::UserRole, send->get_id());
@@ -340,7 +340,7 @@ void TTrackManagerDialog::update_routing_input_output_widget_view()
                 if (bus) {
                         item->setText(bus->get_name());
                         if (!bus->is_valid()) {
-                                item->setTextColor(QColor(Qt::lightGray));
+                                item->setForeground(QColor(Qt::lightGray));
                         }
                 }
         }
@@ -349,24 +349,24 @@ void TTrackManagerDialog::update_routing_input_output_widget_view()
         routingOutputListWidget->clear();
 
         QList<TSend*> postSends = m_track->get_post_sends();
-        foreach(TSend* send, postSends) {
+        for (TSend* send : postSends) {
                 QListWidgetItem* item = new QListWidgetItem(routingOutputListWidget);
                 item->setText(send->get_name());
                 AudioBus* bus = send->get_bus();
                 if (bus && !bus->is_valid()) {
-                        item->setTextColor(QColor(Qt::lightGray));
+                        item->setForeground(QColor(Qt::lightGray));
                 }
                 item->setData(Qt::UserRole, send->get_id());
         }
 
         preSendsListWidget->clear();
         QList<TSend*> preSends = m_track->get_pre_sends();
-        foreach(TSend* send, preSends) {
+        for (TSend* send : preSends) {
                 QListWidgetItem* item = new QListWidgetItem(preSendsListWidget);
                 item->setText(send->get_name());
                 AudioBus* bus = send->get_bus();
                 if (bus && !bus->is_valid()) {
-                        item->setTextColor(QColor(Qt::lightGray));
+                        item->setForeground(QColor(Qt::lightGray));
                 }
                 item->setData(Qt::UserRole, send->get_id());
         }
@@ -376,7 +376,7 @@ void TTrackManagerDialog::update_pre_post_fader_plugins_widget_view()
 {
     postFaderPluginsListWidget->clear();
     QList<Plugin*> postFaderPlugins = m_track->get_plugin_chain()->get_post_fader_plugins();
-    foreach(Plugin* plugin, postFaderPlugins) {
+    for (Plugin* plugin : postFaderPlugins) {
             QListWidgetItem* item = new QListWidgetItem(postFaderPluginsListWidget);
             item->setText(plugin->get_name());
             item->setData(Qt::UserRole, plugin->get_id());
@@ -385,7 +385,7 @@ void TTrackManagerDialog::update_pre_post_fader_plugins_widget_view()
 
     preFaderPluginsListWidget->clear();
     QList<Plugin*> preFaderPlugins = m_track->get_plugin_chain()->get_pre_fader_plugins();
-    foreach(Plugin* plugin, preFaderPlugins) {
+    for (Plugin* plugin : preFaderPlugins) {
             QListWidgetItem* item = new QListWidgetItem(preFaderPluginsListWidget);
             item->setText(plugin->get_name());
             item->setData(Qt::UserRole, plugin->get_id());
@@ -395,21 +395,21 @@ void TTrackManagerDialog::update_pre_post_fader_plugins_widget_view()
 void TTrackManagerDialog::on_routingInputRemoveButton_clicked()
 {
         QList<QListWidgetItem*> selectedItems = routingInputListWidget->selectedItems();
-        foreach(QListWidgetItem* item, selectedItems) {
+        for (QListWidgetItem* item : selectedItems) {
                 qint64 id = item->data(Qt::UserRole).toLongLong();
                 QList<qint64> toBeRemoved;
                 toBeRemoved.append(id);
                 QList<Track*> tracks = pm().get_project()->get_sheet_tracks();
                 tracks.append(pm().get_project()->get_tracks());
-                foreach(Track* track, tracks) {
+                for (Track* track : tracks) {
                         QList<TSend*> preSends = track->get_pre_sends();
-                        foreach(TSend* send, preSends) {
+                        for (TSend* send : preSends) {
                                 if (send->get_id() == id) {
                                         track->remove_pre_sends(toBeRemoved);
                                 }
                         }
                         QList<TSend*> postSends = track->get_post_sends();
-                        foreach(TSend* send, postSends) {
+                        for (TSend* send : postSends) {
                                 if (send->get_id() == id) {
                                         track->remove_post_sends(toBeRemoved);
                                 }
@@ -422,7 +422,7 @@ void TTrackManagerDialog::on_preSendsRemoveButton_clicked()
 {
         QList<QListWidgetItem*> selectedItems = preSendsListWidget->selectedItems();
         QList<qint64> toBeRemoved;
-        foreach(QListWidgetItem* item, selectedItems) {
+        for (QListWidgetItem* item : selectedItems) {
                 qint64 id = item->data(Qt::UserRole).toLongLong();
                 toBeRemoved.append(id);
         }
@@ -434,7 +434,7 @@ void TTrackManagerDialog::on_routingOutputRemoveButton_clicked()
 {
         QList<QListWidgetItem*> selectedItems = routingOutputListWidget->selectedItems();
         QList<qint64> toBeRemoved;
-        foreach(QListWidgetItem* item, selectedItems) {
+        for (QListWidgetItem* item : selectedItems) {
                 qint64 id = item->data(Qt::UserRole).toLongLong();
                 toBeRemoved.append(id);
         }

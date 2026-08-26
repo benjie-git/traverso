@@ -28,6 +28,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA.
 #include "AudioClipManager.h"
 #include "TConfig.h"
 #include "ContextPointer.h"
+#include <algorithm>
 #include "TimeLine.h"
 #include "Utils.h"
 #include "Marker.h"
@@ -119,7 +120,7 @@ void SnapList::update_snaplist()
 	
 
 	// sort the list
-	qSort(m_xposList);
+	std::sort(m_xposList.begin(), m_xposList.end());
 
     int range = int((m_rangeEnd - m_rangeStart) / m_scalefactor);
 

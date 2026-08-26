@@ -25,6 +25,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA.
 #include <QMessageBox>
 #include <QFileInfo>
 #include <QDir>
+#include <QStyleHints>
 
 #include "Traverso.h"
 #include "Mixer.h"
@@ -101,7 +102,9 @@ Traverso::Traverso(int &argc, char **argv )
     QCoreApplication::setOrganizationName("Traverso");
     QCoreApplication::setApplicationName("Traverso");
     QCoreApplication::setOrganizationDomain("traverso-daw.org");
-
+    
+    QGuiApplication::styleHints()->setColorScheme(Qt::ColorScheme::Light);
+    
     qRegisterMetaType<InfoStruct>("InfoStruct");
     qRegisterMetaType<TimeRef>("TimeRef");
 

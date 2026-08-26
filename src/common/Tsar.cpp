@@ -76,7 +76,7 @@ Tsar::Tsar()
 
 Tsar::~ Tsar( )
 {
-	foreach(RingBufferNPT<TsarEvent>* eventBuffer, m_events) {
+	for (RingBufferNPT<TsarEvent>* eventBuffer : m_events) {
 		delete eventBuffer;
 	}
 	delete oldEvents;
@@ -193,8 +193,7 @@ void Tsar::finish_processed_events( )
 				"* You're not running with real time privileges! Please make sure this is setup properly.\n\n"
 				"* The audio chipset isn't supported (completely), you probably have to turn off some of it's features.\n"
 				"\nFor more information, see the Help file, section: \n\n AudioDriver: 'Thread stalled error'\n\n"),
-				"OK", 
-                nullptr );
+				QMessageBox::Ok );
                         AudioDeviceSetup ads;
                         ads.driverType = "Null Driver";
                         audiodevice().set_parameters(ads);
@@ -203,8 +202,7 @@ void Tsar::finish_processed_events( )
             QMessageBox::critical( nullptr,
 				tr("Traverso - Fatal!"), 
 				tr("The Null AudioDriver stalled too, exiting application!"),
-				"OK", 
-                nullptr );
+				QMessageBox::Ok );
 			QCoreApplication::exit(-1);
 		}
 	}

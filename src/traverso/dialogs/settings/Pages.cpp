@@ -63,7 +63,7 @@ AudioDriverConfigPage::AudioDriverConfigPage(QWidget *parent)
 	m_mainLayout = qobject_cast<QVBoxLayout*>(layout());
 	
 	QStringList drivers = audiodevice().get_available_drivers();
-	foreach(const QString &name, drivers) {
+	for (const QString &name : drivers) {
 		driverCombo->addItem(name);
 	}
 	
@@ -72,7 +72,7 @@ AudioDriverConfigPage::AudioDriverConfigPage(QWidget *parent)
 	m_mainLayout->addWidget(m_portaudiodrivers);
 
 	m_alsadevices = new AlsaDevicesPage(this);
-	m_alsadevices->layout()->setMargin(0);
+	m_alsadevices->layout()->setContentsMargins(0, 0, 0, 0);
 	m_mainLayout->addWidget(m_alsadevices);
 	
         connect(driverCombo, SIGNAL(currentIndexChanged(QString)), this, SLOT(driver_combobox_index_changed(QString)));
@@ -443,7 +443,7 @@ void AudioDriverConfigPage::driver_setup_message(QString message, int severity)
               "</style>\n"
               "</head>\n<body>\n");
 
-        foreach(QString string, m_driverSetupMessages) {
+        for (const QString& string : m_driverSetupMessages) {
                 html += string;
         }
 
@@ -489,7 +489,7 @@ void AppearenceConfigPage::load_config()
 	
 	QStringList keys = QStyleFactory::keys();
 	keys.sort();
-	foreach(const QString &key, keys) {
+	for (const QString &key : keys) {
 		styleCombo->addItem(key);
 	}
 	
@@ -543,7 +543,7 @@ void AppearenceConfigPage::load_config()
 		supportedIconSizes = "16;22;32;48";
 	}
 
-	QStringList iconSizesList = supportedIconSizes.split(";", QString::SkipEmptyParts);
+	QStringList iconSizesList = supportedIconSizes.split(";", Qt::SkipEmptyParts);
 
 	// check if the current icon size occurs in the list, if not, add it
 	if (iconSizesList.lastIndexOf(iconsize) == -1) {
@@ -558,7 +558,7 @@ void AppearenceConfigPage::load_config()
 
 	// and the same again for the icons size of the transport console
 	QString trspsize = config().get_property("Themer", "transportconsolesize", "22").toString();
-	iconSizesList = supportedIconSizes.split(";", QString::SkipEmptyParts);
+	iconSizesList = supportedIconSizes.split(";", Qt::SkipEmptyParts);
 
 	if (iconSizesList.lastIndexOf(iconsize) == -1) {
 		iconSizesList << trspsize;
@@ -610,7 +610,7 @@ AppearenceConfigPage::AppearenceConfigPage(QWidget * parent)
         m_colorModifierDialog = 0;
 	
 	languageComboBox->addItem(tr("Default Language"), "");
-	foreach(const QString &lang, find_qm_files()) {
+	for (const QString &lang : find_qm_files()) {
 		languageComboBox->addItem(language_name_from_qm_file(lang), lang);
 	}
 	
@@ -687,12 +687,12 @@ void AppearenceConfigPage::update_theme_combobox(const QString& path)
 {
 	themeSelecterCombo->clear();
 
-        foreach(QString theme, themer()->get_builtin_themes()) {
+        for (const QString& theme : themer()->get_builtin_themes()) {
                 themeSelecterCombo->addItem(theme, "builtintheme");
 	}
 	
 	QDir themedir(path);
-        foreach (QString themeName, themedir.entryList(QDir::Files)) {
+        for (QString themeName : themedir.entryList(QDir::Files)) {
                 themeName = themeName.remove(".xml");
                 QString filename = path + "/" + themeName;
                 if (QFile::exists(filename + ".xml") ) {

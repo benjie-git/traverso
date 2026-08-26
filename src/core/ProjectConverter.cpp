@@ -141,8 +141,8 @@ int ProjectConverter::start_conversion_from_version_2_to_3()
 			readsource1->ref();
 			readsource1->init();
 			
-			m_readsources.insertMulti(id, readsource0);
-			m_readsources.insertMulti(id, readsource1);
+			m_readsources.insert(id, readsource0);
+			m_readsources.insert(id, readsource1);
 			
 			m_filesToMerge++;
 			m_merger->enqueue_task(readsource0, readsource1, dir, name);
@@ -335,7 +335,7 @@ void ProjectConverter::file_merge_finished(QString file)
 
 void ProjectConverter::finish_2_3_conversion()
 {
-	foreach(ReadSource* source, m_readsources) {
+	for (ReadSource* source : m_readsources) {
 		delete source;
 	}
 	

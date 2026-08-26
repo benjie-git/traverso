@@ -103,7 +103,8 @@ bool VorbisAudioReader::seek_private(nframes_t start)
 		return false;
 	}
 	
-	if (int result = ov_pcm_seek(&m_vf, start) < 0) {
+	int result = ov_pcm_seek(&m_vf, start);
+	if (result < 0) {
 //		PERROR("VorbisAudioReader: could not seek to frame %d within %s (%d)", start, QS_C(m_fileName), result);
 		Q_UNUSED(result);
 		return false;

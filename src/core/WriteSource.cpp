@@ -255,8 +255,7 @@ int WriteSource::prepare_export()
 	m_writer->set_bits_per_sample(m_spec->data_width);
 	m_writer->set_num_channels(m_channelCount);
 	
-	QString key;
-	foreach (key, m_spec->extraFormat.keys()) {
+	for (const QString& key : m_spec->extraFormat.keys()) {
 		if (m_writer->set_format_attribute(key, m_spec->extraFormat[key]) == false) {
 			printf("Invalid Extra Format Info: %s=%s\n", QS_C(key), QS_C(m_spec->extraFormat[key]));
 		}

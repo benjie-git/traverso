@@ -55,7 +55,7 @@ void AudioClipGroup::move_to(int trackIndex, TimeRef location)
     PENTER;
     int trackIndexDelta = trackIndex - m_topTrackIndex;
 
-    foreach(AudioClip* clip, m_clips) {
+    for (AudioClip* clip : m_clips) {
         if (trackIndexDelta != 0) {
                         AudioTrack* track = clip->get_sheet()->get_audio_track_for_index(clip->get_track()->get_sort_index() + trackIndexDelta);
             if (track) {
@@ -85,7 +85,7 @@ void AudioClipGroup::update_state()
     m_topTrackIndex = INT_MAX;
     m_bottomTrackIndex = 0;
 
-    foreach(AudioClip* clip, m_clips) {
+    for (AudioClip* clip : m_clips) {
         int index = clip->get_track()->get_sort_index();
         if (index < m_topTrackIndex) {
             m_topTrackIndex = index;
@@ -104,14 +104,14 @@ void AudioClipGroup::update_state()
 
 void AudioClipGroup::set_snappable(bool snap)
 {
-    foreach(AudioClip* clip, m_clips) {
+    for (AudioClip* clip : m_clips) {
         clip->set_snappable(snap);
     }
 }
 
 void AudioClipGroup::set_as_moving(bool move)
 {
-    foreach(AudioClip* clip, m_clips) {
+    for (AudioClip* clip : m_clips) {
         clip->set_as_moving(move);
     }
 }
@@ -120,7 +120,7 @@ QList<AudioClip*> AudioClipGroup::copy_clips()
 {
     QList<AudioClip*> newclips;
 
-    foreach(AudioClip* clip, m_clips) {
+    for (AudioClip* clip : m_clips) {
         AudioClip* newclip = resources_manager()->get_clip(clip->get_id());
         newclip->set_sheet(clip->get_sheet());
         newclip->set_track(clip->get_track());
@@ -133,14 +133,14 @@ QList<AudioClip*> AudioClipGroup::copy_clips()
 
 void AudioClipGroup::add_all_clips_to_tracks()
 {
-    foreach(AudioClip* clip, m_clips) {
+    for (AudioClip* clip : m_clips) {
         TCommand::process_command(clip->get_track()->add_clip(clip, false));
     }
 }
 
 void AudioClipGroup::remove_all_clips_from_tracks()
 {
-    foreach(AudioClip* clip, m_clips) {
+    for (AudioClip* clip : m_clips) {
         TCommand::process_command(clip->get_track()->remove_clip(clip, false));
     }
 }
@@ -165,7 +165,7 @@ void AudioClipGroup::check_valid_track_index_delta(int & delta)
 
 bool AudioClipGroup::is_locked() const
 {
-    foreach(AudioClip* clip, m_clips) {
+    for (AudioClip* clip : m_clips) {
         if (clip->is_locked()) {
             return true;
         }

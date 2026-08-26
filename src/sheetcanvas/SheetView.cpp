@@ -22,6 +22,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-11  USA.
 
 #include <QScrollBar>
 #include <QInputDialog>
+#include <algorithm>
 
 #include "TConfig.h"
 #include "Curve.h"
@@ -144,7 +145,7 @@ SheetView::SheetView(SheetWidget* sheetwidget,
 
 	// fill the view with trackviews, add_new_trackview()
 	// doesn't yet layout the new tracks.
-	foreach(Track* track, m_session->get_tracks()) {
+	for (Track* track : m_session->get_tracks()) {
 		add_new_track_view(track);
 	}
 
@@ -245,8 +246,8 @@ void SheetView::move_trackview_up(TrackView *trackView)
 
 	trackView->get_track()->set_sort_index(newindex);
 
-	qSort(m_audioTrackViews.begin(), m_audioTrackViews.end(), smallerTrackView);
-	qSort(m_busTrackViews.begin(), m_busTrackViews.end(), smallerTrackView);
+	std::sort(m_audioTrackViews.begin(), m_audioTrackViews.end(), smallerTrackView);
+	std::sort(m_busTrackViews.begin(), m_busTrackViews.end(), smallerTrackView);
 
 	layout_tracks();
 }
@@ -289,8 +290,8 @@ void SheetView::move_trackview_down(TrackView *trackView)
 
 	trackView->get_track()->set_sort_index(newindex);
 
-	qSort(m_audioTrackViews.begin(), m_audioTrackViews.end(), smallerTrackView);
-	qSort(m_busTrackViews.begin(), m_busTrackViews.end(), smallerTrackView);
+	std::sort(m_audioTrackViews.begin(), m_audioTrackViews.end(), smallerTrackView);
+	std::sort(m_busTrackViews.begin(), m_busTrackViews.end(), smallerTrackView);
 
 	layout_tracks();
 
@@ -321,8 +322,8 @@ void SheetView::to_bottom(TrackView *trackView)
 	}
 
 
-	qSort(m_audioTrackViews.begin(), m_audioTrackViews.end(), smallerTrackView);
-	qSort(m_busTrackViews.begin(), m_busTrackViews.end(), smallerTrackView);
+	std::sort(m_audioTrackViews.begin(), m_audioTrackViews.end(), smallerTrackView);
+	std::sort(m_busTrackViews.begin(), m_busTrackViews.end(), smallerTrackView);
 
 	layout_tracks();
 }
@@ -359,8 +360,8 @@ void SheetView::to_top(TrackView *trackView)
 	}
 
 
-	qSort(m_audioTrackViews.begin(), m_audioTrackViews.end(), smallerTrackView);
-	qSort(m_busTrackViews.begin(), m_busTrackViews.end(), smallerTrackView);
+	std::sort(m_audioTrackViews.begin(), m_audioTrackViews.end(), smallerTrackView);
+	std::sort(m_busTrackViews.begin(), m_busTrackViews.end(), smallerTrackView);
 
 	layout_tracks();
 }
@@ -392,8 +393,8 @@ void SheetView::add_new_track_view(Track* track)
 
 	connect(view, SIGNAL(totalTrackHeightChanged()), this, SLOT(layout_tracks()));
 
-	qSort(m_audioTrackViews.begin(), m_audioTrackViews.end(), smallerTrackView);
-	qSort(m_busTrackViews.begin(), m_busTrackViews.end(), smallerTrackView);
+	std::sort(m_audioTrackViews.begin(), m_audioTrackViews.end(), smallerTrackView);
+	std::sort(m_busTrackViews.begin(), m_busTrackViews.end(), smallerTrackView);
 
 	layout_tracks();
 }
@@ -404,7 +405,7 @@ void SheetView::remove_track_view(Track* track)
 	views.append(m_audioTrackViews);
 	views.append(m_busTrackViews);
 
-	foreach(TrackView* view, views) {
+	for (TrackView* view : views) {
 		if (view->get_track() == track) {
 			TrackPanelView* panel = view->get_panel_view();
 			scene()->removeItem(panel);
@@ -499,16 +500,16 @@ TCommand* SheetView::toggle_expand_all_tracks(int height)
 {
 	if (height < 0) {
 		if (m_meanTrackHeight > m_trackMinimumHeight) {
-			foreach(TrackView* view, get_track_views()) {
+			for (TrackView* view : get_track_views()) {
 				m_session->set_track_height(view->get_track()->get_id(), m_trackMinimumHeight);
 			}
 		} else {
-			foreach(TrackView* view, get_track_views()) {
+			for (TrackView* view : get_track_views()) {
 				m_session->set_track_height(view->get_track()->get_id(), Track::INITIAL_HEIGHT);
 			}
 		}
 	} else {
-		foreach(TrackView* view, get_track_views()) {
+		for (TrackView* view : get_track_views()) {
 			m_session->set_track_height(view->get_track()->get_id(), height);
 		}
 	}
@@ -865,7 +866,7 @@ void SheetView::browse_to_track(Track *track)
 		views.append(m_projectMasterOutView);
 	}
 
-	foreach(TrackView* view, views) {
+	for (TrackView* view : views) {
 		if (view->get_track() == track) {
 			QList<ContextItem*> list;
 			list.append(view);
@@ -917,7 +918,7 @@ void SheetView::browse_to_marker_view(MarkerView *markerView)
 
 	QList<ContextItem*> contexts = cpointer().get_active_context_items();
 	MarkerView* view;
-	foreach(ContextItem* item, contexts) {
+	for (ContextItem* item : contexts) {
 		view = qobject_cast<MarkerView*>(item);
 		if (view) {
 			cpointer().remove_from_active_context_list(item);
@@ -968,7 +969,7 @@ void SheetView::collect_item_browser_data(ItemBrowserData &data)
 		data.currentContext = list.first()->metaObject()->className();
 	}
 
-	foreach(ContextItem* obj, list) {
+	for (ContextItem* obj : list) {
         if (!data.timeLineView) {
 			data.timeLineView = qobject_cast<TimeLineView*>(obj);
 		}
@@ -1163,7 +1164,7 @@ TCommand* SheetView::browse_to_next_context_item()
 		}
 
 		QList<AudioClipView*> views = data.atv->get_clipviews();
-		foreach(AudioClipView* view, views) {
+		for (AudioClipView* view : views) {
 			if (view->get_clip() == nextClip) {
 				browse_to_audio_clip_view(view);
 				return nullptr;
@@ -1219,7 +1220,7 @@ TCommand* SheetView::browse_to_previous_context_item()
 		}
 
 		QList<AudioClipView*> views = data.atv->get_clipviews();
-		foreach(AudioClipView* view, views) {
+		for (AudioClipView* view : views) {
 			if (view->get_clip() == nextClip) {
 				browse_to_audio_clip_view(view);
 				return nullptr;
@@ -1379,7 +1380,7 @@ void SheetView::context_changed()
     QList<ContextItem*> items = cpointer().get_active_context_items();
 
     if (!items.isEmpty()) {
-        foreach(ContextItem * item, items) {
+        for (ContextItem * item : items) {
             QString cursorShape = cursor_dict()->value(item->metaObject()->className(), "");
             if (!cursorShape.isEmpty()) {
                 cpointer().set_canvas_cursor_shape(cursorShape, Qt::AlignTop | Qt::AlignHCenter);

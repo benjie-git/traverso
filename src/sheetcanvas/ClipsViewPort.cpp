@@ -93,7 +93,7 @@ void ClipsViewPort::dragEnterEvent( QDragEnterEvent * event )
 	// and who knows, it could have been a D&D drop from a filemanager...
     if (event->mimeData()->hasUrls()) {
 
-		foreach(QUrl url, event->mimeData()->urls()) {
+		for (const QUrl &url : event->mimeData()->urls()) {
 			QString fileName = url.toLocalFile();
 			
 			if (fileName.isEmpty()) {
@@ -107,7 +107,7 @@ void ClipsViewPort::dragEnterEvent( QDragEnterEvent * event )
 			// marked as failed, cleanup allready created imports,
 			// and clear the import list.
             if (import->create_readsource() == -1) {
-				foreach(Import* import, m_imports) {
+				for (Import* import : m_imports) {
 					delete import;
 				}
 				m_imports.clear();
@@ -135,7 +135,7 @@ void ClipsViewPort::dropEvent(QDropEvent* event )
 	
 	TimeRef startpos = TimeRef(mapFromGlobal(QCursor::pos()).x() * m_sw->get_sheetview()->timeref_scalefactor);
 	
-	foreach(qint64 id, m_resourcesImport) {
+	for (qint64 id : m_resourcesImport) {
 		AudioClip* clip = resources_manager()->get_clip(id);
 		if (clip) {
 			bool hadSheet = clip->has_sheet();
@@ -164,7 +164,7 @@ void ClipsViewPort::dropEvent(QDropEvent* event )
 	}
 	
 	bool firstItem = true;
-	foreach(Import* import, m_imports) {
+	for (Import* import : m_imports) {
 		import->set_track(m_importTrack);
 		if (firstItem) {
 			// Place first item at cursor, others at end of track.
@@ -199,7 +199,7 @@ void ClipsViewPort::dragMoveEvent( QDragMoveEvent * event )
 	// no mouse move events during D&D move events...
 	// So we need to calculate the scene pos ourselves.
     QList<QGraphicsItem *> itemlist = items(mapFromGlobal(QCursor::pos()));
-	foreach(QGraphicsItem* obj, itemlist) {
+	for (QGraphicsItem* obj : itemlist) {
 		AudioTrackView* tv = dynamic_cast<AudioTrackView*>(obj);
 		if (tv) {
 			m_importTrack = tv->get_track();

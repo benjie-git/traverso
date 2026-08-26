@@ -34,7 +34,5 @@
 	<string>Traverso needs access to audio input devices for recording.</string>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
-	<key>NSRequiresAquaSystemAppearance</key>
-	<true/>
 </dict>
 </plist>

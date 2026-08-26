@@ -98,7 +98,7 @@ void ResampleAudioReader::clear_buffers()
 // Clear the samplerateconverter to a clean state (used on seek)
 void ResampleAudioReader::reset()
 {
-	foreach(SRC_STATE* state, m_srcStates) {
+	for (SRC_STATE* state : m_srcStates) {
 		src_reset(state);
 	}
 	

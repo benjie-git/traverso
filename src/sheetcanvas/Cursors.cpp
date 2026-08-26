@@ -30,6 +30,7 @@
 #include <QPen>
 #include <QScrollBar>
 #include <QApplication>
+#include <QEasingCurve>
 		
 // Always put me below _all_ includes, this is needed
 // in case we run with memory leak detection enabled!
@@ -51,7 +52,7 @@ PlayHead::PlayHead(SheetView* sv, TSession* session, ClipsViewPort* vp)
 	
 	// TODO: Make duration scale with scalefactor? (nonlinerly?)
 	m_animation.setDuration(ANIME_DURATION);
-	m_animation.setCurveShape(QTimeLine::EaseInOutCurve);
+	m_animation.setEasingCurve(QEasingCurve::InOutQuad);
 	
 	connect(m_session, SIGNAL(transportStarted()), this, SLOT(play_start()));
 	connect(m_session, SIGNAL(transportStopped()), this, SLOT(play_stop()));
