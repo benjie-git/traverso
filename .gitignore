@@ -13,6 +13,7 @@ CPackConfig.cmake
 CPackSourceConfig.cmake
 cmake_install.cmake
 cmake_uninstall.cmake
+compile_commands.json
 Makefile
 /src/config.h
 .cmake
