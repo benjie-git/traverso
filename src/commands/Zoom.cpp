@@ -188,8 +188,6 @@ void Zoom::hzoom_out()
 
 void Zoom::track_vzoom_in()
 {
-
-
         if (!m_tv) {
                 return;
         }
@@ -202,8 +200,6 @@ void Zoom::track_vzoom_in()
 
 void Zoom::track_vzoom_out()
 {
-
-
         if (!m_tv) {
                 return;
         }

@@ -833,6 +833,15 @@ bool TInputEventDispatcher::is_holding( )
 	return m_isHolding;
 }
 
+bool TInputEventDispatcher::is_holding_modifier_key(const char *keyname)
+{
+	int eventcode = 0;
+	if (t_KeyStringToKeyValue(eventcode, keyname)) {
+		return m_activeModifierKeys.contains(eventcode);
+	}
+	return false;
+}
+
 TCommand * TInputEventDispatcher::get_holding_command() const
 {
 	return m_holdingCommand;

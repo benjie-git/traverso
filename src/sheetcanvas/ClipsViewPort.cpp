@@ -29,6 +29,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA.
 #include <Import.h>
 #include <CommandGroup.h>
 #include "RemoveClip.h"
+#include "TInputEventDispatcher.h"
 
 #include "AudioDevice.h"
 
@@ -226,17 +227,20 @@ void ClipsViewPort::wheelEvent ( QWheelEvent * e )
   	}
 }
 
-// Catch native Mac trackpad gestures
+// Catch native trackpad gestures
 bool ClipsViewPort::event(QEvent *event)
 {
     if (event->type() == QEvent::NativeGesture) {
         QNativeGestureEvent *gestureEvent = static_cast<QNativeGestureEvent*>(event);
         if (gestureEvent->gestureType() == Qt::ZoomNativeGesture) {
-            qreal zoomFactor = 1 - 2*gestureEvent->value(); 
-            
-            SheetView* sv = m_sw->get_sheetview();
-            sv->hzoom(zoomFactor);
-            
+            qreal zoomFactor = 2*gestureEvent->value(); 
+
+            if (ied().is_holding_modifier_key("SHIFT")) {
+                m_sv->vzoom(1+zoomFactor);
+            }
+            else {
+                m_sv->hzoom(1-zoomFactor);
+            }
             return true; // Event handled
         }
     }

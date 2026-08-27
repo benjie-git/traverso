@@ -237,6 +237,14 @@ TraversoCommands::TraversoCommands()
     add_function(function, ZoomCommand);
 
     function = new TFunction();
+    function->object = "SheetView";
+    function->setDescription(tr("Zoom Vertical"));
+    function->commandName = "ZoomVertical";
+    function->useY = true;
+    function->arguments << "VJogZoom" << "1.2" << "0.2";
+    add_function(function, ZoomCommand);
+
+    function = new TFunction();
     function->object = "TimeLineView";
     function->setDescription(tr("Move Marker"));
     function->commandName = "TimeLineMoveMarker";
