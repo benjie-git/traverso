@@ -965,7 +965,7 @@ void RecordingConfigPage::load_config()
 	int index = config().get_property("Conversion", "RTResamplingConverterType", DEFAULT_RESAMPLE_QUALITY).toInt();
 	ontheflyResampleComboBox->setCurrentIndex(index);
 	
-	index = config().get_property("Conversion", "ExportResamplingConverterType", 1).toInt();
+	index = config().get_property("Conversion", "ExportResamplingConverterType", 0).toInt();
 	exportDefaultResampleQualityComboBox->setCurrentIndex(index);
 }
 

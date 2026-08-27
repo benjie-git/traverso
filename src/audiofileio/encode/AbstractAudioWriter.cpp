@@ -25,6 +25,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA.
 #if defined MP3_ENCODE_SUPPORT
 #include "LameAudioWriter.h"
 #endif
+#if defined M4A_ENCODE_SUPPORT
+#include "FaacAudioWriter.h"
+#endif
 #include "VorbisAudioWriter.h"
 #include "FlacAudioWriter.h"
 
@@ -32,6 +35,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA.
 
 RELAYTOOL_WAVPACK;
 RELAYTOOL_MP3LAME;
+RELAYTOOL_FAAC;
 RELAYTOOL_FLAC;
 
 // Always put me below _all_ includes, this is needed
@@ -143,6 +147,11 @@ AbstractAudioWriter* AbstractAudioWriter::create_audio_writer(const QString& typ
 #if defined MP3_ENCODE_SUPPORT
 	else if (libmp3lame_is_present && type == "lame") {
 		return new LameAudioWriter();
+	}
+#endif
+#if defined M4A_ENCODE_SUPPORT
+	else if (libfaac_is_present && type == "faac") {
+		return new FaacAudioWriter();
 	}
 #endif
 	else if (type == "vorbis") {

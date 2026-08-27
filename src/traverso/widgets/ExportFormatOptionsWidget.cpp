@@ -29,6 +29,7 @@
 RELAYTOOL_WAVPACK;
 RELAYTOOL_FLAC;
 RELAYTOOL_MP3LAME;
+RELAYTOOL_FAAC;
 RELAYTOOL_VORBISENC;
 
 // Always put me below _all_ includes, this is needed
@@ -74,6 +75,11 @@ ExportFormatOptionsWidget::ExportFormatOptionsWidget( QWidget * parent )
 #if defined MP3_ENCODE_SUPPORT
 	if (libmp3lame_is_present) {
 		audioTypeComboBox->addItem("MP3", "mp3");
+	}
+#endif
+#if defined M4A_ENCODE_SUPPORT
+	if (libfaac_is_present) {
+		audioTypeComboBox->addItem("M4A", "m4a");
 	}
 #endif
 	if (libvorbisenc_is_present) {
@@ -176,6 +182,22 @@ ExportFormatOptionsWidget::ExportFormatOptionsWidget( QWidget * parent )
 	checked = config().get_property("ExportFormatOptionsWidget", "skipWVXCheckBox", "false").toBool();
 	skipWVXCheckBox->setChecked(checked);
 
+	// M4A Options Setup
+	m4aBitrateComboBox->addItem("64 Kbps", "64");
+	m4aBitrateComboBox->addItem("96 Kbps", "96");
+	m4aBitrateComboBox->addItem("128 Kbps", "128");
+	m4aBitrateComboBox->addItem("160 Kbps", "160");
+	m4aBitrateComboBox->addItem("192 Kbps - recommended", "192");
+	m4aBitrateComboBox->addItem("224 Kbps", "224");
+	m4aBitrateComboBox->addItem("256 Kbps", "256");
+	m4aBitrateComboBox->addItem("320 Kbps", "320");
+
+	option = config().get_property("ExportFormatOptionsWidget", "m4aBitrateComboBox", "192").toString();
+	index = m4aBitrateComboBox->findData(option);
+	m4aBitrateComboBox->setCurrentIndex(index >= 0 ? index : 4);
+
+	m4aOptionsGroupBox->hide();
+
 	
 	option = config().get_property("ExportFormatOptionsWidget", "audioTypeComboBox", "wav").toString();
 	index = audioTypeComboBox->findData(option);
@@ -184,9 +206,9 @@ ExportFormatOptionsWidget::ExportFormatOptionsWidget( QWidget * parent )
 	checked = config().get_property("ExportFormatOptionsWidget", "normalizeCheckBox", "false").toBool();
 	normalizeCheckBox->setChecked(checked);
 	
-	index = config().get_property("ExportFormatOptionsWidget", "resampleQualityComboBox", "1").toInt();
+	index = config().get_property("ExportFormatOptionsWidget", "resampleQualityComboBox", "0").toInt();
 	index = resampleQualityComboBox->findData(index);
-	resampleQualityComboBox->setCurrentIndex(index >= 0 ? index : 1);
+	resampleQualityComboBox->setCurrentIndex(index >= 0 ? index : 0);
 	
 	option = config().get_property("ExportFormatOptionsWidget", "bitdepthComboBox", "16").toString();
 	index = bitdepthComboBox->findData(option);
@@ -202,6 +224,7 @@ ExportFormatOptionsWidget::~ ExportFormatOptionsWidget( )
 	config().set_property("ExportDialog", "oggMethodComboBox", oggMethodComboBox->itemData(oggMethodComboBox->currentIndex()).toString());
 	config().set_property("ExportDialog", "oggBitrateComboBox", oggBitrateComboBox->itemData(oggBitrateComboBox->currentIndex()).toString());
 	config().set_property("ExportDialog", "wavpackCompressionComboBox", wavpackCompressionComboBox->itemData(wavpackCompressionComboBox->currentIndex()).toString());
+	config().set_property("ExportDialog", "m4aBitrateComboBox", m4aBitrateComboBox->itemData(m4aBitrateComboBox->currentIndex()).toString());
 	config().set_property("ExportDialog", "audioTypeComboBox", audioTypeComboBox->itemData(audioTypeComboBox->currentIndex()).toString());
 	config().set_property("ExportDialog", "normalizeCheckBox", normalizeCheckBox->isChecked());
 	config().set_property("ExportDialog", "skipWVXCheckBox", skipWVXCheckBox->isChecked());
@@ -217,25 +240,35 @@ void ExportFormatOptionsWidget::audio_type_changed(int index)
 	if (newType == "mp3") {
 		oggOptionsGroupBox->hide();
 		wacpackGroupBox->hide();
+		m4aOptionsGroupBox->hide();
 		mp3OptionsGroupBox->show();
 	}
 	else if (newType == "ogg") {
 		mp3OptionsGroupBox->hide();
 		wacpackGroupBox->hide();
+		m4aOptionsGroupBox->hide();
 		oggOptionsGroupBox->show();
 	}
 	else if (newType == "wavpack") {
 		mp3OptionsGroupBox->hide();
 		oggOptionsGroupBox->hide();
+		m4aOptionsGroupBox->hide();
 		wacpackGroupBox->show();
+	}
+	else if (newType == "m4a") {
+		mp3OptionsGroupBox->hide();
+		oggOptionsGroupBox->hide();
+		wacpackGroupBox->hide();
+		m4aOptionsGroupBox->show();
 	}
 	else {
 		mp3OptionsGroupBox->hide();
 		wacpackGroupBox->hide();
 		oggOptionsGroupBox->hide();
+		m4aOptionsGroupBox->hide();
 	}
 	
-	if (newType == "mp3" || newType == "ogg" || newType == "flac") {
+	if (newType == "mp3" || newType == "ogg" || newType == "flac" || newType == "m4a") {
 		bitdepthComboBox->setCurrentIndex(bitdepthComboBox->findData(16));
 		bitdepthComboBox->setDisabled(true);
 	}
@@ -312,6 +345,10 @@ void ExportFormatOptionsWidget::get_format_options(ExportSpecification * spec)
 		spec->extraFormat["minBitrate"] = mp3MinBitrateComboBox->itemData(mp3MinBitrateComboBox->currentIndex()).toString();
 		spec->extraFormat["maxBitrate"] = mp3MaxBitrateComboBox->itemData(mp3MaxBitrateComboBox->currentIndex()).toString();
 		spec->extraFormat["quality"] = QString::number(mp3QualitySlider->value());
+	}
+	else if (audioType == "m4a") {
+		spec->writerType = "faac";
+		spec->extraFormat["bitrate"] = m4aBitrateComboBox->itemData(m4aBitrateComboBox->currentIndex()).toString();
 	}
 	else if (audioType == "ogg") {
 		spec->writerType = "vorbis";

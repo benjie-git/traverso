@@ -647,6 +647,65 @@ p, li { white-space: pre-wrap; }
              </layout>
             </widget>
            </item>
+           <item>
+            <widget class="QGroupBox" name="m4aOptionsGroupBox" >
+             <property name="sizePolicy" >
+              <sizepolicy vsizetype="Maximum" hsizetype="Preferred" >
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="title" >
+              <string>M4A Options</string>
+             </property>
+             <layout class="QGridLayout" >
+              <property name="leftMargin" >
+               <number>9</number>
+              </property>
+              <property name="topMargin" >
+               <number>9</number>
+              </property>
+              <property name="rightMargin" >
+               <number>9</number>
+              </property>
+              <property name="bottomMargin" >
+               <number>9</number>
+              </property>
+              <property name="horizontalSpacing" >
+               <number>9</number>
+              </property>
+              <property name="verticalSpacing" >
+               <number>9</number>
+              </property>
+              <item row="0" column="0" >
+               <widget class="QLabel" name="m4aBitrateLabel" >
+                <property name="sizePolicy" >
+                 <sizepolicy vsizetype="Preferred" hsizetype="Preferred" >
+                  <horstretch>4</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="text" >
+                 <string>Bitrate</string>
+                </property>
+                <property name="alignment" >
+                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="1" >
+               <widget class="QComboBox" name="m4aBitrateComboBox" >
+                <property name="sizePolicy" >
+                 <sizepolicy vsizetype="Fixed" hsizetype="Expanding" >
+                  <horstretch>5</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </widget>
+           </item>
           </layout>
          </item>
         </layout>

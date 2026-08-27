@@ -76,6 +76,7 @@ option(WANT_COREAUDIO "Include CoreAudio support (macOS)" ${DEFAULT_WANT_COREAUD
 option(WANT_LV2 "Include LV2 Plugin support" ${DEFAULT_WANT_LV2})
 option(WANT_MP3_DECODE "Include MP3 decoding support (libmad)" ON)
 option(WANT_MP3_ENCODE "Include MP3 encoding support (lame)" ON)
+option(WANT_M4A_ENCODE "Include M4A/AAC encoding support (faac)" ON)
 option(WANT_PCH "Use precompiled headers" OFF)
 option(WANT_TRAVERSO_DEBUG "Enable Traverso debug output on command line" OFF)
 option(WANT_THREAD_CHECK "Enable runtime thread checks for debugging" OFF)
@@ -260,6 +261,29 @@ if(WANT_MP3_ENCODE)
     endif()
 endif()
 
+set(HAVE_M4A_ENCODING FALSE)
+if(WANT_M4A_ENCODE)
+    pkg_check_modules(FAAC IMPORTED_TARGET faac)
+    if(NOT FAAC_FOUND)
+        find_path(FAAC_INCLUDE_DIR faac.h)
+        find_library(FAAC_LIBRARY NAMES faac)
+        if(FAAC_INCLUDE_DIR AND FAAC_LIBRARY)
+            add_library(PkgConfig::FAAC UNKNOWN IMPORTED)
+            set_target_properties(PkgConfig::FAAC PROPERTIES
+                INTERFACE_INCLUDE_DIRECTORIES "${FAAC_INCLUDE_DIR}"
+                IMPORTED_LOCATION "${FAAC_LIBRARY}"
+            )
+            set(FAAC_FOUND TRUE)
+        endif()
+    endif()
+    if(FAAC_FOUND)
+        set(HAVE_M4A_ENCODING TRUE)
+        traverso_add_definition(M4A_ENCODE_SUPPORT)
+    else()
+        message(FATAL_ERROR "M4A encoding requested but faac not found")
+    endif()
+endif()
+
 # Build formatted TRAVERSO_DEFINES string
 set(TRAVERSO_DEFINES "")
 foreach(def IN LISTS TRAVERSO_DEFINES_LIST)
@@ -328,6 +352,7 @@ Traverso ${VERSION} Configuration Summary:
   LV2 (Lilv) support    : ${HAVE_LILV}
   MP3 decode support    : ${HAVE_MP3_DECODING}
   MP3 encode support    : ${HAVE_MP3_ENCODING}
+  M4A encode support    : ${HAVE_M4A_ENCODING}
   SSE optimizations     : ${HOST_SUPPORTS_SSE}
   Precompiled headers   : ${WANT_PCH}
 --------------------------------------------------

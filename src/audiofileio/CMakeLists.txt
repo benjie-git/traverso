@@ -20,6 +20,10 @@ if(HAVE_MP3_ENCODING)
     list(APPEND TRAVERSO_AUDIOFILEIO_SOURCES encode/LameAudioWriter.cpp)
 endif()
 
+if(HAVE_M4A_ENCODING)
+    list(APPEND TRAVERSO_AUDIOFILEIO_SOURCES encode/FaacAudioWriter.cpp)
+endif()
+
 add_library(traversoaudiofileio STATIC ${TRAVERSO_AUDIOFILEIO_SOURCES})
 
 target_include_directories(traversoaudiofileio
@@ -54,6 +58,10 @@ endif()
 
 if(HAVE_MP3_ENCODING)
     target_link_libraries(traversoaudiofileio PUBLIC PkgConfig::LAME)
+endif()
+
+if(HAVE_M4A_ENCODING)
+    target_link_libraries(traversoaudiofileio PUBLIC PkgConfig::FAAC)
 endif()
 
 if(WANT_PCH)
