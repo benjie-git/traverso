@@ -78,7 +78,7 @@ extern "C"
 }
 #endif
 
-#if defined (__APPLE__)  && defined (BUILD_VECLIB_OPTIMIZATIONS)
+#if defined (__APPLE__)
 
 float veclib_compute_peak              (const audio_sample_t* buf, nframes_t nsamples, float current);
 void  veclib_apply_gain_to_buffer      (audio_sample_t* buf, nframes_t nframes, float gain);

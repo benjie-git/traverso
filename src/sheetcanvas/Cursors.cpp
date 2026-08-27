@@ -170,7 +170,7 @@ void PlayHead::update_position()
 	
 	int vpWidth = m_vp->viewport()->width();
 	
-	// When timeref_scalefactor is below 5120, the playhead moves faster then teh view scrolls
+	// When timeref_scalefactor is below 5120, the playhead moves faster then the view scrolls
 	// so it's better to keep the view centered around the playhead.
 	if (m_mode == CENTERED || (m_sv->timeref_scalefactor <= 10280) ) {
                 // For some reason on some systems the event of

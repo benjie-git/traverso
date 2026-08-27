@@ -29,23 +29,23 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/lib")
 
 # Qt6 setup
 if(APPLE)
-    if(EXISTS "/opt/homebrew/opt/qt")
-        list(PREPEND CMAKE_PREFIX_PATH "/opt/homebrew/opt/qt")
-    elseif(EXISTS "/opt/homebrew/opt/qt@6")
-        list(PREPEND CMAKE_PREFIX_PATH "/opt/homebrew/opt/qt@6")
-    elseif(EXISTS "/usr/local/opt/qt")
-        list(PREPEND CMAKE_PREFIX_PATH "/usr/local/opt/qt")
-    elseif(EXISTS "/usr/local/opt/qt@6")
-        list(PREPEND CMAKE_PREFIX_PATH "/usr/local/opt/qt@6")
-    elseif(EXISTS "/opt/local/libexec/qt6")
-        list(PREPEND CMAKE_PREFIX_PATH "/opt/local/libexec/qt6")
+    if(EXISTS "/opt/homebrew/opt/qtbase")
+        list(PREPEND CMAKE_PREFIX_PATH "/opt/homebrew/opt/qtbase")
+    elseif(EXISTS "/usr/local/opt/qtbase")
+        list(PREPEND CMAKE_PREFIX_PATH "/usr/local/opt/qtbase")
+    endif()
+
+    if(EXISTS "/opt/homebrew/opt/qtsvg")
+        list(PREPEND CMAKE_PREFIX_PATH "/opt/homebrew/opt/qtsvg")
+    elseif(EXISTS "/usr/local/opt/qtsvg")
+        list(PREPEND CMAKE_PREFIX_PATH "/usr/local/opt/qtsvg")
     endif()
 endif()
 
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTORCC ON)
-find_package(Qt6 6.0 REQUIRED COMPONENTS Core Widgets Xml)
+find_package(Qt6 6.0 REQUIRED COMPONENTS Core Widgets Xml Svg)
 
 # Options with platform defaults
 if(APPLE)
@@ -81,7 +81,6 @@ option(WANT_M4A_ENCODE "Include M4A/AAC encoding support (faac)" ON)
 option(WANT_PCH "Use precompiled headers" OFF)
 option(WANT_TRAVERSO_DEBUG "Enable Traverso debug output on command line" OFF)
 option(WANT_THREAD_CHECK "Enable runtime thread checks for debugging" OFF)
-option(WANT_VECLIB_OPTIMIZATIONS "Build with VecLib optimizations (Mac OS X PowerPC/Tiger)" OFF)
 option(WANT_SSE "Use SSE instruction set optimizations (x86/x86_64 only)" ON)
 
 # Version tagging option
@@ -107,10 +106,6 @@ endif()
 
 if(WANT_THREAD_CHECK)
     traverso_add_definition(THREAD_CHECK)
-endif()
-
-if(APPLE AND WANT_VECLIB_OPTIMIZATIONS)
-    traverso_add_definition(BUILD_VECLIB_OPTIMIZATIONS)
 endif()
 
 if(WIN32)

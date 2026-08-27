@@ -47,9 +47,6 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA.
 #ifdef __SSE__
 #include <xmmintrin.h>
 #endif
-#if defined (__APPLE__)
-#include <Carbon/Carbon.h> // For Gestalt
-#endif
 
 
 // Always put me below _all_ includes, this is needed
@@ -222,22 +219,15 @@ void Traverso::init_sse( )
 
     }
 
-#elif defined (__APPLE__) && defined (BUILD_VECLIB_OPTIMIZATIONS)
-    long sysVersion = 0;
+#elif defined (__APPLE__)
+    Mixer::compute_peak           = veclib_compute_peak;
+    Mixer::apply_gain_to_buffer   = veclib_apply_gain_to_buffer;
+    Mixer::mix_buffers_with_gain  = veclib_mix_buffers_with_gain;
+    Mixer::mix_buffers_no_gain    = veclib_mix_buffers_no_gain;
 
-    if (noErr != Gestalt(gestaltSystemVersion, &sysVersion))
-        sysVersion = 0;
+    generic_mix_functions = false;
 
-    if (sysVersion >= 0x00001040) { // Tiger at least
-        Mixer::compute_peak           = veclib_compute_peak;
-        Mixer::apply_gain_to_buffer   = veclib_apply_gain_to_buffer;
-        Mixer::mix_buffers_with_gain  = veclib_mix_buffers_with_gain;
-        Mixer::mix_buffers_no_gain    = veclib_mix_buffers_no_gain;
-
-        generic_mix_functions = false;
-
-        printf("Apple VecLib H/W specific optimizations in use\n");
-    }
+    printf("Apple Accelerate/vDSP H/W specific optimizations in use\n");
 #endif
 
     /* consider FPU denormal handling to be "h/w optimization" */

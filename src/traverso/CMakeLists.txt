@@ -74,11 +74,12 @@ target_link_libraries(traverso
         Qt6::Core
         Qt6::Widgets
         Qt6::Xml
+        Qt6::Svg
         ${CMAKE_DL_LIBS}
 )
 
 if(APPLE)
-    target_link_libraries(traverso PRIVATE "-framework CoreFoundation")
+    target_link_libraries(traverso PRIVATE "-framework CoreFoundation" "-framework Accelerate")
 endif()
 
 if(WIN32)
