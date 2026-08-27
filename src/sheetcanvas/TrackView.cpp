@@ -220,7 +220,6 @@ int TrackView::get_total_height()
 		if (lane->isVisible()) {
 			totalHeight += lane->get_height() + m_laneSpacing;
 		}
-
 	}
 
 	totalHeight += m_laneSpacing;

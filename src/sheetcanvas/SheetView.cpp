@@ -432,7 +432,7 @@ void SheetView::update_scrollbars()
 	m_hScrollBar->setSingleStep(m_clipsViewPort->width() / 10);
 	m_hScrollBar->setPageStep(m_clipsViewPort->width());
 
-	m_vScrollBar->setRange(0, m_sceneHeight - m_clipsViewPort->height() / 2);
+	m_vScrollBar->setRange(0, m_sceneHeight - m_clipsViewPort->height() + 8);
 	m_vScrollBar->setSingleStep(m_clipsViewPort->height() / 10);
 	m_vScrollBar->setPageStep(m_clipsViewPort->height());
 

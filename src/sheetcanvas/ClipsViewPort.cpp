@@ -58,7 +58,7 @@ ClipsViewPort::ClipsViewPort(QGraphicsScene* scene, SheetWidget* sw)
 void ClipsViewPort::resizeEvent( QResizeEvent * e )
 {
 	ViewPort::resizeEvent(e);
-//	m_sw->get_sheetview()->clipviewport_resize_event();
+	m_sw->get_sheetview()->clipviewport_resize_event();
 }
 
 
