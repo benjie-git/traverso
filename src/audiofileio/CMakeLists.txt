@@ -16,6 +16,10 @@ if(HAVE_MP3_DECODING)
     list(APPEND TRAVERSO_AUDIOFILEIO_SOURCES decode/MadAudioReader.cpp)
 endif()
 
+if(HAVE_M4A_DECODING)
+    list(APPEND TRAVERSO_AUDIOFILEIO_SOURCES decode/FaadAudioReader.cpp)
+endif()
+
 if(HAVE_MP3_ENCODING)
     list(APPEND TRAVERSO_AUDIOFILEIO_SOURCES encode/LameAudioWriter.cpp)
 endif()
@@ -32,6 +36,7 @@ target_include_directories(traversoaudiofileio
         ${CMAKE_CURRENT_SOURCE_DIR}/decode
         ${CMAKE_CURRENT_SOURCE_DIR}/encode
         ${CMAKE_SOURCE_DIR}/src/common
+        ${CMAKE_SOURCE_DIR}/src/3rdparty
     PRIVATE
         ${CMAKE_SOURCE_DIR}/src/core
         ${PROJECT_BINARY_DIR}
@@ -54,6 +59,10 @@ target_link_libraries(traversoaudiofileio
 
 if(HAVE_MP3_DECODING)
     target_link_libraries(traversoaudiofileio PUBLIC PkgConfig::MAD)
+endif()
+
+if(HAVE_M4A_DECODING)
+    target_link_libraries(traversoaudiofileio PUBLIC PkgConfig::FAAD2)
 endif()
 
 if(HAVE_MP3_ENCODING)

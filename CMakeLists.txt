@@ -76,6 +76,7 @@ option(WANT_COREAUDIO "Include CoreAudio support (macOS)" ${DEFAULT_WANT_COREAUD
 option(WANT_LV2 "Include LV2 Plugin support" ${DEFAULT_WANT_LV2})
 option(WANT_MP3_DECODE "Include MP3 decoding support (libmad)" ON)
 option(WANT_MP3_ENCODE "Include MP3 encoding support (lame)" ON)
+option(WANT_M4A_DECODE "Include M4A/AAC decoding support (faad2)" ON)
 option(WANT_M4A_ENCODE "Include M4A/AAC encoding support (faac)" ON)
 option(WANT_PCH "Use precompiled headers" OFF)
 option(WANT_TRAVERSO_DEBUG "Enable Traverso debug output on command line" OFF)
@@ -261,6 +262,36 @@ if(WANT_MP3_ENCODE)
     endif()
 endif()
 
+set(HAVE_M4A_DECODING FALSE)
+if(WANT_M4A_DECODE)
+    pkg_check_modules(FAAD2 IMPORTED_TARGET faad2)
+    if(NOT FAAD2_FOUND)
+        pkg_check_modules(FAAD IMPORTED_TARGET faad)
+        if(FAAD_FOUND)
+            set(FAAD2_FOUND TRUE)
+            add_library(PkgConfig::FAAD2 ALIAS PkgConfig::FAAD)
+        endif()
+    endif()
+    if(NOT FAAD2_FOUND)
+        find_path(FAAD2_INCLUDE_DIR neaacdec.h)
+        find_library(FAAD2_LIBRARY NAMES faad faad2)
+        if(FAAD2_INCLUDE_DIR AND FAAD2_LIBRARY)
+            add_library(PkgConfig::FAAD2 UNKNOWN IMPORTED)
+            set_target_properties(PkgConfig::FAAD2 PROPERTIES
+                INTERFACE_INCLUDE_DIRECTORIES "${FAAD2_INCLUDE_DIR}"
+                IMPORTED_LOCATION "${FAAD2_LIBRARY}"
+            )
+            set(FAAD2_FOUND TRUE)
+        endif()
+    endif()
+    if(FAAD2_FOUND)
+        set(HAVE_M4A_DECODING TRUE)
+        traverso_add_definition(M4A_DECODE_SUPPORT)
+    else()
+        message(FATAL_ERROR "M4A decoding requested but faad2 not found")
+    endif()
+endif()
+
 set(HAVE_M4A_ENCODING FALSE)
 if(WANT_M4A_ENCODE)
     pkg_check_modules(FAAC IMPORTED_TARGET faac)
@@ -352,6 +383,7 @@ Traverso ${VERSION} Configuration Summary:
   LV2 (Lilv) support    : ${HAVE_LILV}
   MP3 decode support    : ${HAVE_MP3_DECODING}
   MP3 encode support    : ${HAVE_MP3_ENCODING}
+  M4A decode support    : ${HAVE_M4A_DECODING}
   M4A encode support    : ${HAVE_M4A_ENCODING}
   SSE optimizations     : ${HOST_SUPPORTS_SSE}
   Precompiled headers   : ${WANT_PCH}

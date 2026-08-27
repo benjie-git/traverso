@@ -226,7 +226,7 @@ void NewProjectDialog::add_files()
 
 	QStringList list = QFileDialog::getOpenFileNames(this, tr("Open Audio Files"),
                         importdir,
-                        tr("Audio files (*.wav *.flac *.ogg *.mp3 *.wv *.w64)"));
+                        tr("Audio files (*.wav *.flac *.ogg *.mp3 *.m4a *.mp4 *.aac *.wv *.w64)"));
         
         if (list.size()) {
                 QFileInfo info(list.at(0));

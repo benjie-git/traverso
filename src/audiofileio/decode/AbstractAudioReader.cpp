@@ -25,6 +25,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA.
 #if defined MP3_DECODE_SUPPORT
 #include "MadAudioReader.h"
 #endif
+#if defined M4A_DECODE_SUPPORT
+#include "FaadAudioReader.h"
+#endif
 #include "WPAudioReader.h"
 #include "VorbisAudioReader.h"
 #include "ResampleAudioReader.h"
@@ -140,6 +143,11 @@ AbstractAudioReader* AbstractAudioReader::create_audio_reader(const QString& fil
             newReader = new MadAudioReader(filename);
         }
 #endif
+#if defined M4A_DECODE_SUPPORT
+        else if (decoder == "faad" || decoder == "m4a") {
+            newReader = new FaadAudioReader(filename);
+        }
+#endif
 
         if (newReader && !newReader->is_valid()) {
 //            PERROR("new %s reader is invalid! (channels: %d, frames: %d)", QS_C(newReader->decoder_type()), newReader->get_num_channels(), newReader->get_nframes());
@@ -165,6 +173,11 @@ AbstractAudioReader* AbstractAudioReader::create_audio_reader(const QString& fil
 #if defined MP3_DECODE_SUPPORT
         else if (MadAudioReader::can_decode(filename)) {
             newReader = new MadAudioReader(filename);
+        }
+#endif
+#if defined M4A_DECODE_SUPPORT
+        else if (FaadAudioReader::can_decode(filename)) {
+            newReader = new FaadAudioReader(filename);
         }
 #endif
     }

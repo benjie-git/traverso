@@ -514,6 +514,10 @@ static inline long get_microseconds()
 	extern int libfaac_is_present;\
 	extern int libfaac_symbol_is_present(char *s);
 
+#define RELAYTOOL_FAAD \
+	extern int libfaad_is_present;\
+	extern int libfaad_symbol_is_present(char *s);
+
 #else
 
 
@@ -556,6 +560,10 @@ static inline long get_microseconds()
 #define RELAYTOOL_FAAC \
 	static const int libfaac_is_present=1;\
 	static int __attribute__((unused)) libfaac_symbol_is_present(char *) { return 1; }
+
+#define RELAYTOOL_FAAD \
+	static const int libfaad_is_present=1;\
+	static int __attribute__((unused)) libfaad_symbol_is_present(char *) { return 1; }
 
 #endif // endif RELAYTOOL_PRESENT
 
