@@ -207,6 +207,9 @@ SheetWidget::SheetWidget(TSession* sheet, QWidget* parent)
 		SIGNAL(valueChanged(int)),
 		m_clipsViewPort->verticalScrollBar(), 
 		SLOT(setValue(int)));
+
+        m_timeLine->horizontalScrollBar()->setValue(
+                m_clipsViewPort->horizontalScrollBar()->value());
 	
 	connect(themer(), SIGNAL(themeLoaded()), this, SLOT(load_theme_data()), Qt::QueuedConnection);
 	
