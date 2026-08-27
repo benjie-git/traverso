@@ -80,6 +80,7 @@ public:
     bool decodeNextFrame();
     bool findNextHeader();
     bool checkFrameHeader(mad_header* header) const;
+    static bool isXingOrInfoFrame(const mad_header* header, const unsigned char* frame_data, size_t frame_len);
 
     void createInputBuffer();
     void clearInputBuffer();
@@ -94,6 +95,7 @@ private:
     bool m_madStructuresInitialized;
     unsigned char* m_inputBuffer;
     bool m_bInputError;
+    bool m_eofPadded;
 
     int m_channels{};
     int m_sampleRate{};

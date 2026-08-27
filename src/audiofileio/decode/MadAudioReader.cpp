@@ -1,5 +1,5 @@
 /*
-Copyright (C) 2007 Ben Levitt
+Copyright (C) 2007-2026 Ben Levitt
  * This file is based on the mp3 decoding plugin of the K3b project.
  * Copyright (C) 1998-2007 Sebastian Trueg <trueg@k3b.org>
 
@@ -40,7 +40,8 @@ static const int INPUT_BUFFER_SIZE = 5*8192;
 
 K3bMad::K3bMad()
   : m_madStructuresInitialized(false),
-    m_bInputError(false)
+    m_bInputError(false),
+    m_eofPadded(false)
 {
     madStream = new mad_stream;
     madFrame  = new mad_frame;
@@ -91,6 +92,7 @@ bool K3bMad::open(const QString& filename)
     cleanup();
 
     m_bInputError = false;
+    m_eofPadded = false;
     m_channels = m_sampleRate = 0;
 
     m_inputFile.setFileName(filename);
@@ -117,54 +119,54 @@ bool K3bMad::fillStreamBuffer()
     /* The input bucket must be filled if it becomes empty or if
     * it's the first execution of the loop.
     */
-    if (madStream->buffer == 0 || madStream->error == MAD_ERROR_BUFLEN) {
-        if (eof()) {
-            return false;
-        }
-
+    if (madStream->buffer == nullptr || madStream->error == MAD_ERROR_BUFLEN) {
         if (!m_inputBuffer) {
             createInputBuffer();
         }
 
-        long readSize, remaining;
+        long remaining = 0;
         unsigned char* readStart;
 
-        if (madStream->next_frame != 0) {
+        if (madStream->next_frame != nullptr) {
             remaining = madStream->bufend - madStream->next_frame;
-            memmove(m_inputBuffer, madStream->next_frame, remaining);
+            if (remaining > 0) {
+                memmove(m_inputBuffer, madStream->next_frame, remaining);
+            }
             readStart = m_inputBuffer + remaining;
-            readSize = INPUT_BUFFER_SIZE - remaining;
         }
         else {
-            readSize  = INPUT_BUFFER_SIZE;
             readStart = m_inputBuffer;
             remaining = 0;
         }
 
-        // Fill-in the buffer.
-        long result = m_inputFile.read((char*)readStart, readSize);
-        if (result < 0) {
-            //kdDebug() << "(K3bMad) read error on bitstream)" << endl;
-            m_bInputError = true;
-            return false;
-        }
-        else if (result == 0) {
-            //kdDebug() << "(K3bMad) end of input stream" << endl;
-            return false;
-        }
-        else {
-            readStart += result;
+        long readSize = INPUT_BUFFER_SIZE - remaining;
+        long result = 0;
 
-            if (eof()) {
-                //kdDebug() << "(K3bMad::fillStreamBuffer) MAD_BUFFER_GUARD" << endl;
-                memset(readStart, 0, MAD_BUFFER_GUARD);
-                result += MAD_BUFFER_GUARD;
+        if (!m_inputFile.atEnd()) {
+            result = m_inputFile.read((char*)readStart, readSize);
+            if (result < 0) {
+                m_bInputError = true;
+                return false;
             }
-
-            // Pipe the new buffer content to libmad's stream decoder facility.
-            mad_stream_buffer(madStream, m_inputBuffer, result + remaining);
-            madStream->error = MAD_ERROR_NONE;
         }
+
+        if (result == 0) {
+            if (m_eofPadded) {
+                return false;
+            }
+            memset(readStart, 0, MAD_BUFFER_GUARD);
+            result = MAD_BUFFER_GUARD;
+            m_eofPadded = true;
+        }
+        else if (m_inputFile.atEnd()) {
+            memset(readStart + result, 0, MAD_BUFFER_GUARD);
+            result += MAD_BUFFER_GUARD;
+            m_eofPadded = true;
+        }
+
+        // Pipe the new buffer content to libmad's stream decoder facility.
+        mad_stream_buffer(madStream, m_inputBuffer, result + remaining);
+        madStream->error = MAD_ERROR_NONE;
     }
 
     return true;
@@ -219,6 +221,49 @@ bool K3bMad::skipTag()
 }
 
 
+bool K3bMad::isXingOrInfoFrame(const mad_header* header, const unsigned char* frame_data, size_t frame_len)
+{
+    if (!header || !frame_data) {
+        return false;
+    }
+
+    size_t side_info_len = 0;
+    if (header->flags & MAD_FLAG_MPEG_2_5_EXT) {
+        // MPEG 2.5
+        side_info_len = (header->mode == MAD_MODE_SINGLE_CHANNEL) ? 9 : 17;
+    } else if (header->layer == MAD_LAYER_III) {
+        if (header->flags & MAD_FLAG_LSF_EXT) {
+            // MPEG 2
+            side_info_len = (header->mode == MAD_MODE_SINGLE_CHANNEL) ? 9 : 17;
+        } else {
+            // MPEG 1
+            side_info_len = (header->mode == MAD_MODE_SINGLE_CHANNEL) ? 17 : 32;
+        }
+    } else {
+        return false;
+    }
+
+    size_t xing_offset = 4 + side_info_len;
+    if (frame_len >= xing_offset + 4) {
+        const unsigned char* p = frame_data + xing_offset;
+        if ((p[0] == 'X' && p[1] == 'i' && p[2] == 'n' && p[3] == 'g') ||
+            (p[0] == 'I' && p[1] == 'n' && p[2] == 'f' && p[3] == 'o')) {
+            return true;
+        }
+    }
+
+    // Check VBRI header at offset 36 (4 + 32)
+    if (frame_len >= 36 + 4) {
+        const unsigned char* p = frame_data + 36;
+        if (p[0] == 'V' && p[1] == 'B' && p[2] == 'R' && p[3] == 'I') {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+
 bool K3bMad::seekFirstHeader()
 {
     //
@@ -228,25 +273,31 @@ bool K3bMad::seekFirstHeader()
     // take way to long for non-mp3 files.
     //
     bool headerFound = findNextHeader();
-    qint64 inputPos = streamPos();
+    qint64 startInputPos = streamPos();
     while (!headerFound &&
        !m_inputFile.atEnd() &&
-       streamPos() <= inputPos+1024) {
+       streamPos() <= startInputPos+1024) {
         headerFound = findNextHeader();
     }
 
-    // seek back to the begin of the frame
     if (headerFound) {
-        int streamSize = madStream->bufend - madStream->buffer;
-        int bytesToFrame = madStream->this_frame - madStream->buffer;
-        m_inputFile.seek(m_inputFile.pos() - streamSize + bytesToFrame);
-
-        //kdDebug() << "(K3bMad) found first header at " << m_inputFile.pos() << endl;
+        size_t frameLen = madStream->next_frame ? (madStream->next_frame - madStream->this_frame) : 0;
+        if (isXingOrInfoFrame(&madFrame->header, madStream->this_frame, frameLen)) {
+            // Skip the Xing/Info/VBRI metadata frame so it isn't decoded as silence
+            headerFound = findNextHeader();
+        }
     }
 
-    // reset the stream to make sure mad really starts decoding at out seek position
+    // seek back to the begin of the audio frame
+    if (headerFound) {
+        qint64 targetPos = streamPos();
+        m_inputFile.seek(targetPos);
+    }
+
+    // reset the stream to make sure mad really starts decoding at our seek position
     mad_stream_finish(madStream);
     mad_stream_init(madStream);
+    m_eofPadded = false;
 
     return headerFound;
 }
@@ -266,12 +317,15 @@ qint64 K3bMad::inputPos() const
 
 qint64 K3bMad::streamPos() const
 {
-    return inputPos() - (madStream->bufend - madStream->this_frame + 1);
+    return inputPos() - (madStream->bufend - madStream->this_frame);
 }
 
 
 bool K3bMad::inputSeek(qint64 pos)
 {
+    mad_stream_finish(madStream);
+    mad_stream_init(madStream);
+    m_eofPadded = false;
     return m_inputFile.seek(pos);
 }
 
@@ -291,6 +345,7 @@ void K3bMad::initMad()
 
 void K3bMad::cleanup()
 {
+    m_eofPadded = false;
     if (m_inputFile.isOpen()) {
         //kdDebug() << "(K3bMad) cleanup at offset: "
         //	      << "Input file at: " << m_inputFile.pos() << " "
@@ -465,8 +520,7 @@ MadAudioReader::MadAudioReader(const QString& filename)
 
     d->overflowBuffers = nullptr;
 
-    seek_private(0);
-    clear_buffers();
+    initDecoderInternal();
 }
 
 
@@ -598,75 +652,48 @@ bool MadAudioReader::seek_private(nframes_t start)
         return false;
     }
 
-    //
-    // search a position
-    // This is all hacking, I don't really know what I am doing here... ;)
-    //
-    double mp3FrameSecs = static_cast<double>(d->firstHeader.duration.seconds) + static_cast<double>(d->firstHeader.duration.fraction) / static_cast<double>(MAD_TIMER_RESOLUTION);
+    unsigned int samplesPerFrame = MAD_NSBSAMPLES(&d->firstHeader) * 32;
+    if (samplesPerFrame == 0) {
+        samplesPerFrame = 1152;
+    }
 
-    double posSecs = static_cast<double>(start) / m_rate;
+    unsigned int targetFrame = start / samplesPerFrame;
+    nframes_t frameOffset = start % samplesPerFrame;
 
-    // seekPosition to seek after frame i
-    unsigned int frame = static_cast<unsigned int>(posSecs / mp3FrameSecs);
-    nframes_t frameOffset = (nframes_t)(start - (frame * mp3FrameSecs * m_rate + 0.5));
+    if (d->seekPositions.isEmpty()) {
+        return false;
+    }
 
-    // K3b source: Rob said: 29 frames is the theoretically max frame reservoir limit
-    // (whatever that means...) it seems that mad needs at most 29 frames to get ready
-    //
-    // Ben says: It looks like Rob (the author of MAD) implies here:
-    //    http://www.mars.org/mailman/public/mad-dev/2001-August/000321.html
-    // that 3 frames (1 + 2 extra) is enough... much faster, and seems to work fine...
-    unsigned int frameReservoirProtect = (frame > 3 ? 3 : frame);
+    if (targetFrame >= static_cast<unsigned int>(d->seekPositions.size())) {
+        targetFrame = static_cast<unsigned int>(d->seekPositions.size()) - 1;
+    }
 
-    frame -= frameReservoirProtect;
+    unsigned int frameReservoirProtect = (targetFrame > 3 ? 3 : targetFrame);
+    unsigned int startFrame = targetFrame - frameReservoirProtect;
 
-    // seek in the input file behind the already decoded data
-    d->handle->inputSeek( d->seekPositions[frame] );
+    // seek in the input file to the warmup frame
+    d->handle->inputSeek( d->seekPositions[startFrame] );
 
-    // decode some frames ignoring MAD_ERROR_BADDATAPTR errors
-    unsigned int i = 1;
-    while (i <= frameReservoirProtect) {
-        d->handle->fillStreamBuffer();
-        if (mad_frame_decode( d->handle->madFrame, d->handle->madStream)) {
-            if (MAD_RECOVERABLE( d->handle->madStream->error)) {
-                if (d->handle->madStream->error == MAD_ERROR_BUFLEN) {
-                    continue;
-                }
-                else if (d->handle->madStream->error != MAD_ERROR_BADDATAPTR) {
-                    //kdDebug() << "(K3bMadDecoder) Seeking: recoverable mad error ("
-                    //<< mad_stream_errorstr(d->handle->madStream) << ")" << endl;
-                    continue;
-                }
-                else {
-                    //kdDebug() << "(K3bMadDecoder) Seeking: ignoring ("
-                    //<< mad_stream_errorstr(d->handle->madStream) << ")" << endl;
-                }
-            }
-            else {
-                return false;
-            }
+    // Seek to warmup frame
+    d->handle->inputSeek( d->seekPositions[startFrame] );
+
+    // Decode and synthesize warmup frames up to targetFrame
+    while (d->handle->streamPos() < static_cast<qint64>(d->seekPositions[targetFrame])) {
+        if (!d->handle->decodeNextFrame()) {
+            return false;
         }
-
-        if (i == frameReservoirProtect) {  // synth only the last frame (Rob said so ;)
-            mad_synth_frame( d->handle->madSynth, d->handle->madFrame );
-        }
-
-        ++i;
+        mad_synth_frame( d->handle->madSynth, d->handle->madFrame );
     }
 
     d->overflowStart = 0;
     d->overflowSize = 0;
 
-    // Seek to exact traverso frame, within this mp3 frame
-    if (frameOffset > 0) {
-        //printf("seekOffset: %lu (start: %lu)\n", frameOffset, start);
-        d->outputBuffers = nullptr; // Zeros so that we write to overflow
-        d->outputSize = 0;
-        d->outputPos = 0;
-        createPcmSamples(d->handle->madSynth);
-        d->overflowStart = frameOffset;
-        d->overflowSize -= frameOffset;
-    }
+    d->outputBuffers = nullptr; // Zeros so that we write to overflow
+    d->outputSize = 0;
+    d->outputPos = 0;
+    createPcmSamples(d->handle->madSynth);
+    d->overflowStart = frameOffset;
+    d->overflowSize = (d->overflowSize > frameOffset) ? (d->overflowSize - frameOffset) : 0;
 
     return true;
 }
@@ -715,7 +742,7 @@ unsigned long MadAudioReader::countFrames()
         // position in stream: position in file minus the not yet used buffer
         //
         unsigned long long seekPos = d->handle->inputPos() -
-        (d->handle->madStream->bufend - d->handle->madStream->this_frame + 1);
+        (d->handle->madStream->bufend - d->handle->madStream->this_frame);
 
         // save the number of bytes to be read to decode i-1 frames at position i
         // in other words: when seeking to seekPos the next decoded frame will be i
@@ -723,8 +750,11 @@ unsigned long MadAudioReader::countFrames()
     }
 
     if (!d->handle->inputError() && !error) {
-        frames =  d->firstHeader.samplerate * (d->handle->madTimer->seconds + (unsigned long)(
-            (float)d->handle->madTimer->fraction/(float)MAD_TIMER_RESOLUTION));
+        unsigned int samplesPerFrame = MAD_NSBSAMPLES(&d->firstHeader) * 32;
+        if (samplesPerFrame == 0) {
+            samplesPerFrame = 1152;
+        }
+        frames = d->seekPositions.size() * samplesPerFrame;
     }
 
     d->handle->cleanup();
