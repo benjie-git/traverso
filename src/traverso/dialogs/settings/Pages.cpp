@@ -837,6 +837,7 @@ void KeyboardConfigPage::load_config()
 	int jogByPassDistance = config().get_property("InputEventDispatcher", "jobbypassdistance", 70).toInt();
 	int mouseClickTakesOverKeyboardNavigation = config().get_property("InputEventDispatcher", "mouseclicktakesoverkeyboardnavigation", false).toBool();
 	bool enterFinishesHold = config().get_property("InputEventDispatcher", "EnterFinishesHold", false).toBool();
+	bool allowArrowKeyBrowsing = config().get_property("InputEventDispatcher", "AllowArrowKeyBrowsing", false).toBool();
 	
         mouseTreshHoldSpinBox->setValue(jogByPassDistance);
 
@@ -851,6 +852,8 @@ void KeyboardConfigPage::load_config()
 	} else {
         keyReleasedRadioButton->setChecked(true);
 	}
+
+	allowArrowKeyBrowsingCheckBox->setChecked(allowArrowKeyBrowsing);
 }
 
 void KeyboardConfigPage::save_config()
@@ -858,6 +861,7 @@ void KeyboardConfigPage::save_config()
 	config().set_property("InputEventDispatcher", "jobbypassdistance", mouseTreshHoldSpinBox->value());
 	config().set_property("InputEventDispatcher", "mouseclicktakesoverkeyboardnavigation", leftMouseClickRadioButton->isChecked());
     config().set_property("InputEventDispatcher", "EnterFinishesHold", enterPressedRadioButton->isChecked());
+	config().set_property("InputEventDispatcher", "AllowArrowKeyBrowsing", allowArrowKeyBrowsingCheckBox->isChecked());
 
         cpointer().set_jog_bypass_distance(mouseTreshHoldSpinBox->value());
         cpointer().set_left_mouse_click_bypasses_jog(leftMouseClickRadioButton->isChecked());
@@ -868,6 +872,7 @@ void KeyboardConfigPage::reset_default_config()
 	config().set_property("InputEventDispatcher", "jobbypassdistance", 70);
 	config().set_property("InputEventDispatcher", "mouseclicktakesoverkeyboardnavigation", false);
 	config().set_property("InputEventDispatcher", "EnterFinishesHold", false);
+	config().set_property("InputEventDispatcher", "AllowArrowKeyBrowsing", false);
 	load_config();
 }
 
@@ -877,6 +882,11 @@ void KeyboardConfigPage::on_exportButton_clicked()
 	QMessageBox::information( TMainWindow::instance(), tr("KeyMap Export"), 
 		     tr("The exported keymap can be found here:\n\n %1").arg(QDir::homePath() + "/traversokeymap.html"),
 		     QMessageBox::Ok);
+}
+
+void KeyboardConfigPage::on_editKeymapButton_clicked()
+{
+	TMainWindow::instance()->show_shortcuts_edit_dialog();
 }
 
 

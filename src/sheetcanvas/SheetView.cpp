@@ -1367,7 +1367,7 @@ void SheetView::do_keyboard_canvas_cursor_move(const QPointF &position)
 
 void SheetView::mouse_hover_move_event()
 {
-   set_canvas_cursor_pos(cpointer().scene_pos(), AbstractViewPort::CursorMoveReason::MOUSE_MOVE_EVENT);
+    set_canvas_cursor_pos(cpointer().scene_pos(), AbstractViewPort::CursorMoveReason::MOUSE_MOVE_EVENT);
 }
 
 void SheetView::context_changed()

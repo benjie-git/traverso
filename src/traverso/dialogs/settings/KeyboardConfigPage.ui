@@ -90,6 +90,22 @@
      </layout>
     </widget>
    </item>
+     <item>
+        <widget class="QGroupBox" name="arrowKeyBrowsingGroupBox">
+         <property name="title">
+            <string>Arrow Key Browsing</string>
+         </property>
+         <layout class="QVBoxLayout" name="arrowKeyBrowsingLayout">
+            <item>
+             <widget class="QCheckBox" name="allowArrowKeyBrowsingCheckBox">
+                <property name="text">
+                 <string>Allow Arrow Key Browsing</string>
+                </property>
+             </widget>
+            </item>
+         </layout>
+        </widget>
+     </item>
    <item>
     <widget class="QGroupBox" name="groupBox_2">
      <property name="title">
@@ -130,6 +146,13 @@
          <widget class="QPushButton" name="exportButton">
           <property name="text">
            <string>Export Keymap</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="editKeymapButton">
+          <property name="text">
+           <string>Edit Keymap</string>
           </property>
          </widget>
         </item>
