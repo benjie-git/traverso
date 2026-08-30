@@ -380,8 +380,7 @@ void AudioClipView::paint_tile(QPainter* painter, qreal xstart, int pixelcount)
             if (microView) {
                 // Microview, paint waveform as polyline
                 for (int x = dataOffset; x < width && x - dataOffset < availpeaks; ++x) {
-                    const float curveValue = hasCurve ? curveMixdown[x] : 1.0f;
-                    polygon.append(QPointF(x, center - scale * curveValue * pixelData[x - dataOffset]));
+                    polygon.append(QPointF(x, center - scale * curveMixdown[x] * pixelData[x - dataOffset]));
                 }
                 tilePainter.setPen(noSignalColor);
                 tilePainter.drawLine(0, center, width, center);
@@ -406,14 +405,12 @@ void AudioClipView::paint_tile(QPainter* painter, qreal xstart, int pixelcount)
                     // Merged view: calculate highest value for all channels,
                     // and store it in the first channels pixeldata.
                     for (int x = dataOffset; x < width && (x - dataOffset) * 2 + 1 < availpeaks; ++x) {
-                        const float curveValue = hasCurve ? curveMixdown[x] : 1.0f;
-                        polygon.append(QPointF(x, center - scale * curveValue * pixelData[(x - dataOffset) * 2]));
+                        polygon.append(QPointF(x, center - scale * curveMixdown[x] * pixelData[(x - dataOffset) * 2]));
                     }
                     for (int x = polygon.size() - 1; x >= 0; --x) {
                         const int sample = (m_mergedView) ? int(polygon.at(x).x()) : x;
-                        const float curveValue = (hasCurve) ? curveMixdown[sample] : 1.0f;
                         const int pixel = sample - dataOffset;
-                        polygon.append(QPointF(sample, center + scale * curveValue * pixelData[pixel * 2 + 1]));
+                        polygon.append(QPointF(sample, center + scale * curveMixdown[sample] * pixelData[pixel * 2 + 1]));
                     }
                     tilePainter.drawPolygon(polygon);
                 } else {
@@ -655,6 +652,9 @@ void AudioClipView::calculate_bounding_rect()
         m_classicView = ! config().get_property("Themer", "paintaudiorectified", false).toBool();
     }
 
+    if (m_gainCurveView) {
+        m_gainCurveView->updateNodeVisibility(0, (m_clip->get_track_end_location()-m_clip->get_track_start_location()) / m_sv->timeref_scalefactor);
+    }
     update_start_pos();
     ViewItem::calculate_bounding_rect();
 }

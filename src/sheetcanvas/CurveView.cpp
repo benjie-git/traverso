@@ -84,6 +84,14 @@ static bool smallerpoint(const QPointF& left, const QPointF& right) {
     return left.x() < right.x();
 }
 
+void CurveView::updateNodeVisibility(int startx, int endx)
+{
+    for (CurveNodeView* nodeView : m_nodeViews) {
+        nodeView->setVisible(nodeView->pos().x() > startx && nodeView->pos().x() < endx);
+    }
+}
+
+
 void CurveView::paint( QPainter * painter, const QStyleOptionGraphicsItem * option, QWidget * widget )
 {
     Q_UNUSED(widget);
@@ -160,8 +168,8 @@ void CurveView::paint( QPainter * painter, const QStyleOptionGraphicsItem * opti
     // Path's need an additional pixel righ/left to be painted correctly.
     // FadeCurveView get_curve adjusts for this, if changing these
     // values, also change the adjustment in FadeCurveView::get_curve() !!!
-    pixelcount += 2;
     xstart -= 1;
+    pixelcount += 2;
     if (xstart < 0) {
         xstart = 0;
     }
