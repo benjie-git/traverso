@@ -62,6 +62,7 @@ public:
     void get_vector (double x0, double x1, float *arg, nframes_t veclen);
 	APILinkedList& get_nodes() {return m_nodes;}
         TSession* get_sheet() const {return m_session;}
+	bool is_trivial(); // 0 or 1 point -- constant gain over time
 
 	// Set functions
 	virtual void set_range(double when);

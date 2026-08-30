@@ -224,6 +224,7 @@ void AudioTrackView::update_clips_in_range(int xleft, int xright)
             int updateLeft = qMax(0, xleft - clipStart);
             int updateRight = qMin(int(clipView->boundingRect().width()), xright - clipStart);
             int updateWidth = updateRight - updateLeft + 3;
+            clipView->invalidate_tiles_range(updateLeft, updateLeft + updateWidth);
             clipView->update(updateLeft, 0, updateWidth, clipView->boundingRect().height());
         }
     }

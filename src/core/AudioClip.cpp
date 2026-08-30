@@ -314,6 +314,7 @@ void AudioClip::set_left_edge(TimeRef newLeftLocation)
         set_source_start_location( m_sourceStartLocation + movingToRight );
         set_track_start_location(m_trackStartLocation + movingToRight);
     }
+    emit edgeMoved(true);
 }
 
 void AudioClip::set_right_edge(TimeRef newRightLocation)
@@ -349,6 +350,7 @@ void AudioClip::set_right_edge(TimeRef newRightLocation)
         set_source_end_location( m_sourceEndLocation - movingToLeft);
         set_track_end_location( m_trackEndLocation - movingToLeft );
     }
+    emit edgeMoved(false);
 }
 
 void AudioClip::set_source_start_location(const TimeRef& location)
@@ -895,7 +897,7 @@ float AudioClip::calculate_normalization_factor(float targetdB)
 {
     float target = dB_to_scale_factor (targetdB);
 
-    if (target == 1.0f) {
+    if (qFuzzyCompare(target, 1.0f)) {
         /* do not normalize to precisely 1.0 (0 dBFS), to avoid making it appear
            that we may have clipped.
         */

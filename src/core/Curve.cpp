@@ -36,6 +36,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA.
 #include "Mixer.h"
 #include "Information.h"
 #include "TInputEventDispatcher.h"
+#include <QtGlobal>
 
 // Always put me below _all_ includes, this is needed
 // in case we run with memory leak detection enabled!
@@ -127,6 +128,11 @@ int Curve::set_state( const QDomNode & node )
 	return 1;
 }
 
+bool Curve::is_trivial()
+{
+	return m_nodes.size() <= 1;
+}
+
 int Curve::process(
 	audio_sample_t** buffer,
 	const TimeRef& startlocation,
@@ -145,7 +151,7 @@ int Curve::process(
 	if (endlocation > qint64(get_range())) {
         audio_sample_t gain = audio_sample_t((static_cast<CurveNode*>(m_nodes.last()))->value) * makeupgain;
 
-		if (gain == 1.0f) {
+		if (qFuzzyCompare(gain, 1.0f)) {
 			return 0;
 		}
 		
@@ -596,7 +602,7 @@ void Curve::set_range(double when)
 	
 	double factor = when / lastnode->when;
 	
-	if (factor == 1.0)
+	if (qFuzzyCompare(factor, 1.0))
 		return;
 	
 	x_scale (factor);

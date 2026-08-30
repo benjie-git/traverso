@@ -202,7 +202,7 @@ void CurveView::paint( QPainter * painter, const QStyleOptionGraphicsItem * opti
 
 int CurveView::get_vector(qreal xstart, qreal pixelcount, float* arg)
 {
-    if (m_guicurve->get_nodes().size() == 1 && ((CurveNode*)m_guicurve->get_nodes().first())->value == 1.0) {
+    if (m_guicurve->get_nodes().size() == 1 && qFuzzyCompare(((CurveNode*)m_guicurve->get_nodes().first())->value, 1.0)) {
         return 0;
     }
 

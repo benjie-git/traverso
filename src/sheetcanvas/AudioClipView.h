@@ -28,6 +28,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA.
 #include <QTimer>
 #include <QPolygonF>
 #include <QPixmap>
+#include "ClipTileCache.h"
 
 class AudioClip;
 class Sheet;
@@ -110,6 +111,7 @@ private:
 	void draw_clipinfo_area(QPainter* painter, double xstart);
 	void draw_db_lines(QPainter* painter, qreal xstart, int pixelcount);
 	void draw_peaks(QPainter* painter, qreal xstart, int pixelcount);
+	void paint_tile(QPainter* painter, qreal xstart, int pixelcount);
 	void create_brushes();
 
 	friend class FadeCurveView;
@@ -120,6 +122,10 @@ public slots:
 	void repaint();
 	void update_start_pos();
 	void position_changed();
+	void invalidate_clip_tiles();
+	void invalidate_fade_tiles();
+	void invalidate_edge_tiles(bool isLeftEdge);
+	void invalidate_tiles_range(int startx, int endx);
 	
 	TCommand* fade_range();
 	TCommand* clip_fade_in();
@@ -137,7 +143,7 @@ private slots:
 	void finish_recording();
 	void update_recording();
 	void clip_state_changed();
-        void active_context_changed();
+    void active_context_changed();
 };
 
 #endif

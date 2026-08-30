@@ -26,6 +26,7 @@
 #include "TimeLineViewPort.h"
 #include "SheetView.h"
 #include "Themer.h"
+#include "ClipTileCache.h"
 #include "TConfig.h"
 #include "Peak.h"
 
@@ -245,6 +246,8 @@ void SheetWidget::load_theme_data()
 {
 	QList<QGraphicsItem*> list = m_scene->items();
 	
+        ctcache().invalidate_all();
+
 	for (int i = 0; i < list.size(); ++i) {
 		ViewItem* item = qgraphicsitem_cast<ViewItem*>(list.at(i));
 		if (item) {
