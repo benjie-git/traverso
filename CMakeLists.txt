@@ -40,6 +40,10 @@ if(APPLE)
     elseif(EXISTS "/usr/local/opt/qtsvg")
         list(PREPEND CMAKE_PREFIX_PATH "/usr/local/opt/qtsvg")
     endif()
+
+    if(APPLE)
+        set(Qt6Svg_DIR "/opt/homebrew/opt/qtsvg/lib/cmake/Qt6Svg" CACHE PATH "Path to Qt6Svg config" FORCE)
+    endif()
 endif()
 
 set(CMAKE_AUTOMOC ON)
