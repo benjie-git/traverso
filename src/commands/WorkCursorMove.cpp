@@ -181,7 +181,9 @@ void WorkCursorMove::browse_to_next_marker()
 	QList<Marker*> markers = m_session->get_timeline()->get_markers();
 	QList<ContextItem*> contexts = cpointer().get_active_context_items();
 	MarkerView* view;
-	foreach(ContextItem* item, contexts) {
+	QList<ContextItem*> contextsCopy = contexts;
+	
+	for (ContextItem* item : contextsCopy) {
 		view = qobject_cast<MarkerView*>(item);
 		if (view) {
 			cpointer().remove_from_active_context_list(item);
@@ -190,7 +192,7 @@ void WorkCursorMove::browse_to_next_marker()
 	}
 
 	Marker* next = nullptr;
-	foreach(Marker* marker, markers) {
+	for (Marker* marker : markers) {
 		if (marker->get_when() > m_session->get_work_location()) {
 			next = marker;
 			break;
@@ -199,9 +201,9 @@ void WorkCursorMove::browse_to_next_marker()
 
 	if (next) {
         QList<MarkerView*> markerViews = d->sv->get_timeline_viewport()->get_timeline_view()->get_marker_views();
-		foreach(MarkerView* view, markerViews) {
-			if (view->get_marker() == next) {
-				contexts.prepend(view);
+		for (MarkerView* markerView : markerViews) {
+			if (markerView->get_marker() == next) {
+				contexts.prepend(markerView);
 				break;
 			}
 		}
@@ -216,7 +218,9 @@ void WorkCursorMove::browse_to_previous_marker()
 	QList<Marker*> markers = m_session->get_timeline()->get_markers();
 	QList<ContextItem*> contexts = cpointer().get_active_context_items();
 	MarkerView* view;
-	foreach(ContextItem* item, contexts) {
+	QList<ContextItem*> contextsCopy = contexts;
+
+	for (ContextItem* item : contextsCopy) {
 		view = qobject_cast<MarkerView*>(item);
 		if (view) {
 			cpointer().remove_from_active_context_list(item);
@@ -235,9 +239,9 @@ void WorkCursorMove::browse_to_previous_marker()
 
 	if (prev) {
         QList<MarkerView*> markerViews = d->sv->get_timeline_viewport()->get_timeline_view()->get_marker_views();
-		foreach(MarkerView* view, markerViews) {
-			if (view->get_marker() == prev) {
-				contexts.prepend(view);
+		for (MarkerView* markerView : markerViews) {
+			if (markerView->get_marker() == prev) {
+				contexts.prepend(markerView);
 				break;
 			}
 		}
@@ -251,7 +255,7 @@ void WorkCursorMove::browse_to_previous_marker()
 void WorkCursorMove::remove_markers_from_active_context()
 {
 	QList<ContextItem*> contexts = cpointer().get_active_context_items();
-	foreach(ContextItem* item, contexts) {
+	for (ContextItem* item : contexts) {
 		if (item->inherits("MarkerView")) {
 			cpointer().remove_from_active_context_list(item);
 		}

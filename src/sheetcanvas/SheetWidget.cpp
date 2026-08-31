@@ -26,6 +26,7 @@
 #include "TimeLineViewPort.h"
 #include "SheetView.h"
 #include "Themer.h"
+#include "ClipTileCache.h"
 #include "TConfig.h"
 #include "Peak.h"
 
@@ -177,7 +178,7 @@ SheetWidget::SheetWidget(TSession* sheet, QWidget* parent)
 	m_mainLayout->addWidget(m_hScrollBar, 2, 1);
 	m_mainLayout->addWidget(m_vScrollBar, 1, 2);
 	
-	m_mainLayout->setMargin(0);
+	m_mainLayout->setContentsMargins(0, 0, 0, 0);
 	m_mainLayout->setSpacing(0);
 
 	setLayout(m_mainLayout);
@@ -207,6 +208,9 @@ SheetWidget::SheetWidget(TSession* sheet, QWidget* parent)
 		SIGNAL(valueChanged(int)),
 		m_clipsViewPort->verticalScrollBar(), 
 		SLOT(setValue(int)));
+
+        m_timeLine->horizontalScrollBar()->setValue(
+                m_clipsViewPort->horizontalScrollBar()->value());
 	
 	connect(themer(), SIGNAL(themeLoaded()), this, SLOT(load_theme_data()), Qt::QueuedConnection);
 	
@@ -242,6 +246,8 @@ void SheetWidget::load_theme_data()
 {
 	QList<QGraphicsItem*> list = m_scene->items();
 	
+        ctcache().invalidate_all();
+
 	for (int i = 0; i < list.size(); ++i) {
 		ViewItem* item = qgraphicsitem_cast<ViewItem*>(list.at(i));
 		if (item) {

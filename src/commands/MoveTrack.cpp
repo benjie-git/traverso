@@ -154,7 +154,7 @@ void MoveTrack::move_to_sheet()
 
     QMenu menu;
 
-    foreach(Sheet* sheet, sheets) {
+    for (Sheet* sheet : sheets) {
         QAction* action = menu.addAction(sheet->get_name());
         action->setData(sheet->get_id());
     }

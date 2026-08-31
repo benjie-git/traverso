@@ -49,6 +49,7 @@ target_link_libraries(traversocommands
         traversocore
 )
 
+
 if(WANT_PCH)
     target_precompile_headers(traversocommands PRIVATE "${CMAKE_SOURCE_DIR}/src/precompile.h")
 endif()

@@ -24,6 +24,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA.
 #include "CurveNodeView.h"
 #include <Themer.h>
 #include "AudioDevice.h"
+#include <algorithm>
 
 #include <Curve.h>
 #include <CurveNode.h>
@@ -82,6 +83,15 @@ CurveView::~ CurveView( )
 static bool smallerpoint(const QPointF& left, const QPointF& right) {
     return left.x() < right.x();
 }
+
+void CurveView::updateNodeVisibility(int startx, int endx)
+{
+    for (CurveNodeView* nodeView : m_nodeViews) {
+        int pos = nodeView->pos().x()+4 ; // +4 for half width of the node view
+        nodeView->setVisible(pos >= startx && pos <= endx);
+    }
+}
+
 
 void CurveView::paint( QPainter * painter, const QStyleOptionGraphicsItem * option, QWidget * widget )
 {
@@ -159,8 +169,8 @@ void CurveView::paint( QPainter * painter, const QStyleOptionGraphicsItem * opti
     // Path's need an additional pixel righ/left to be painted correctly.
     // FadeCurveView get_curve adjusts for this, if changing these
     // values, also change the adjustment in FadeCurveView::get_curve() !!!
-    pixelcount += 2;
     xstart -= 1;
+    pixelcount += 2;
     if (xstart < 0) {
         xstart = 0;
     }
@@ -193,7 +203,7 @@ void CurveView::paint( QPainter * painter, const QStyleOptionGraphicsItem * opti
     }
 
     // Which means we have to sort the polygon
-    qSort(polygon.begin(), polygon.end(), smallerpoint);
+    std::sort(polygon.begin(), polygon.end(), smallerpoint);
 
     painter->drawPolyline(polygon);
     painter->restore();
@@ -201,7 +211,7 @@ void CurveView::paint( QPainter * painter, const QStyleOptionGraphicsItem * opti
 
 int CurveView::get_vector(qreal xstart, qreal pixelcount, float* arg)
 {
-    if (m_guicurve->get_nodes().size() == 1 && ((CurveNode*)m_guicurve->get_nodes().first())->value == 1.0) {
+    if (m_guicurve->get_nodes().size() == 1 && qFuzzyCompare(((CurveNode*)m_guicurve->get_nodes().first())->value, 1.0)) {
         return 0;
     }
 
@@ -220,7 +230,7 @@ void CurveView::add_curvenode_view(CurveNode* node)
         cmd->set_instantanious(true);
         TCommand::process_command(cmd);
 
-        qSort(m_nodeViews.begin(), m_nodeViews.end(), Curve::smallerNode);
+        std::sort(m_nodeViews.begin(), m_nodeViews.end(), Curve::smallerNode);
 
         update();
         emit curveUpdated(0, int(m_boundingRect.width()));
@@ -312,7 +322,7 @@ void CurveView::update_softselected_node(QPointF point)
     if (! m_blinkingNode)
         return;
 
-    foreach(CurveNodeView* nodeView, m_nodeViews) {
+    for (CurveNodeView* nodeView : m_nodeViews) {
 
         QPointF nodePos(nodeView->scenePos().x(), nodeView->scenePos().y());
 
@@ -361,7 +371,7 @@ void CurveView::update_blink_color()
 
     QColor blinkColor = themer()->get_color("CurveNode:blink");
 
-    m_blinkingNode->set_color(blinkColor.light(m_blinkDarkness));
+    m_blinkingNode->set_color(blinkColor.lighter(m_blinkDarkness));
 
     m_blinkingNode->update();
 }
@@ -402,7 +412,7 @@ TCommand* CurveView::remove_node()
     CommandGroup* group = new CommandGroup(m_curve, description);
 
     int nodes_remaining = m_nodeViews.size();
-    foreach(CurveNodeView* nodeView, nodesToBeRemoved) {
+    for (CurveNodeView* nodeView : nodesToBeRemoved) {
         if (--nodes_remaining > 0) {
             nodeView->set_hard_selected(false);
             group->add_command(m_curve->remove_node(nodeView->get_curve_node()));
@@ -425,7 +435,7 @@ TCommand* CurveView::drag_node()
 
     QList<CurveNodeView*> selectedNodeViews = get_selected_nodes();
     QList<CurveNode*> selectedNodes;
-    foreach(CurveNodeView* nodeView, selectedNodeViews) {
+    for (CurveNodeView* nodeView : selectedNodeViews) {
         selectedNodes.append(nodeView->get_curve_node());
     }
 
@@ -462,7 +472,7 @@ TCommand* CurveView::drag_node()
 
     double maxValue = DBL_MIN;
     double minValue = DBL_MAX;
-    foreach(CurveNode* node, selectedNodes) {
+    for (CurveNode* node : selectedNodes) {
         double value = node->get_value();
         if (value > maxValue) {
             maxValue = value;
@@ -485,7 +495,7 @@ TCommand* CurveView::drag_node()
 
 void CurveView::node_moved( )
 {
-    foreach (CurveNodeView* nodeView, m_nodeViews) {
+    for (CurveNodeView* nodeView : m_nodeViews) {
         nodeView->update_pos();
     }
 
@@ -594,7 +604,7 @@ TCommand* CurveView::select_lazy_selected_node()
 TCommand* CurveView::toggle_select_all_nodes()
 {
     bool selectedNodes = false;
-    foreach(CurveNodeView* nodeView, m_nodeViews) {
+    for (CurveNodeView* nodeView : m_nodeViews) {
         if (nodeView->is_hard_selected()) {
             selectedNodes = true;
             break;
@@ -602,11 +612,11 @@ TCommand* CurveView::toggle_select_all_nodes()
     }
 
     if (selectedNodes) {
-        foreach(CurveNodeView* nodeView, m_nodeViews) {
+        for (CurveNodeView* nodeView : m_nodeViews) {
             nodeView->set_hard_selected(false);
         }
     } else {
-        foreach(CurveNodeView* nodeView, m_nodeViews) {
+        for (CurveNodeView* nodeView : m_nodeViews) {
             nodeView->set_hard_selected(true);
         }
     }
@@ -635,7 +645,7 @@ CurveNodeView* CurveView::get_node_view_after(TimeRef location) const
 {
     TimeRef curveStartOffset = m_curve->get_start_offset();
 
-    foreach(CurveNodeView* nodeview, m_nodeViews) {
+    for (CurveNodeView* nodeview : m_nodeViews) {
         TimeRef absoluteLocation = TimeRef(nodeview->get_curve_node()->get_when()) + curveStartOffset;
         if (absoluteLocation > location) {
             return nodeview;
@@ -654,7 +664,7 @@ QList<CurveNodeView*> CurveView::get_selected_nodes()
 {
     QList<CurveNodeView*> list;
 
-    foreach(CurveNodeView* curveNodeView, m_nodeViews) {
+    for (CurveNodeView* curveNodeView : m_nodeViews) {
         if (curveNodeView->is_hard_selected()) {
             list.append(curveNodeView);
         }

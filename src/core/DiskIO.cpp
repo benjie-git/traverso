@@ -194,7 +194,7 @@ void DiskIO::seek()
 
     TimeRef location = m_sheet->get_new_transport_location();
 
-    foreach(ReadSource* source, m_readSources) {
+    for (ReadSource* source : m_readSources) {
         if (m_sampleRateChanged) {
             source->set_diskio(this);
         }

@@ -22,6 +22,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA.
 #include "TimeLineView.h"
 
 #include <QPainter>
+#include <algorithm>
 
 #include "MoveMarker.h"
 #include "Themer.h"
@@ -69,7 +70,7 @@ TimeLineView::TimeLineView(SheetView* view)
 	load_theme_data();
 	
 	// Create MarkerViews for existing markers
-	foreach(Marker* marker, m_timeline->get_markers()) {
+	for (Marker* marker : m_timeline->get_markers()) {
 		add_new_marker_view(marker);
 	}
 	
@@ -159,7 +160,7 @@ void TimeLineView::paint(QPainter* painter, const QStyleOptionGraphicsItem* opti
 	TimeRef lastLocation = TimeRef(xstart * m_sv->timeref_scalefactor + pixelcount * m_sv->timeref_scalefactor);
 	int xstartoffset = m_sv->hscrollbar_value();
 	
-	painter->setMatrixEnabled(false);
+	painter->resetTransform();
 
     qint64 count = TimeRef((lastLocation-firstLocation+major) / minor).universal_frame();
 
@@ -223,7 +224,7 @@ void TimeLineView::add_new_marker_view(Marker * marker)
 
 void TimeLineView::remove_marker_view(Marker * marker)
 {
-	foreach(MarkerView* view, m_markerViews) {
+	for (MarkerView* view : m_markerViews) {
 		if (view->get_marker() == marker) {
 			m_markerViews.removeAll(view);
 			scene()->removeItem(view);
@@ -330,7 +331,7 @@ void TimeLineView::update_softselected_marker(QPointF pos)
         int x = int(pos.x());
 	int blinkMarkerDist = abs(x - m_blinkingMarker->position());
 	
-	foreach(MarkerView* markerView, m_markerViews) {
+	for (MarkerView* markerView : m_markerViews) {
 		int markerDist = abs(x - markerView->position());
 
 		fflush(stdout);
@@ -402,7 +403,7 @@ TCommand * TimeLineView::clear_markers()
 {
 	CommandGroup* group = new CommandGroup(m_timeline, tr("Clear Markers"));
 
-	foreach(Marker *m, m_timeline->get_markers()) {
+	for (Marker *m : m_timeline->get_markers()) {
 		group->add_command(m_timeline->remove_marker(m));
 	}
 
@@ -418,9 +419,9 @@ void TimeLineView::load_theme_data()
 MarkerView* TimeLineView::get_marker_view_after(TimeRef location)
 {
         // FIXME: only keep this list sorted if markers are added/moved??
-        qSort(m_markerViews.begin(), m_markerViews.end(), smallerMarker);
+        std::sort(m_markerViews.begin(), m_markerViews.end(), smallerMarker);
 
-        foreach(MarkerView* markerView, m_markerViews) {
+        for (MarkerView* markerView : m_markerViews) {
                 if (markerView->get_marker()->get_when() > location) {
                         return markerView;
                 }
@@ -431,7 +432,7 @@ MarkerView* TimeLineView::get_marker_view_after(TimeRef location)
 MarkerView* TimeLineView::get_marker_view_before(TimeRef location)
 {
         // FIXME: only keep this list sorted if markers are added/moved??
-        qSort(m_markerViews.begin(), m_markerViews.end(), smallerMarker);
+        std::sort(m_markerViews.begin(), m_markerViews.end(), smallerMarker);
 
         for (int i=m_markerViews.size() - 1; i>= 0; --i) {
                 MarkerView* markerView = m_markerViews.at(i);

@@ -34,6 +34,8 @@ public:
 		delete_destination_buffers();
 		delete_readbuffer();
 	}
+	DecodeBuffer(const DecodeBuffer&) = delete;
+	DecodeBuffer& operator=(const DecodeBuffer&) = delete;
 	
 	void check_buffers_capacity(uint size, uint channels);
 	
@@ -76,7 +78,7 @@ public:
 	virtual QString decoder_type() const = 0;
 	virtual void clear_buffers() {}
 	
-	static AbstractAudioReader* create_audio_reader(const QString& filename, const QString& decoder = 0);
+	static AbstractAudioReader* create_audio_reader(const QString& filename, const QString& decoder = QString());
 	
 protected:
 	virtual bool seek_private(nframes_t start) = 0;

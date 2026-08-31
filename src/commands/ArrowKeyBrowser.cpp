@@ -21,6 +21,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA.
 
 #include "ArrowKeyBrowser.h"
 
+#include <libtraversocore.h>
 #include "SheetView.h"
 
 #include "Debugger.h"
@@ -52,20 +53,32 @@ void ArrowKeyBrowser::set_cursor_shape(int useX, int useY)
 
 void ArrowKeyBrowser::up()
 {
+        if (!config().get_property("InputEventDispatcher", "AllowArrowKeyBrowsing", false).toBool()) {
+                return;
+        }
 	m_sv->browse_to_context_item_above();
 }
 
 void ArrowKeyBrowser::down()
 {
+        if (!config().get_property("InputEventDispatcher", "AllowArrowKeyBrowsing", false).toBool()) {
+                return;
+        }
 	m_sv->browse_to_context_item_below();
 }
 
 void ArrowKeyBrowser::left()
 {
+        if (!config().get_property("InputEventDispatcher", "AllowArrowKeyBrowsing", false).toBool()) {
+                return;
+        }
 	m_sv->browse_to_previous_context_item();
 }
 
 void ArrowKeyBrowser::right()
 {
+        if (!config().get_property("InputEventDispatcher", "AllowArrowKeyBrowsing", false).toBool()) {
+                return;
+        }
 	m_sv->browse_to_next_context_item();
 }

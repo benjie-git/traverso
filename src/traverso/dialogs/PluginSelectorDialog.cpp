@@ -22,6 +22,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA.
 #include "PluginSelectorDialog.h"
 
 #include <QHeaderView>
+#include <QMultiMap>
 
 #if defined (LV2_SUPPORT)
 #include <LV2Plugin.h>
@@ -53,7 +54,7 @@ PluginSelectorDialog::PluginSelectorDialog(QWidget* parent)
         printf("Getting the list of found lv2 plugins from the PluginManager\n");
 	const LilvPlugins* pluginList = PluginManager::instance()->get_lilv_plugins();
 
-	QMap<QString, PluginInfo> pluginsMap;
+	QMultiMap<QString, PluginInfo> pluginsMap;
 
 	printf("Number of found lv2 plugins: %d\n", lilv_plugins_size(pluginList));
 	
@@ -61,10 +62,10 @@ PluginSelectorDialog::PluginSelectorDialog(QWidget* parent)
 
 		const LilvPlugin* p = lilv_plugins_get(pluginList, i);
 		PluginInfo pinfo = LV2Plugin::get_plugin_info(p);
-		pluginsMap.insertMulti(pinfo.type, pinfo);
+		pluginsMap.insert(pinfo.type, pinfo);
 	}
 	
-	foreach(PluginInfo pinfo, pluginsMap) {
+	for (const PluginInfo& pinfo : pluginsMap) {
 		
 		if ( (pinfo.audioPortInCount == 1 && pinfo.audioPortOutCount ==  1) ||
 		     (pinfo.audioPortInCount == 2 && pinfo.audioPortOutCount ==  2) ) {
@@ -73,7 +74,7 @@ PluginSelectorDialog::PluginSelectorDialog(QWidget* parent)
 			
 			QTreeWidgetItem* item = new QTreeWidgetItem(pluginTreeWidget);
 			item->setText(0, pinfo.name);
-			item->setText(1, pinfo.type.remove("Plugin"));
+			item->setText(1, QString(pinfo.type).remove("Plugin"));
 			item->setText(2, inoutcount);
 			item->setData(0, Qt::UserRole, QString(pinfo.uri));
 			item->setToolTip(0, pinfo.name);

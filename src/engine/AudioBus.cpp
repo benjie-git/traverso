@@ -121,7 +121,7 @@ QStringList AudioBus::get_channel_names() const
         }
 
         QStringList list;
-        foreach(AudioChannel* channel, m_channels) {
+        for (AudioChannel* channel : m_channels) {
                 list.append(channel->get_name());
         }
 
@@ -131,7 +131,7 @@ QStringList AudioBus::get_channel_names() const
 QList<qint64> AudioBus::get_channel_ids() const
 {
         QList<qint64> ids;
-        foreach(AudioChannel* channel, m_channels) {
+        for (AudioChannel* channel : m_channels) {
                 ids.append(channel->get_id());
         }
         return ids;
@@ -144,7 +144,7 @@ void AudioBus::audiodevice_params_changed()
 
         AudioChannel* channel;
 
-        foreach(QString channelName, m_channelNames) {
+        for (const QString& channelName : m_channelNames) {
                 if (is_input()) {
                         channel = audiodevice().get_capture_channel_by_name(channelName);
                 } else {

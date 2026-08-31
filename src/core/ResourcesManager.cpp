@@ -50,14 +50,14 @@ ResourcesManager::ResourcesManager(Project* project)
 ResourcesManager::~ResourcesManager()
 {
 	PENTERDES;
-	foreach(SourceData* data, m_sources) {
+	for (SourceData* data : m_sources) {
 		if (! data->source->ref()) {
 			delete data->source;
 		}
 		delete data;
 	}
 	
-	foreach(ClipData* data, m_clips) {
+	for (ClipData* data : m_clips) {
 		delete data->clip;
 		delete data;
 	}
@@ -73,7 +73,7 @@ QDomNode ResourcesManager::get_state( QDomDocument doc )
 	
 	QDomElement audioSourcesElement = doc.createElement("AudioSources");
 	
-	foreach(SourceData* data, m_sources) {
+	for (SourceData* data : m_sources) {
 		ReadSource* source = data->source;
 		audioSourcesElement.appendChild(source->get_state(doc));
 	}
@@ -83,7 +83,7 @@ QDomNode ResourcesManager::get_state( QDomDocument doc )
 	
 	QDomElement audioClipsElement = doc.createElement("AudioClips");
 	
-	foreach(ClipData* data, m_clips) {
+	for (ClipData* data : m_clips) {
 		AudioClip* clip = data->clip;
 		
 		if (data->isCopy && data->removed) {
@@ -143,7 +143,7 @@ int ResourcesManager::set_state( const QDomNode & node )
 ReadSource* ResourcesManager::import_source(const QString& dir, const QString& name)
 {
 	QString fileName = dir + name;
-	foreach(SourceData* data, m_sources) {
+	for (SourceData* data : m_sources) {
 		if (data->source->get_filename() == fileName) {
 			printf("id is %lld\n", data->source->get_id());
 			return get_readsource(data->source->get_id()); 
@@ -305,7 +305,7 @@ AudioClip* ResourcesManager::new_audio_clip(const QString& name)
 QList<ReadSource*> ResourcesManager::get_all_audio_sources( ) const
 {
 	QList< ReadSource * > list;
-	foreach(SourceData* data, m_sources) {
+	for (SourceData* data : m_sources) {
 		list.append(data->source);
 	}
 	if (m_silentReadSource) {
@@ -317,7 +317,7 @@ QList<ReadSource*> ResourcesManager::get_all_audio_sources( ) const
 QList< AudioClip * > ResourcesManager::get_all_clips() const
 {
 	QList<AudioClip* > list;
-	foreach(ClipData* data, m_clips) {
+	for (ClipData* data : m_clips) {
 		list.append(data->clip);
 	}
 	return list;

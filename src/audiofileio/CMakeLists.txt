@@ -16,8 +16,16 @@ if(HAVE_MP3_DECODING)
     list(APPEND TRAVERSO_AUDIOFILEIO_SOURCES decode/MadAudioReader.cpp)
 endif()
 
+if(HAVE_M4A_DECODING)
+    list(APPEND TRAVERSO_AUDIOFILEIO_SOURCES decode/FaadAudioReader.cpp)
+endif()
+
 if(HAVE_MP3_ENCODING)
     list(APPEND TRAVERSO_AUDIOFILEIO_SOURCES encode/LameAudioWriter.cpp)
+endif()
+
+if(HAVE_M4A_ENCODING)
+    list(APPEND TRAVERSO_AUDIOFILEIO_SOURCES encode/FaacAudioWriter.cpp)
 endif()
 
 add_library(traversoaudiofileio STATIC ${TRAVERSO_AUDIOFILEIO_SOURCES})
@@ -28,6 +36,7 @@ target_include_directories(traversoaudiofileio
         ${CMAKE_CURRENT_SOURCE_DIR}/decode
         ${CMAKE_CURRENT_SOURCE_DIR}/encode
         ${CMAKE_SOURCE_DIR}/src/common
+        ${CMAKE_SOURCE_DIR}/src/3rdparty
     PRIVATE
         ${CMAKE_SOURCE_DIR}/src/core
         ${PROJECT_BINARY_DIR}
@@ -36,8 +45,8 @@ target_include_directories(traversoaudiofileio
 
 target_link_libraries(traversoaudiofileio
     PUBLIC
-        Qt5::Core
-        Qt5::Widgets
+        Qt6::Core
+        Qt6::Widgets
         PkgConfig::SNDFILE
         PkgConfig::SAMPLERATE
         PkgConfig::WAVPACK
@@ -52,8 +61,16 @@ if(HAVE_MP3_DECODING)
     target_link_libraries(traversoaudiofileio PUBLIC PkgConfig::MAD)
 endif()
 
+if(HAVE_M4A_DECODING)
+    target_link_libraries(traversoaudiofileio PUBLIC PkgConfig::FAAD2)
+endif()
+
 if(HAVE_MP3_ENCODING)
     target_link_libraries(traversoaudiofileio PUBLIC PkgConfig::LAME)
+endif()
+
+if(HAVE_M4A_ENCODING)
+    target_link_libraries(traversoaudiofileio PUBLIC PkgConfig::FAAC)
 endif()
 
 if(WANT_PCH)

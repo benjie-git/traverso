@@ -24,6 +24,7 @@
 
 #include <QGraphicsView>
 #include <QGraphicsItem>
+#include <QEnterEvent>
 #include "ContextItem.h"
 #include "AbstractViewPort.h"
 
@@ -44,43 +45,43 @@ public :
     virtual ~ViewPort();
 
     // Set functions
-    void set_canvas_cursor_text(const QString& text, int mseconds=-1);
-    void set_canvas_cursor_pos(QPointF pos, CursorMoveReason reason);
-    void set_canvas_cursor_shape(const QString& shape, int alignment=Qt::AlignCenter);
+    void set_canvas_cursor_text(const QString& text, int mseconds=-1) override;
+    void set_canvas_cursor_pos(QPointF pos, CursorMoveReason reason) override;
+    void set_canvas_cursor_shape(const QString& shape, int alignment=Qt::AlignCenter) override;
     virtual void set_sheetview(SheetView* view) {m_sv = view;}
 
-    inline QPointF map_to_scene(const QPoint& pos) const {
+    inline QPointF map_to_scene(const QPoint& pos) const override {
         return mapToScene(pos);
     }
 
-    inline QPoint map_to_global(const QPoint& point) const {
+    inline QPoint map_to_global(const QPoint& point) const override {
         return mapToGlobal(point);
     }
 
-    void grab_mouse();
-    void release_mouse();
+    void grab_mouse() override;
+    void release_mouse() override;
 
-    void detect_items_below_cursor();
+    void detect_items_below_cursor() override;
 
 
 
 protected:
-    virtual bool event(QEvent *event);
-    virtual void enterEvent ( QEvent * );
-    virtual void leaveEvent ( QEvent * );
-    virtual void paintEvent( QPaintEvent* e);
-    virtual void mouseMoveEvent(QMouseEvent* e);
-    virtual void mousePressEvent ( QMouseEvent * e );
-    virtual void mouseReleaseEvent ( QMouseEvent * e );
-    virtual void mouseDoubleClickEvent ( QMouseEvent * e );
-    virtual void wheelEvent ( QWheelEvent* e );
-    virtual void keyPressEvent ( QKeyEvent* e);
-    virtual void keyReleaseEvent ( QKeyEvent* e);
-    virtual void dragEnterEvent(QDragEnterEvent *event);
-    virtual void dragMoveEvent(QDragMoveEvent *event);
+    virtual bool event(QEvent *event) override;
+    virtual void enterEvent ( QEnterEvent * ) override;
+    virtual void leaveEvent ( QEvent * ) override;
+    virtual void paintEvent( QPaintEvent* e) override;
+    virtual void mouseMoveEvent(QMouseEvent* e) override;
+    virtual void mousePressEvent ( QMouseEvent * e ) override;
+    virtual void mouseReleaseEvent ( QMouseEvent * e ) override;
+    virtual void mouseDoubleClickEvent ( QMouseEvent * e ) override;
+    virtual void wheelEvent ( QWheelEvent* e ) override;
+    virtual void keyPressEvent ( QKeyEvent* e) override;
+    virtual void keyReleaseEvent ( QKeyEvent* e) override;
+    virtual void dragEnterEvent(QDragEnterEvent *event) override;
+    virtual void dragMoveEvent(QDragMoveEvent *event) override;
 
 
-    void tabletEvent ( QTabletEvent * event );
+    void tabletEvent ( QTabletEvent * event ) override;
 
     SheetView* m_sv;
 

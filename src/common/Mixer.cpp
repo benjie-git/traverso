@@ -61,7 +61,7 @@ void default_mix_buffers_no_gain (audio_sample_t* dst, const audio_sample_t* src
 }
 
 
-#if defined (__APPLE__) && defined (BUILD_VECLIB_OPTIMIZATIONS)
+#if defined (__APPLE__)
 #include <Accelerate/Accelerate.h>
 
 float veclib_compute_peak (const audio_sample_t* buf, nframes_t nsamples, float current)
@@ -89,9 +89,7 @@ void veclib_mix_buffers_with_gain (audio_sample_t * dst, const audio_sample_t * 
 
 void veclib_mix_buffers_no_gain (audio_sample_t * dst, const audio_sample_t * src, nframes_t nframes)
 {
-	// It seems that a vector mult only operation does not exist...
-	float gain = 1.0f;
-	vDSP_vsma(src, 1, &gain, dst, 1, dst, 1, nframes);
+	vDSP_vadd(src, 1, dst, 1, dst, 1, nframes);
 }
 
 #endif

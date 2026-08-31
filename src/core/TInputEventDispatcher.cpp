@@ -117,7 +117,7 @@ int TInputEventDispatcher::dispatch_shortcut_from_contextmenu(TFunction* functio
 		return -1;
 	}
 
-	foreach(int modifier, function->getModifierKeys())
+	for (int modifier : function->getModifierKeys())
 	{
 		m_activeModifierKeys.append(modifier);
 	}
@@ -174,7 +174,7 @@ int TInputEventDispatcher::dispatch_shortcut(TShortcut* shortCut, bool fromConte
 		{
             QList<TFunction*> functions = shortCut->getFunctionsForObject(metaObject->className());
 
-            foreach(TFunction* function, functions) {
+            for (TFunction* function : functions) {
                 if (!function) {
 					continue;
 				}
@@ -690,7 +690,7 @@ void TInputEventDispatcher::process_hold_modifier_keys()
 		return;
 	}
 
-	foreach(HoldModifierKey* hmk, m_holdModifierKeys) {
+	for (HoldModifierKey* hmk : m_holdModifierKeys) {
 		if (!hmk->wasExecuted) {
 			hmk->wasExecuted = true;
 			dispatch_shortcut(hmk->shortcut);
@@ -776,7 +776,7 @@ void TInputEventDispatcher::finish_hold()
 void TInputEventDispatcher::clear_hold_modifier_keys()
 {
 	m_holdKeyRepeatTimer.stop();
-	foreach(HoldModifierKey* hmk, m_holdModifierKeys) {
+	for (HoldModifierKey* hmk : m_holdModifierKeys) {
 		delete hmk;
 	}
 	m_holdModifierKeys.clear();
@@ -833,6 +833,15 @@ bool TInputEventDispatcher::is_holding( )
 	return m_isHolding;
 }
 
+bool TInputEventDispatcher::is_holding_modifier_key(const char *keyname)
+{
+	int eventcode = 0;
+	if (t_KeyStringToKeyValue(eventcode, keyname)) {
+		return m_activeModifierKeys.contains(eventcode);
+	}
+	return false;
+}
+
 TCommand * TInputEventDispatcher::get_holding_command() const
 {
 	return m_holdingCommand;
@@ -845,7 +854,7 @@ bool TInputEventDispatcher::modifierKeysMatch(QList<int> first, const QList<int>
 		return false;
 	}
 
-	foreach(int key, first)
+	for (int key : first)
 	{
 		if (!second.contains(key))
 		{

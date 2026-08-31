@@ -2,6 +2,7 @@ set(TRAVERSO_SONGCANVAS_SOURCES
     AudioClipView.cpp
     AudioTrackView.cpp
     ClipsViewPort.cpp
+    ClipTileCache.cpp
     Cursors.cpp
     CurveNodeView.cpp
     CurveView.cpp

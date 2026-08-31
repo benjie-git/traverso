@@ -30,6 +30,7 @@
 #include <QPen>
 #include <QScrollBar>
 #include <QApplication>
+#include <QEasingCurve>
 		
 // Always put me below _all_ includes, this is needed
 // in case we run with memory leak detection enabled!
@@ -51,7 +52,7 @@ PlayHead::PlayHead(SheetView* sv, TSession* session, ClipsViewPort* vp)
 	
 	// TODO: Make duration scale with scalefactor? (nonlinerly?)
 	m_animation.setDuration(ANIME_DURATION);
-	m_animation.setCurveShape(QTimeLine::EaseInOutCurve);
+	m_animation.setEasingCurve(QEasingCurve::InOutQuad);
 	
 	connect(m_session, SIGNAL(transportStarted()), this, SLOT(play_start()));
 	connect(m_session, SIGNAL(transportStopped()), this, SLOT(play_stop()));
@@ -169,7 +170,7 @@ void PlayHead::update_position()
 	
 	int vpWidth = m_vp->viewport()->width();
 	
-	// When timeref_scalefactor is below 5120, the playhead moves faster then teh view scrolls
+	// When timeref_scalefactor is below 5120, the playhead moves faster then the view scrolls
 	// so it's better to keep the view centered around the playhead.
 	if (m_mode == CENTERED || (m_sv->timeref_scalefactor <= 10280) ) {
                 // For some reason on some systems the event of

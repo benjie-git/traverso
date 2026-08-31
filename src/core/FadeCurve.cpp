@@ -253,7 +253,8 @@ void FadeCurve::set_shape(const QString& shapeName)
 			printf("Could not open fadeshapes file!!\n");
 			return;
 		}
-		if (!doc.setContent(&file)) {
+        QDomDocument::ParseResult result = doc.setContent(&file);
+        if (!result) {
 			file.close();
 			printf("Could not set QDomDocument content!\n");
 			return;

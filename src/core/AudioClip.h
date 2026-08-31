@@ -158,6 +158,7 @@ signals:
 	void fadeAdded(FadeCurve*);
 	void fadeRemoved(FadeCurve*);
 	void recordingFinished(AudioClip*);
+	void edgeMoved(bool);
 
 public slots:
 	void finish_recording();

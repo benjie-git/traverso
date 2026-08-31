@@ -26,6 +26,7 @@
 #include <QTimer>
 #include <QFrame>
 #include <QProgressBar>
+#include <QEnterEvent>
 
 class Project;
 class TSession;
@@ -95,7 +96,7 @@ public:
 
 protected:
 	QSize sizeHint () const;
-	void enterEvent ( QEvent * event );
+	void enterEvent ( QEnterEvent * event );
 	void leaveEvent ( QEvent * event );
 
 private:

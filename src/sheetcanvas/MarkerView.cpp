@@ -119,7 +119,7 @@ void MarkerView::calculate_bounding_rect()
 
 
 	QFontMetrics fm(themer()->get_font("Timeline:fontscale:marker"));
-	int descriptionwidth = fm.width(desc) + 1;
+	int descriptionwidth = fm.horizontalAdvance(desc) + 1;
 
 	m_line->set_bounding_rect(QRectF(0, 0, 1, m_sv->get_clips_viewport()->sceneRect().height()));
     m_line->setPos(m_width / 2, m_height);

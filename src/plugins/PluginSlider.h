@@ -24,6 +24,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA.
 #define PLUGIN_SLIDER_H
 
 #include <QWidget>
+#include <QEnterEvent>
 #include <QPainter>
 #include <QMouseEvent>
 
@@ -47,7 +48,7 @@ protected:
 	void mouseMoveEvent(QMouseEvent *e);
 	void mouseReleaseEvent(QMouseEvent *e);
         void leaveEvent( QEvent* );
-        void enterEvent( QEvent* );
+        void enterEvent( QEnterEvent* );
         void wheelEvent(QWheelEvent* e );
 	
 private:

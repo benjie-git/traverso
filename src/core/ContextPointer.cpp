@@ -408,7 +408,7 @@ void ContextPointer::set_active_context_items(const QList<ContextItem *> &items)
     }
 
     // if item had active context set it to false
-    foreach(ContextItem* oldItem, m_activeContextItems) {
+    for (ContextItem* oldItem : m_activeContextItems) {
 		if (!items.contains(oldItem)){
 			oldItem->set_has_active_context(false);
 		}
@@ -416,7 +416,7 @@ void ContextPointer::set_active_context_items(const QList<ContextItem *> &items)
 
 	m_activeContextItems.clear();
 
-	foreach(ContextItem* item, items) {
+	for (ContextItem* item : items) {
 		m_activeContextItems.append(item);
 		item->set_has_active_context(true);
 	}

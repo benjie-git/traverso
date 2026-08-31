@@ -26,6 +26,7 @@
 #include <QScrollBar>
 #include <QWheelEvent>
 #include <ContextPointer.h>
+#include "TInputEventDispatcher.h"
 		
 #include <Debugger.h>
 
@@ -72,6 +73,27 @@ void TimeLineViewPort::scale_factor_changed()
 	if (m_timeLineView) {
 		m_timeLineView->calculate_bounding_rect();
 	}
+}
+
+// Catch native trackpad gestures
+bool TimeLineViewPort::event(QEvent *event)
+{
+    if (event->type() == QEvent::NativeGesture) {
+        QNativeGestureEvent *gestureEvent = static_cast<QNativeGestureEvent*>(event);
+        if (gestureEvent->gestureType() == Qt::ZoomNativeGesture) {
+            qreal zoomFactor = 2*gestureEvent->value(); 
+
+            if (ied().is_holding_modifier_key("SHIFT")) {
+                m_sv->vzoom(1+zoomFactor);
+            }
+            else {
+                m_sv->hzoom(1-zoomFactor);
+            }
+            
+            return true; // Event handled
+        }
+    }
+    return QWidget::event(event);
 }
 
 

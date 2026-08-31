@@ -184,7 +184,7 @@ void Themer::save( )
                 QDomElement e = doc.createElement("gradient");
                 e.setAttribute("name", gradientsIt.key());
                 QLinearGradient gradient = gradientsIt.value();
-                foreach(QGradientStop gradientstop, gradient.stops()) {
+                for (const QGradientStop& gradientstop : gradient.stops()) {
                         QDomElement stopNode = doc.createElement("stop");
                         stopNode.setAttribute("value", gradientstop.first);
                         QColor color = gradientstop.second;
@@ -235,8 +235,12 @@ void Themer::load( )
                 return;
 	}
 
+
+
 	QString errorMsg;
-	if (!doc.setContent(&file, &errorMsg)) {
+        QDomDocument::ParseResult result = doc.setContent(&file);
+        if (!result) {
+                errorMsg = result.errorMessage;
 		file.close();
                 printf("Cannot set Content of XML file (%s)\n", QS_C(errorMsg));
                 return;
@@ -271,9 +275,9 @@ void Themer::load( )
 		if (coloradjust != 100) {
 			int adjust = coloradjust - 100;
 			if (adjust < 0) {
-				color = color.dark(-1 * adjust + 100);
+				color = color.darker(-1 * adjust + 100);
 			} else {
-				color = color.light(adjust + 100);
+				color = color.lighter(adjust + 100);
 			}
 		}
 		m_colors.insert(name, color);
@@ -303,9 +307,9 @@ void Themer::load( )
 			if (coloradjust != 100) {
 				int adjust = coloradjust - 100;	
 				if (adjust < 0) {
-					color = color.dark(-1 * adjust + 100);
+					color = color.darker(-1 * adjust + 100);
 				} else {
-					color = color.light(adjust + 100);
+					color = color.lighter(adjust + 100);
 				}
 			}
 
@@ -476,7 +480,7 @@ QStringList Themer::get_builtin_themes()
 {
 	QStringList list;
         QDir themesdir(":/themes");
-        foreach (const QString &fileName, themesdir.entryList(QDir::Files)) {
+        for (const QString &fileName : themesdir.entryList(QDir::Files)) {
                 list << fileName;
         }
 	return list;
@@ -616,8 +620,8 @@ void Themer::load_defaults()
         m_defaultColors.insert("TrackPanel:bus:font", p.color(QPalette::WindowText));
         m_defaultColors.insert("TrackPanel:bus:background", p.color(QPalette::Button));
         m_defaultColors.insert("TrackPanel:bus:margin", p.color(QPalette::Dark));
-        m_defaultColors.insert("BusTrack:background", p.color(QPalette::Background));
-        m_defaultColors.insert("BusTrackPanel:background", p.color(QPalette::Background));
+        m_defaultColors.insert("BusTrack:background", p.color(QPalette::Window));
+        m_defaultColors.insert("BusTrackPanel:background", p.color(QPalette::Window));
         m_defaultColors.insert("Workcursor:default", QColor(100, 50, 100, 180));
         m_defaultColors.insert("Marker:default", QColor(Qt::red));
         m_defaultColors.insert("Marker:blink", p.color(QPalette::Highlight));
@@ -628,7 +632,7 @@ void Themer::load_defaults()
 void Themer::validate_loaded_theme()
 {
         QStringList list;
-        foreach(const QString& key, m_defaultColors.keys()) {
+        for (const QString& key : m_defaultColors.keys()) {
                 if (!m_colors.contains(key)) {
                         QColor color = m_defaultColors.value(key);
                         // add the missing color from default colors
@@ -643,7 +647,7 @@ void Themer::validate_loaded_theme()
                 printf("\n");
                 printf("Themer: the following entries are missing, please edit theme: %s\n", QS_C(m_themefile));
 
-                foreach(QString string, list) {
+                for (const QString& string : list) {
                         printf("%s\n", QS_C(string));
                 }
                 printf("\nAnd adjust the color(s) to fit your theme, using the edit theme button in the Appearance config page!\n"
@@ -655,7 +659,7 @@ QList<QString> Themer::get_colors()
 {
         QList<QString> colors = m_colors.keys();
         // if the current theme misses some colors, add them here.
-        foreach(QString color, m_defaultColors.keys()) {
+        for (const QString& color : m_defaultColors.keys()) {
                 if (!colors.contains(color)) {
                         colors.append(color);
                 }

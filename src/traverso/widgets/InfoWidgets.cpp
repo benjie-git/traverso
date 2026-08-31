@@ -118,7 +118,7 @@ SystemResources::SystemResources(QWidget * parent)
 	lay->addWidget(m_cpuUsage);
         lay->addWidget(TMainWindow::instance()->get_track_finder());
         lay->addWidget(m_collectedNumber);
-	lay->setMargin(0);
+	lay->setContentsMargins(0, 0, 0, 0);
 	lay->addSpacing(6);
 	setLayout(lay);
 	setFrameStyle(QFrame::NoFrame);
@@ -139,7 +139,7 @@ void SystemResources::update_status( )
 	int bufWriteStatus = 100;
 	
 	if (m_project) {
-		foreach(Sheet* sheet, m_project->get_sheets() ) {
+		for (Sheet* sheet : m_project->get_sheets()) {
 			bufReadStatus = std::min(sheet->get_diskio()->get_read_buffers_fill_status(), bufReadStatus);
 			bufWriteStatus = std::min(sheet->get_diskio()->get_write_buffers_fill_status(), bufWriteStatus);
 		}
@@ -178,7 +178,7 @@ DriverInfo::DriverInfo( QWidget * parent )
 	
     QHBoxLayout* lay = new QHBoxLayout(this);
     lay->addWidget(m_driver);
-	lay->setMargin(0);
+	lay->setContentsMargins(0, 0, 0, 0);
 	setLayout(lay);
 	
 	setFrameStyle(QFrame::NoFrame);
@@ -225,7 +225,7 @@ QSize DriverInfo::sizeHint() const
 	return QSize(m_driver->width(), SONG_TOOLBAR_HEIGHT);
 }
 
-void DriverInfo::enterEvent(QEvent * /*event*/)
+void DriverInfo::enterEvent(QEnterEvent * /*event*/)
 {
 //	m_driver->setFlat(false);
 }
@@ -247,7 +247,7 @@ HDDSpaceInfo::HDDSpaceInfo(QWidget* parent )
 	m_button->setEnabled(false);
 	
         QHBoxLayout* lay = new QHBoxLayout;
-	lay->setMargin(0);
+	lay->setContentsMargins(0, 0, 0, 0);
 	lay->addWidget(m_button);
 	setLayout(lay);
 	

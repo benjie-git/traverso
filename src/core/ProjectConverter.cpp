@@ -84,7 +84,9 @@ void ProjectConverter::set_project(const QString & rootdir, const QString & name
 		
 	// Start setting and parsing the content of the xml file
 	QString errorMsg;
-	if (!doc.setContent(&file, &errorMsg)) {
+	QDomDocument::ParseResult result = doc.setContent(&file);
+	if (!result) {
+		errorMsg = result.errorMessage;
 		QString error = tr("Project %1: Failed to parse project.tpf file! (Reason: %2)").arg(m_projectname).arg(errorMsg);
 		printf("%s\n", QS_C(error));
 		return;
@@ -141,8 +143,8 @@ int ProjectConverter::start_conversion_from_version_2_to_3()
 			readsource1->ref();
 			readsource1->init();
 			
-			m_readsources.insertMulti(id, readsource0);
-			m_readsources.insertMulti(id, readsource1);
+			m_readsources.insert(id, readsource0);
+			m_readsources.insert(id, readsource1);
 			
 			m_filesToMerge++;
 			m_merger->enqueue_task(readsource0, readsource1, dir, name);
@@ -310,8 +312,9 @@ QString ProjectConverter::get_conversion_description()
 	switch(m_projectfileversion) {
 		case 2 : {
 			QFile file(":/project_conversion_description_2_3");
-			file.open(QIODevice::ReadOnly);
-			return file.readAll();
+			if (file.open(QIODevice::ReadOnly)) {
+				return file.readAll();
+			}
 		}
 	}
 	return tr("No conversion description available!");
@@ -335,7 +338,7 @@ void ProjectConverter::file_merge_finished(QString file)
 
 void ProjectConverter::finish_2_3_conversion()
 {
-	foreach(ReadSource* source, m_readsources) {
+	for (ReadSource* source : m_readsources) {
 		delete source;
 	}
 	

@@ -44,7 +44,9 @@ public:
 	float get_default_value();
 	void calculate_bounding_rect();
 	void load_theme_data();
-        void mouse_hover_move_event();
+	void mouse_hover_move_event();
+	void updateNodeVisibility(int startx, int endx);
+	
 	QString get_name() const;
 
         void set_start_offset(TimeRef offset);

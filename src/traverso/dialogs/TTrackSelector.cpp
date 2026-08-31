@@ -32,7 +32,7 @@ TTrackSelector::TTrackSelector(QWidget* parent, TSession* parentSession, TSessio
         setupUi(this);
 
         QList<Track*> tracks = parentSession->get_tracks();
-        foreach(Track* track, tracks) {
+        for (Track* track : tracks) {
                 QListWidgetItem* item = new QListWidgetItem(tracksListWidget);
                 item->setText(track->get_name());
                 item->setData(Qt::UserRole, track->get_id());
@@ -54,7 +54,7 @@ TTrackSelector::TTrackSelector(QWidget* parent, TSession* parentSession, TSessio
 void TTrackSelector::accept()
 {
         QList<QListWidgetItem*> selected = tracksListWidget->selectedItems();
-        foreach(QListWidgetItem* item, selected) {
+        for (QListWidgetItem* item : selected) {
                 Track* track = m_parentSession->get_track(item->data(Qt::UserRole).toLongLong());
                 Q_ASSERT(track);
                 m_childSession->add_track(track);

@@ -116,7 +116,7 @@ void NewTrackDialog::create_track()
             TBusTrack* busTrack = qobject_cast<TBusTrack*>(track);
 
             QList<QListWidgetItem*> selectedItems = routingInputListWidget->selectedItems();
-            foreach(QListWidgetItem* item, selectedItems) {
+            for (QListWidgetItem* item : selectedItems) {
                 // add external input (AudioTrack only)
                 if (audioTrack) {
                     track->add_input_bus(item->text());
@@ -137,7 +137,7 @@ void NewTrackDialog::create_track()
 
             // add post send to Track/Bus if any was selected
             QList<QListWidgetItem*> selectedOutputItems = routingOutputListWidget->selectedItems();
-            foreach(QListWidgetItem* item, selectedOutputItems) {
+            for (QListWidgetItem* item : selectedOutputItems) {
                 qint64 outputBusId = item->data(Qt::UserRole).toLongLong();
                 track->add_post_send(outputBusId);
             }
@@ -203,14 +203,14 @@ void NewTrackDialog::update_buses_comboboxes()
 
         QListWidgetItem* item = new QListWidgetItem(routingOutputListWidget);
         item->setText(tr("Internal Buses:"));
-        item->setTextColor(QColor("grey"));
-        item->setFlags(Qt::NoItemFlags);
+        item->setForeground(QColor("grey"));
+        item->setFlags(Qt::ItemFlags{});
 
         QList<TBusTrack*> subs;
         subs.append(session->get_master_out_bus_track());
         subs.append(session->get_bus_tracks());
         subs.append(m_project->get_master_out_bus_track());
-        foreach(TBusTrack* sg, subs) {
+        for (TBusTrack* sg : subs) {
             QListWidgetItem* item = new QListWidgetItem(routingOutputListWidget);
             item->setText(sg->get_name());
             item->setData(Qt::UserRole, sg->get_id());
@@ -220,9 +220,9 @@ void NewTrackDialog::update_buses_comboboxes()
 
         item = new QListWidgetItem(routingOutputListWidget);
         item->setText(tr("External Outputs:"));
-        item->setTextColor(QColor("grey"));
-        item->setFlags(Qt::NoItemFlags);
-        foreach(AudioBus* bus, hardwareBuses) {
+        item->setForeground(QColor("grey"));
+        item->setFlags(Qt::ItemFlags{});
+        for (AudioBus* bus : hardwareBuses) {
             if (isAudioTrack->isChecked() && bus->get_type() == ChannelIsInput) {
                 QListWidgetItem* item = new QListWidgetItem(routingInputListWidget);
                 item->setText(bus->get_name());
@@ -237,7 +237,7 @@ void NewTrackDialog::update_buses_comboboxes()
 
         Sheet* sheet = qobject_cast<Sheet*>(session);
         if (isBusTrack->isChecked() && sheet) {
-            foreach(AudioTrack* at, sheet->get_audio_tracks()) {
+            for (AudioTrack* at : sheet->get_audio_tracks()) {
                 QListWidgetItem* item = new QListWidgetItem(routingInputListWidget);
                 item->setText(at->get_name());
                 item->setData(Qt::UserRole, at->get_id());

@@ -40,7 +40,7 @@ MoveCurveNode::MoveCurveNode(Curve* curve,
     : TMoveCommand(nullptr, curve, des)
     , mcnd(new MoveCurveNode::MoveCurveNodeData)
 {
-	foreach(CurveNode* node, nodes) {
+	for (CurveNode* node : nodes) {
 		CurveNodeData curveData{};
 		curveData.node = node;
 		curveData.origValue = node->get_value();
@@ -124,7 +124,7 @@ int MoveCurveNode::begin_hold()
 
 int MoveCurveNode::do_action()
 {
-	foreach(const CurveNodeData& nodeData, m_nodeDatas) {
+	for (const CurveNodeData& nodeData : m_nodeDatas) {
 		nodeData.node->set_when_and_value(nodeData.origWhen + m_whenDiff.universal_frame(), nodeData.origValue + m_valueDiff);
 	}
 
@@ -133,7 +133,7 @@ int MoveCurveNode::do_action()
 
 int MoveCurveNode::undo_action()
 {
-	foreach(const CurveNodeData& nodeData, m_nodeDatas) {
+	for (const CurveNodeData& nodeData : m_nodeDatas) {
 		nodeData.node->set_when_and_value(nodeData.origWhen, nodeData.origValue);
 	}
 

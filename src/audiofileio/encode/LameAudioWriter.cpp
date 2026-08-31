@@ -42,11 +42,11 @@ struct LameAudioWriter::LameInfo {
 LameAudioWriter::LameAudioWriter()
  : AbstractAudioWriter()
 {
-	m_fid = 0;
+	m_fid = nullptr;
 	m_lameInfo = new LameInfo();
-	m_lameInfo->flags = 0;
+	m_lameInfo->flags = nullptr;
 	m_bufferSize = 0;
-	m_buffer = 0;
+	m_buffer = nullptr;
 	
 	// Quality settings
 	m_method = 0;
@@ -120,7 +120,7 @@ bool LameAudioWriter::open_private()
 	
 	m_lameInfo->flags = lame_init();
 	
-	if (m_lameInfo->flags == 0) {
+	if (m_lameInfo->flags == nullptr) {
 		PERROR("lame_init failed.");
 		return false;
 	}
@@ -238,10 +238,10 @@ bool LameAudioWriter::close_private()
 	}
 	
 	lame_close(m_lameInfo->flags);
-	m_lameInfo->flags = 0;
+	m_lameInfo->flags = nullptr;
 	
 	fclose(m_fid);
-	m_fid = 0;
+	m_fid = nullptr;
 	
 	return success;
 }

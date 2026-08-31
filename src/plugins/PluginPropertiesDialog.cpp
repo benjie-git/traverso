@@ -57,11 +57,11 @@ PluginPropertiesDialog::PluginPropertiesDialog(QWidget* parent, Plugin* plugin)
 	QVBoxLayout* dialogLayout = new QVBoxLayout;
 	dialogLayout->addWidget(sliderWidget);
 	dialogLayout->addWidget(optionsWidget);
-	dialogLayout->setMargin(0);
+	dialogLayout->setContentsMargins(0, 0, 0, 0);
 	setLayout(dialogLayout);
 
 
-	foreach(PluginControlPort* port, m_plugin->get_control_ports()) {
+	for (PluginControlPort* port : m_plugin->get_control_ports()) {
 
 		if (port->get_symbol() == "latency") {
 			continue;
@@ -71,7 +71,7 @@ PluginPropertiesDialog::PluginPropertiesDialog(QWidget* parent, Plugin* plugin)
 		widget->setMaximumHeight(22);
 		QHBoxLayout* lay = new QHBoxLayout();
 		lay->setSpacing(12);
-		lay->setMargin(3);
+		lay->setContentsMargins(3, 3, 3, 3);
 
 		PluginSlider* slider = new PluginSlider(port);
 		slider->update_slider_position();
@@ -119,7 +119,7 @@ void PluginPropertiesDialog::bypass_button_clicked()
 
 void PluginPropertiesDialog::reset_button_clicked()
 {
-	foreach(PluginSlider* slider, m_sliders) {
+	for (PluginSlider* slider : m_sliders) {
 		slider->reset_default_value();
 	}
 }

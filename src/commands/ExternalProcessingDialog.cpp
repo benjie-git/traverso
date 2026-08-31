@@ -36,6 +36,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA.
 
 #include <QFile>
 #include <QCompleter>
+#include <QRegularExpression>
 
 // Always put me below _all_ includes, this is needed
 // in case we run with memory leak detection enabled!
@@ -114,7 +115,7 @@ void ExternalProcessingDialog::start_external_processing()
 	
 	m_arguments.append(m_infilename);
 	m_arguments.append(m_outfilename);
-	m_arguments += m_commandargs.split(QRegExp("\\s+"));
+	m_arguments += m_commandargs.split(QRegularExpression("\\s+"));
 	
 	m_processor->start(m_program, m_arguments);
 }
@@ -130,14 +131,14 @@ void ExternalProcessingDialog::read_standard_output()
 		// On mac os x (and perhaps windows) the full path is given, so we check if the path contains sox!
 		if (m_program.contains("sox")) {
 			QStringList list = result.split("\n");
-			foreach(QString string, list) {
+			for (const QString& string : list) {
                 if (string.contains("Supported effects:") || string.contains("effect:") || string.contains("EFFECTS:")) {
-                    result = string.remove("Supported effects:").remove("effect:").remove("EFFECTS:");
-					QStringList options = string.split(QRegExp("\\s+"));
-					foreach(QString string, options) {
-						if (!string.isEmpty()) {
-							argsComboBox->addItem(string);
-							completionlist << string;
+                    result = QString(string).remove("Supported effects:").remove("effect:").remove("EFFECTS:");
+					QStringList options = result.split(QRegularExpression("\\s+"));
+					for (const QString& opt : options) {
+						if (!opt.isEmpty()) {
+							argsComboBox->addItem(opt);
+							completionlist << opt;
 						}
 					}
 				}
@@ -158,8 +159,8 @@ void ExternalProcessingDialog::read_standard_output()
 	QString result = m_processor->readAllStandardOutput();
 	
 	if (result.contains("%")) {
-		QStringList tokens = result.split(QRegExp("\\s+"));
-		foreach(QString token, tokens) {
+		QStringList tokens = result.split(QRegularExpression("\\s+"));
+		for (QString token : tokens) {
 			if (token.contains("%")) {
 				token = token.remove("%").remove("(").remove(")");
 				bool ok;

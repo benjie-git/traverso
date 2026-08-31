@@ -25,6 +25,7 @@ $Id: BusMonitor.h,v 1.1 2008/05/24 17:41:02 r_sijrier Exp $
 
 #include <QWidget>
 #include <QList>
+#include <QEnterEvent>
 
 class VUMeter;
 class Project;
@@ -42,7 +43,7 @@ public:
 	~BusMonitor();
 
 protected:
-	void enterEvent ( QEvent * );
+	void enterEvent ( QEnterEvent * );
 	void mousePressEvent ( QMouseEvent * e );
 	void keyPressEvent ( QKeyEvent* e);
 	QSize sizeHint () const;

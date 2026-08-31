@@ -32,7 +32,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA.
 #include <Themer.h>
 
 #include <QHeaderView>
-#include <QDirModel>
+#include <QFileSystemModel>
 #include <QListView>
 #include <QPushButton>
 #include <QHBoxLayout>
@@ -48,8 +48,9 @@ FileWidget::FileWidget(QWidget *parent)
     QPalette palette;
     palette.setColor(QPalette::AlternateBase, themer()->get_color("ResourcesBin:alternaterowcolor"));
 
-    m_dirModel = new QDirModel;
-    m_dirModel->setFilter(QDir::Dirs | QDir::Files | QDir::NoDot);
+    m_dirModel = new QFileSystemModel(this);
+    m_dirModel->setFilter(QDir::Dirs | QDir::Files | QDir::NoDotAndDotDot);
+    m_dirModel->setRootPath(QDir::rootPath());
     m_dirView = new QListView;
     m_dirView->setModel(m_dirModel);
     m_dirView->setDragEnabled(true);
@@ -57,7 +58,6 @@ FileWidget::FileWidget(QWidget *parent)
     m_dirView->setSelectionMode(QAbstractItemView::ExtendedSelection);
     m_dirView->setAlternatingRowColors(true);
     m_dirView->setPalette(palette);
-    m_dirModel->setSorting(QDir::DirsFirst | QDir::Name | QDir::IgnoreCase);
 
     m_box = new QComboBox(this);
     m_box->addItem("", "");
@@ -88,7 +88,7 @@ FileWidget::FileWidget(QWidget *parent)
     hlay->addStretch();
 
     QVBoxLayout* lay = new QVBoxLayout(this);
-    lay->setMargin(0);
+    lay->setContentsMargins(0, 0, 0, 0);
     lay->setSpacing(6);
     lay->addWidget(m_box);
     lay->addLayout(hlay);
@@ -142,7 +142,8 @@ void FileWidget::dir_up_button_clicked()
 
 void FileWidget::refresh_button_clicked()
 {
-	m_dirModel->refresh(m_dirView->rootIndex());
+	QString currentPath = m_dirModel->filePath(m_dirView->rootIndex());
+	m_dirModel->setRootPath(currentPath);
 }
 
 void FileWidget::box_actived(int i)
@@ -243,15 +244,15 @@ void ResourcesWidget::project_load_finished()
 	connect(rsmanager, SIGNAL(sourceAdded(ReadSource*)), this, SLOT(add_source(ReadSource*)));
 	connect(rsmanager, SIGNAL(sourceRemoved(ReadSource*)), this, SLOT(remove_source(ReadSource*)));
 	
-	foreach(ReadSource* rs, resources_manager()->get_all_audio_sources()) {
+	for (ReadSource* rs : resources_manager()->get_all_audio_sources()) {
 		add_source(rs);
 	}
 	
-	foreach(AudioClip* clip, resources_manager()->get_all_clips()) {
+	for (AudioClip* clip : resources_manager()->get_all_clips()) {
 		add_clip(clip);
 	}
 	
-	foreach(Sheet* sheet, m_project->get_sheets()) {
+	for (Sheet* sheet : m_project->get_sheets()) {
 		sheet_added(sheet);
 	}
 	
@@ -308,12 +309,12 @@ void ResourcesWidget::filter_on_current_sheet()
 		return;
 	}
 	
-	foreach(ClipTreeItem* item, m_clipindices.values()) {
+	for (ClipTreeItem* item : m_clipindices.values()) {
 		item->apply_filter(m_currentSheet);
 	}
 
 	
-	foreach(SourceTreeItem* item, m_sourceindices.values()) {
+	for (SourceTreeItem* item : m_sourceindices.values()) {
 		item->apply_filter(m_currentSheet);
 	}
 }

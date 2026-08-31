@@ -25,16 +25,8 @@ echo "Using traverso binary: $BIN_PATH"
 
 # Find macdeployqt
 MACDEPLOYQT=""
-if command -v macdeployqt >/dev/null 2>&1; then
-    MACDEPLOYQT="$(command -v macdeployqt)"
-elif [ -x "/opt/homebrew/opt/qt@5/bin/macdeployqt" ]; then
-    MACDEPLOYQT="/opt/homebrew/opt/qt@5/bin/macdeployqt"
-elif [ -x "/opt/homebrew/bin/macdeployqt" ]; then
-    MACDEPLOYQT="/opt/homebrew/bin/macdeployqt"
-elif [ -x "/usr/local/opt/qt@5/bin/macdeployqt" ]; then
-    MACDEPLOYQT="/usr/local/opt/qt@5/bin/macdeployqt"
-elif [ -x "/opt/local/libexec/qt5/bin/macdeployqt" ]; then
-    MACDEPLOYQT="/opt/local/libexec/qt5/bin/macdeployqt"
+if command -v macdeployqt6 >/dev/null 2>&1; then
+    MACDEPLOYQT="$(command -v macdeployqt6)"
 else
     echo "Error: macdeployqt not found."
     exit 1

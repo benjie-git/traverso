@@ -17,6 +17,7 @@ compile_commands.json
 Makefile
 /src/config.h
 .cmake
+.qt
 
 # build products
 /bin

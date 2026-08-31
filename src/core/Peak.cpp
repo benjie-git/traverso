@@ -93,7 +93,7 @@ Peak::~Peak()
 
     delete m_source;
 
-    foreach(ChannelData* data, m_channelData) {
+    for (ChannelData* data : m_channelData) {
         if (data->normFile.isOpen()) {
             QFile::remove(data->normFileName);
         }
@@ -114,7 +114,7 @@ int Peak::read_header()
 
     Q_ASSERT(m_source);
 
-    foreach(ChannelData* data, m_channelData) {
+    for (ChannelData* data : m_channelData) {
 
         data->file.setFileName(data->fileName);
 
@@ -359,7 +359,7 @@ int Peak::prepare_processing(uint rate)
 {
     PENTER;
 
-    foreach(ChannelData* data, m_channelData) {
+    for (ChannelData* data : m_channelData) {
 
         data->normFileName = data->fileName;
         data->normFileName.append(".norm");
@@ -408,7 +408,7 @@ int Peak::finish_processing()
 {
     PENTER;
 
-    foreach(ChannelData* data, m_channelData) {
+    for (ChannelData* data : m_channelData) {
 
         if (data->pd->processLocation < data->pd->nextDataPointLocation) {
             peak_data_t peakvalue = (peak_data_t)(data->pd->peakUpperValue * MAX_DB_VALUE);
@@ -651,7 +651,7 @@ out:
 
 audio_sample_t Peak::get_max_amplitude(TimeRef startlocation, TimeRef endlocation)
 {
-    foreach(ChannelData* data, m_channelData) {
+    for (ChannelData* data : m_channelData) {
         if (!data->file.isOpen() || !m_peaksAvailable) {
             printf("either the file is not open, or no peak data available\n");
             return 0.0f;
@@ -699,7 +699,7 @@ audio_sample_t Peak::get_max_amplitude(TimeRef startlocation, TimeRef endlocatio
     // read in the cached normvalues, and calculate the highest value!
     count = endpos - startpos;
 
-    foreach(ChannelData* data, m_channelData) {
+    for (ChannelData* data : m_channelData) {
         data->file.seek(data->headerdata.normValuesDataOffset + (startpos * sizeof(audio_sample_t)));
 
         int read = data->file.read((char*)readbuffer, sizeof(audio_sample_t) * count) / sizeof(audio_sample_t);
@@ -771,7 +771,8 @@ void PeakProcessor::start_task()
         return;
     }
 
-    foreach(Peak* peak, m_queue) {
+    QList<Peak*> queueList = m_queue;
+    for (Peak* peak : queueList) {
         if (m_runningPeak->m_source->get_filename() == peak->m_source->get_filename()) {
             m_queue.removeAll(peak);
             emit peak->finished();

@@ -83,15 +83,16 @@ target_link_libraries(traversocore
     PUBLIC
         traversoaudiobackend
         traversoaudiofileio
-        Qt5::Core
-        Qt5::Widgets
-        Qt5::Xml
+        Qt6::Core
+        Qt6::Widgets
+        Qt6::Xml
+        Qt6::Svg
         PkgConfig::FFTW3
         PkgConfig::SAMPLERATE
 )
 
-if(APPLE AND WANT_VECLIB_OPTIMIZATIONS)
-    target_link_libraries(traversocore PRIVATE "-framework Accelerate")
+if(APPLE)
+    target_link_libraries(traversocore PUBLIC "-framework Accelerate")
 endif()
 
 if(WANT_PCH)

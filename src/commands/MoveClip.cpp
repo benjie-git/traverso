@@ -129,7 +129,7 @@ MoveClip::MoveClip(ViewItem* view, const QVariantList& args)
 
         if (m_actionType == FOLD_SHEET || m_actionType == FOLD_MARKERS) {
             QList<Marker*> movingMarkers = d->sv->get_sheet()->get_timeline()->get_markers();
-            foreach(Marker* marker, movingMarkers) {
+            for (Marker* marker : movingMarkers) {
                 if (marker->get_when() > currentLocation) {
                     MarkerAndOrigin markerAndOrigin;
                     markerAndOrigin.marker = marker;
@@ -140,9 +140,9 @@ MoveClip::MoveClip(ViewItem* view, const QVariantList& args)
         }
 
         if (m_actionType == FOLD_SHEET || m_actionType == FOLD_TRACK) {
-            foreach(AudioTrack* track, tracks) {
+            for (AudioTrack* track : tracks) {
                 QList<AudioClip*> clips = track->get_audioclips();
-                foreach(AudioClip* clip, clips) {
+                for (AudioClip* clip : clips) {
                     if (clip->get_track_end_location() > currentLocation) {
                         movingClips.append(clip);
                     }
@@ -268,7 +268,7 @@ int MoveClip::do_action()
         move_to_end();
     }
 
-    foreach(MarkerAndOrigin markerAndOrigin, m_markers) {
+    for (const MarkerAndOrigin& markerAndOrigin : m_markers) {
         markerAndOrigin.marker->set_when(markerAndOrigin.origin + m_posDiff);
     }
 
@@ -285,7 +285,7 @@ int MoveClip::undo_action()
         m_group.move_to(m_origTrackIndex, m_trackStartLocation);
     }
 
-    foreach(MarkerAndOrigin markerAndOrigin, m_markers) {
+    for (const MarkerAndOrigin& markerAndOrigin : m_markers) {
         markerAndOrigin.marker->set_when(markerAndOrigin.origin);
     }
 
@@ -343,7 +343,7 @@ int MoveClip::jog()
     m_group.move_to(m_newTrackIndex, m_trackStartLocation + m_posDiff);
 
     // and used to move the markers
-    foreach(MarkerAndOrigin markerAndOrigin, m_markers) {
+    for (const MarkerAndOrigin& markerAndOrigin : m_markers) {
         markerAndOrigin.marker->set_when(markerAndOrigin.origin + m_posDiff);
     }
 

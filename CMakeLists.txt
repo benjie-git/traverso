@@ -12,7 +12,7 @@ set(VERSION_SUFFIX "-git-01-11-2010")
 set(VERSION "${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}${VERSION_SUFFIX}")
 
 # C/C++ standard requirements
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_C_STANDARD 99)
@@ -27,21 +27,25 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/bin")
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/lib")
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/lib")
 
-# Qt5 setup
+# Qt6 setup
 if(APPLE)
-    if(EXISTS "/opt/homebrew/opt/qt@5")
-        list(PREPEND CMAKE_PREFIX_PATH "/opt/homebrew/opt/qt@5")
-    elseif(EXISTS "/usr/local/opt/qt@5")
-        list(PREPEND CMAKE_PREFIX_PATH "/usr/local/opt/qt@5")
-    elseif(EXISTS "/opt/local/libexec/qt5")
-        list(PREPEND CMAKE_PREFIX_PATH "/opt/local/libexec/qt5")
+    if(EXISTS "/opt/homebrew/opt/qtbase")
+        list(PREPEND CMAKE_PREFIX_PATH "/opt/homebrew/opt/qtbase")
+    elseif(EXISTS "/usr/local/opt/qtbase")
+        list(PREPEND CMAKE_PREFIX_PATH "/usr/local/opt/qtbase")
+    endif()
+
+    if(EXISTS "/opt/homebrew/opt/qtsvg")
+        list(PREPEND CMAKE_PREFIX_PATH "/opt/homebrew/opt/qtsvg")
+    elseif(EXISTS "/usr/local/opt/qtsvg")
+        list(PREPEND CMAKE_PREFIX_PATH "/usr/local/opt/qtsvg")
     endif()
 endif()
 
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTORCC ON)
-find_package(Qt5 5.3.0 REQUIRED COMPONENTS Core Widgets Xml)
+find_package(Qt6 6.0 REQUIRED COMPONENTS Core Widgets Xml Svg)
 
 # Options with platform defaults
 if(APPLE)
@@ -72,10 +76,11 @@ option(WANT_COREAUDIO "Include CoreAudio support (macOS)" ${DEFAULT_WANT_COREAUD
 option(WANT_LV2 "Include LV2 Plugin support" ${DEFAULT_WANT_LV2})
 option(WANT_MP3_DECODE "Include MP3 decoding support (libmad)" ON)
 option(WANT_MP3_ENCODE "Include MP3 encoding support (lame)" ON)
+option(WANT_M4A_DECODE "Include M4A/AAC decoding support (faad2)" ON)
+option(WANT_M4A_ENCODE "Include M4A/AAC encoding support (faac)" ON)
 option(WANT_PCH "Use precompiled headers" OFF)
 option(WANT_TRAVERSO_DEBUG "Enable Traverso debug output on command line" OFF)
 option(WANT_THREAD_CHECK "Enable runtime thread checks for debugging" OFF)
-option(WANT_VECLIB_OPTIMIZATIONS "Build with VecLib optimizations (Mac OS X PowerPC/Tiger)" OFF)
 option(WANT_SSE "Use SSE instruction set optimizations (x86/x86_64 only)" ON)
 
 # Version tagging option
@@ -101,10 +106,6 @@ endif()
 
 if(WANT_THREAD_CHECK)
     traverso_add_definition(THREAD_CHECK)
-endif()
-
-if(APPLE AND WANT_VECLIB_OPTIMIZATIONS)
-    traverso_add_definition(BUILD_VECLIB_OPTIMIZATIONS)
 endif()
 
 if(WIN32)
@@ -256,6 +257,59 @@ if(WANT_MP3_ENCODE)
     endif()
 endif()
 
+set(HAVE_M4A_DECODING FALSE)
+if(WANT_M4A_DECODE)
+    pkg_check_modules(FAAD2 IMPORTED_TARGET faad2)
+    if(NOT FAAD2_FOUND)
+        pkg_check_modules(FAAD IMPORTED_TARGET faad)
+        if(FAAD_FOUND)
+            set(FAAD2_FOUND TRUE)
+            add_library(PkgConfig::FAAD2 ALIAS PkgConfig::FAAD)
+        endif()
+    endif()
+    if(NOT FAAD2_FOUND)
+        find_path(FAAD2_INCLUDE_DIR neaacdec.h)
+        find_library(FAAD2_LIBRARY NAMES faad faad2)
+        if(FAAD2_INCLUDE_DIR AND FAAD2_LIBRARY)
+            add_library(PkgConfig::FAAD2 UNKNOWN IMPORTED)
+            set_target_properties(PkgConfig::FAAD2 PROPERTIES
+                INTERFACE_INCLUDE_DIRECTORIES "${FAAD2_INCLUDE_DIR}"
+                IMPORTED_LOCATION "${FAAD2_LIBRARY}"
+            )
+            set(FAAD2_FOUND TRUE)
+        endif()
+    endif()
+    if(FAAD2_FOUND)
+        set(HAVE_M4A_DECODING TRUE)
+        traverso_add_definition(M4A_DECODE_SUPPORT)
+    else()
+        message(FATAL_ERROR "M4A decoding requested but faad2 not found")
+    endif()
+endif()
+
+set(HAVE_M4A_ENCODING FALSE)
+if(WANT_M4A_ENCODE)
+    pkg_check_modules(FAAC IMPORTED_TARGET faac)
+    if(NOT FAAC_FOUND)
+        find_path(FAAC_INCLUDE_DIR faac.h)
+        find_library(FAAC_LIBRARY NAMES faac)
+        if(FAAC_INCLUDE_DIR AND FAAC_LIBRARY)
+            add_library(PkgConfig::FAAC UNKNOWN IMPORTED)
+            set_target_properties(PkgConfig::FAAC PROPERTIES
+                INTERFACE_INCLUDE_DIRECTORIES "${FAAC_INCLUDE_DIR}"
+                IMPORTED_LOCATION "${FAAC_LIBRARY}"
+            )
+            set(FAAC_FOUND TRUE)
+        endif()
+    endif()
+    if(FAAC_FOUND)
+        set(HAVE_M4A_ENCODING TRUE)
+        traverso_add_definition(M4A_ENCODE_SUPPORT)
+    else()
+        message(FATAL_ERROR "M4A encoding requested but faac not found")
+    endif()
+endif()
+
 # Build formatted TRAVERSO_DEFINES string
 set(TRAVERSO_DEFINES "")
 foreach(def IN LISTS TRAVERSO_DEFINES_LIST)
@@ -324,6 +378,8 @@ Traverso ${VERSION} Configuration Summary:
   LV2 (Lilv) support    : ${HAVE_LILV}
   MP3 decode support    : ${HAVE_MP3_DECODING}
   MP3 encode support    : ${HAVE_MP3_ENCODING}
+  M4A decode support    : ${HAVE_M4A_DECODING}
+  M4A encode support    : ${HAVE_M4A_ENCODING}
   SSE optimizations     : ${HOST_SUPPORTS_SSE}
   Precompiled headers   : ${WANT_PCH}
 --------------------------------------------------

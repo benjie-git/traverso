@@ -28,6 +28,7 @@
 #include <QTextStream>
 #include <QDomDocument>
 #include <QFileDialog>
+#include <algorithm>
 #include <QHeaderView>
 #include <QToolButton>
 #include <QPushButton>
@@ -120,17 +121,14 @@ void NewProjectDialog::accept( )
 
 	// first test if project exists already
 	if (pm().project_exists(title)) {
-		switch (QMessageBox::information(this,
+		if (QMessageBox::question(this,
 			tr("Traverso - Question"),
-			   tr("The Project \"%1\" already exists, do you want to remove it and replace it with a new one ?").arg(title),
-			      tr("Yes"), tr("No"), QString::null, 1, -1)) 
+			tr("The Project \"%1\" already exists, do you want to remove it and replace it with a new one ?").arg(title),
+			QMessageBox::Yes | QMessageBox::No, QMessageBox::No) == QMessageBox::Yes) 
 		{
-			case 0:
-				pm().remove_project(title);
-				break;
-			default:
-				return;
-				break;
+			pm().remove_project(title);
+		} else {
+			return;
 		}
 	}
 
@@ -214,7 +212,7 @@ void NewProjectDialog::update_template_combobox()
 {
 	QDir templatedir(QDir::homePath() + "/.traverso/ProjectTemplates");
 	
-	foreach (QString filename, templatedir.entryList(QDir::Files | QDir::NoDotAndDotDot)) {
+	for (QString filename : templatedir.entryList(QDir::Files | QDir::NoDotAndDotDot)) {
 		templateComboBox->insertItem(0, filename.remove(".tpt"));
 	}
 }
@@ -228,7 +226,7 @@ void NewProjectDialog::add_files()
 
 	QStringList list = QFileDialog::getOpenFileNames(this, tr("Open Audio Files"),
                         importdir,
-                        tr("Audio files (*.wav *.flac *.ogg *.mp3 *.wv *.w64)"));
+                        tr("Audio files (*.wav *.flac *.ogg *.mp3 *.m4a *.mp4 *.aac *.wv *.w64)"));
         
         if (list.size()) {
                 QFileInfo info(list.at(0));
@@ -363,11 +361,11 @@ void NewProjectDialog::move_up()
 		return;
 	}
 
-	qSort(selection);
+	std::sort(selection.begin(), selection.end());
 	int firstIndex = treeWidgetFiles->topLevelItemCount();
 	QList<int> indexList;
 
-	foreach(QTreeWidgetItem *it, selection) {
+	for (QTreeWidgetItem *it : selection) {
 	    int idx = treeWidgetFiles->indexOfTopLevelItem(it);
 	    firstIndex = qMin(idx, firstIndex);
 	}
@@ -393,11 +391,11 @@ void NewProjectDialog::move_down()
 		return;
 	}
 
-	qSort(selection);
+	std::sort(selection.begin(), selection.end());
 	int firstIndex = 0;
 	QList<int> indexList;
 
-	foreach(QTreeWidgetItem *it, selection) {
+	for (QTreeWidgetItem *it : selection) {
 	    int idx = treeWidgetFiles->indexOfTopLevelItem(it);
 	    firstIndex = qMax(idx, firstIndex);
 	}
@@ -446,7 +444,7 @@ void NewProjectDialog::on_changeProjectsDirButton_clicked()
                                 tr("Please check permission for this directory: %1").arg(newPath) );
                 return;
         } else {
-                QMessageBox::information( this, tr("Traverso - Information"), tr("Created new Project directory for you here: %1\n").arg(newPath), "OK", 0 );
+                QMessageBox::information( this, tr("Traverso - Information"), tr("Created new Project directory for you here: %1\n").arg(newPath), QMessageBox::Ok );
         }
 
         pm().set_current_project_dir(newPath);

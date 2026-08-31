@@ -26,8 +26,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA.
 #include <QFileInfo>
 #include <QList>
 #include <QMap>
-#include <QRegExp>
 #include <QDebug>
+#include <algorithm>
 
 #include <commands.h>
 
@@ -302,7 +302,7 @@ QDomNode Sheet::get_state(QDomDocument doc, bool istemplate)
 
 	QDomNode tracksNode = doc.createElement("Tracks");
 
-        foreach(AudioTrack* track, m_audioTracks) {
+        for (AudioTrack* track : m_audioTracks) {
 		tracksNode.appendChild(track->get_state(doc, istemplate));
 	}
 
@@ -310,14 +310,14 @@ QDomNode Sheet::get_state(QDomDocument doc, bool istemplate)
 
 
         QDomNode busTracksNode = doc.createElement("BusTracks");
-        foreach(TBusTrack* busTrack, m_busTracks) {
+        for (TBusTrack* busTrack : m_busTracks) {
                 busTracksNode.appendChild(busTrack->get_state(doc, istemplate));
         }
 
         sheetNode.appendChild(busTracksNode);
 
         QDomNode workSheetsNode = doc.createElement("WorkSheets");
-        foreach(TSession* session, m_childSessions) {
+        for (TSession* session : m_childSessions) {
                 workSheetsNode.appendChild(session->get_state(doc));
         }
 
@@ -328,7 +328,7 @@ QDomNode Sheet::get_state(QDomDocument doc, bool istemplate)
 
 bool Sheet::any_audio_track_armed()
 {
-        foreach(AudioTrack* track, m_audioTracks) {
+        for (AudioTrack* track : m_audioTracks) {
                 if (track->armed()) {
 			return true;
 		}
@@ -375,7 +375,7 @@ int Sheet::prepare_export(ExportSpecification* spec)
 
 	TimeRef endlocation, startlocation;
 
-        foreach(AudioTrack* track, m_audioTracks) {
+        for (AudioTrack* track : m_audioTracks) {
                 track->get_render_range(startlocation, endlocation);
 
 		if (track->is_solo()) {
@@ -664,9 +664,9 @@ void Sheet::solo_track(Track *track)
         // that have this Bus Track as the output bus.
         if ((track->get_type() == Track::BUS) && !(track == m_masterOutBusTrack)) {
                 QList<AudioTrack*> busTrackAudioTracks;
-                foreach(AudioTrack* sgTrack, tracks) {
+                for (AudioTrack* sgTrack : tracks) {
                         QList<TSend*> sends = sgTrack->get_post_sends();
-                        foreach(TSend* send, sends) {
+                        for (TSend* send : sends) {
                                 if (send->get_bus_id() == track->get_process_bus()->get_id()) {
                                         busTrackAudioTracks.append(sgTrack);
                                 }
@@ -674,12 +674,12 @@ void Sheet::solo_track(Track *track)
                 }
 
                 if (wasSolo) {
-                        foreach(AudioTrack* sgTrack, busTrackAudioTracks) {
+                        for (AudioTrack* sgTrack : busTrackAudioTracks) {
                                 sgTrack->set_solo(false);
                                 sgTrack->set_muted_by_solo(false);
                         }
                 } else {
-                        foreach(AudioTrack* sgTrack, busTrackAudioTracks) {
+                        for (AudioTrack* sgTrack : busTrackAudioTracks) {
                                 sgTrack->set_solo(true);
                                 sgTrack->set_muted_by_solo(true);
                         }
@@ -688,7 +688,7 @@ void Sheet::solo_track(Track *track)
 
         bool hasSolo = false;
 
-        foreach(Track* t, tracks) {
+        for (Track* t : tracks) {
                 t->set_muted_by_solo(!t->is_solo());
                 if (t->is_solo()) {
                         hasSolo = true;
@@ -696,7 +696,7 @@ void Sheet::solo_track(Track *track)
         }
 
         if (!hasSolo) {
-                foreach(Track* t, tracks) {
+                for (Track* t : tracks) {
                         t->set_muted_by_solo(false);
                 }
         }
@@ -808,7 +808,7 @@ void Sheet::resize_buffer(nframes_t size)
         buses.append(m_masterOutBusTrack->get_process_bus());
         buses.append(m_renderBus);
         buses.append(m_clipRenderBus);
-        foreach(AudioBus* bus, buses) {
+        for (AudioBus* bus : buses) {
                 for(int i=0; i<bus->get_channel_count(); i++) {
                         if (AudioChannel* chan = bus->get_channel(i)) {
                                 chan->set_buffer_size(size);
@@ -913,7 +913,7 @@ TimeRef Sheet::get_last_location() const
 
 TCommand* Sheet::add_track(Track* track, bool historable)
 {
-        foreach(AudioTrack* existing, m_audioTracks) {
+        for (AudioTrack* existing : m_audioTracks) {
                 if (existing->is_solo()) {
                         track->set_muted_by_solo( true );
                         break;
@@ -1110,7 +1110,7 @@ void Sheet::prepare_recording()
         if (m_recording && any_audio_track_armed()) {
 		CommandGroup* group = new CommandGroup(this, "");
 		int clipcount = 0;
-                foreach(AudioTrack* track, m_audioTracks) {
+                for (AudioTrack* track : m_audioTracks) {
                         if (track->armed()) {
 				AudioClip* clip = track->init_recording();
 				if (clip) {
@@ -1227,7 +1227,7 @@ QList< AudioTrack * > Sheet::get_audio_tracks() const
 
 AudioTrack * Sheet::get_audio_track_for_index(int index)
 {
-        foreach(AudioTrack* track, m_audioTracks) {
+        for (AudioTrack* track : m_audioTracks) {
                 if (track->get_sort_index() == index) {
 			return track;
 		}
@@ -1347,7 +1347,7 @@ void Sheet::update_skip_positions()
 		}
 	}
 
-	qSort(m_xposList);
+	std::sort(m_xposList.begin(), m_xposList.end());
 }
 
 void Sheet::skip_to_start()

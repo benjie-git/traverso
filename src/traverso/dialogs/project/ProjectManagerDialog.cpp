@@ -141,7 +141,7 @@ void ProjectManagerDialog::update_sheet_list( )
 	}
 	
 	treeSheetWidget->clear();
-	foreach(Sheet* sheet, m_project->get_sheets()) {
+	for (Sheet* sheet : m_project->get_sheets()) {
 
 		QString sheetNr = QString::number(m_project->get_sheet_index(sheet->get_id()));
                 QString sheetName = "Sheet " + sheetNr + " - " + sheet->get_name();

@@ -27,6 +27,7 @@
 #include "TrackPanelView.h"
 #include <ContextPointer.h>
 #include <QWheelEvent>
+#include "TInputEventDispatcher.h"
 #include <Debugger.h>
 
 
@@ -57,16 +58,20 @@ void TrackPanelViewPort::wheelEvent ( QWheelEvent * e )
   	}
 }
 
-// Catch native Mac trackpad gestures
+// Catch native trackpad gestures
 bool TrackPanelViewPort::event(QEvent *event)
 {
     if (event->type() == QEvent::NativeGesture) {
         QNativeGestureEvent *gestureEvent = static_cast<QNativeGestureEvent*>(event);
         if (gestureEvent->gestureType() == Qt::ZoomNativeGesture) {
-            qreal zoomFactor = 1 - 2*gestureEvent->value(); 
-            
-            SheetView* sv = m_sw->get_sheetview();
-            sv->hzoom(zoomFactor);
+            qreal zoomFactor = 2*gestureEvent->value(); 
+
+            if (ied().is_holding_modifier_key("SHIFT")) {
+                m_sv->vzoom(1+zoomFactor);
+            }
+            else {
+                m_sv->hzoom(1-zoomFactor);
+            }
             
             return true; // Event handled
         }

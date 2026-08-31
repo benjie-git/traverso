@@ -127,7 +127,7 @@ Project::~Project()
 
         delete m_resourcesManager;
 
-        foreach(Sheet* sheet, m_sheets) {
+        for (Sheet* sheet : m_sheets) {
                 delete sheet;
         }
 
@@ -244,7 +244,9 @@ int Project::load(const QString& projectfile)
 	
 	// Start setting and parsing the content of the xml file
 	QString errorMsg;
-	if (!doc.setContent(&file, &errorMsg)) {
+        QDomDocument::ParseResult result = doc.setContent(&file);
+        if (!result) {
+                errorMsg = result.errorMessage;
 		m_errorString = tr("Project %1: Failed to parse project.tpf file! (Reason: %2)").arg(m_name).arg(errorMsg);
 		info().critical(m_errorString);
 		return SETTING_XML_CONTENT_FAILED;
@@ -320,13 +322,13 @@ int Project::load(const QString& projectfile)
                 conf.type = e.attribute("type", "");
                 conf.bustype = e.attribute("bustype", "software");
                 conf.id = e.attribute("id", "-1").toLongLong();
-                QStringList channelIds = e.attribute("channelids", "").split(";", QString::SkipEmptyParts);
+                QStringList channelIds = e.attribute("channelids", "").split(";", Qt::SkipEmptyParts);
 
                 AudioBus* bus = new AudioBus(conf);
 
                 if (bus->get_bus_type() == BusIsSoftware) {
                         AudioChannel* channel;
-                        foreach(QString idString, channelIds) {
+                        for (const QString& idString : channelIds) {
                                 qint64 id = idString.toLongLong();
                                 channel = m_softwareAudioChannels.value(id);
                                 if (channel) {
@@ -336,7 +338,7 @@ int Project::load(const QString& projectfile)
                         m_softwareAudioBuses.insert(bus->get_id(), bus);
                 }
                 if (bus->get_bus_type() == BusIsHardware) {
-                        foreach(QString channelName, conf.channelNames) {
+                        for (const QString& channelName : conf.channelNames) {
                                 bus->add_channel(channelName);
                         }
                         m_hardwareAudioBuses.append(bus);
@@ -467,7 +469,9 @@ int Project::save_from_template_to_project_file(const QString& templateFile, con
 
         // Start setting and parsing the content of the xml file
         QString errorMsg;
-        if (!doc.setContent(&file, &errorMsg)) {
+        QDomDocument::ParseResult result = doc.setContent(&file);
+        if (!result) {
+                errorMsg = result.errorMessage;
                 m_errorString = tr("Project %1: Failed to parse project.tpf file! (Reason: %2)").arg(m_name).arg(errorMsg);
                 info().critical(m_errorString);
                 return SETTING_XML_CONTENT_FAILED;
@@ -577,7 +581,7 @@ QDomNode Project::get_state(QDomDocument doc, bool istemplate)
 
         QDomElement channelsElement = doc.createElement("AudioChannels");
 
-        foreach(AudioChannel* channel, m_softwareAudioChannels) {
+        for (AudioChannel* channel : m_softwareAudioChannels) {
                 QDomElement chanElement = doc.createElement("Channel");
                 chanElement.setAttribute("name", channel->get_name());
                 chanElement.setAttribute("type", channel->get_type() == ChannelIsInput ? "input" : "output");
@@ -592,12 +596,12 @@ QDomNode Project::get_state(QDomDocument doc, bool istemplate)
         buses.append(m_hardwareAudioBuses);
         buses.append(m_softwareAudioBuses.values());
 
-        foreach(AudioBus* bus, buses) {
+        for (AudioBus* bus : buses) {
                 QDomElement busElement = doc.createElement("Bus");
                 busElement.setAttribute("name", bus->get_name());
                 busElement.setAttribute("channels", bus->get_channel_names().join(";"));
                 QStringList channelIds;
-                foreach(qint64 id, bus->get_channel_ids()) {
+                for (qint64 id : bus->get_channel_ids()) {
                         channelIds.append(QString::number(id));
                 }
                 busElement.setAttribute("channelids", channelIds.join(";"));
@@ -612,7 +616,7 @@ QDomNode Project::get_state(QDomDocument doc, bool istemplate)
 
 
         QDomNode busTracksNode = doc.createElement("BusTracks");
-        foreach(TBusTrack* busTrack, m_busTracks) {
+        for (TBusTrack* busTrack : m_busTracks) {
                 busTracksNode.appendChild(busTrack->get_state(doc, istemplate));
         }
 
@@ -634,14 +638,14 @@ QDomNode Project::get_state(QDomDocument doc, bool istemplate)
 	// Get all the Sheets
 	QDomNode sheetsNode = doc.createElement("Sheets");
 
-        foreach(Sheet* sheet, m_sheets) {
+        for (Sheet* sheet : m_sheets) {
 		sheetsNode.appendChild(sheet->get_state(doc, istemplate));
 	}
 
 	projectNode.appendChild(sheetsNode);
 
         QDomNode workSheetsNode = doc.createElement("WorkSheets");
-        foreach(TSession* session, m_childSessions) {
+        for (TSession* session : m_childSessions) {
                 workSheetsNode.appendChild(session->get_state(doc));
         }
 
@@ -766,7 +770,7 @@ void Project::add_meter(Plugin *meter)
  */
 AudioBus* Project::get_playback_bus(const QString& name) const
 {
-        foreach(AudioBus* bus, m_hardwareAudioBuses) {
+        for (AudioBus* bus : m_hardwareAudioBuses) {
                 if (bus->get_type() == ChannelIsOutput) {
                         if (bus->get_name() == name) {
                                 return bus;
@@ -793,7 +797,7 @@ AudioBus* Project::get_capture_bus(const QString& name) const
         allBuses.append(m_hardwareAudioBuses);
         allBuses.append(m_softwareAudioBuses.values());
 
-        foreach(AudioBus* bus, allBuses) {
+        for (AudioBus* bus : allBuses) {
                 if (bus->get_type() == ChannelIsInput) {
                         if (bus->get_name() == name) {
                                 return bus;
@@ -810,30 +814,30 @@ AudioBus* Project::get_audio_bus(qint64 id)
                 return m_masterOutBusTrack->get_process_bus();
         }
 
-        foreach(Sheet* sheet, m_sheets) {
+        for (Sheet* sheet : m_sheets) {
                 if (sheet->get_master_out_bus_track()->get_id() == id) {
                         return sheet->get_master_out_bus_track()->get_process_bus();
                 }
-                foreach(TBusTrack* group, sheet->get_bus_tracks()) {
+                for (TBusTrack* group : sheet->get_bus_tracks()) {
                         if (group->get_id() == id) {
                                 return group->get_process_bus();
                         }
                 }
         }
 
-        foreach(AudioBus* bus, m_hardwareAudioBuses) {
+        for (AudioBus* bus : m_hardwareAudioBuses) {
                 if (bus->get_id() == id) {
                         return bus;
                 }
         }
 
-        foreach(AudioBus* bus, m_softwareAudioBuses) {
+        for (AudioBus* bus : m_softwareAudioBuses) {
                 if (bus->get_id() == id) {
                         return bus;
                 }
         }
 
-        foreach(TBusTrack* group, get_bus_tracks()) {
+        for (TBusTrack* group : get_bus_tracks()) {
                 if (group->get_id() == id) {
                         return group->get_process_bus();
                 }
@@ -877,14 +881,14 @@ QList<TSend*> Project::get_inputs_for_bus_track(TBusTrack *busTrack) const
 
         QList<Track*> tracks;
         tracks.append(get_tracks());
-        foreach(Sheet* sheet, m_sheets) {
+        for (Sheet* sheet : m_sheets) {
                 tracks.append(sheet->get_tracks());
                 tracks.append(sheet->get_master_out_bus_track());
         }
 
-        foreach(Track* track, tracks) {
+        for (Track* track : tracks) {
                 QList<TSend*> sends = track->get_post_sends();
-                foreach(TSend* send, sends) {
+                for (TSend* send : sends) {
                         if (send->get_bus_id() == busTrack->get_id()) {
                                 inputs.append(send);
                         }
@@ -897,7 +901,7 @@ QList<TSend*> Project::get_inputs_for_bus_track(TBusTrack *busTrack) const
 QList<Track*> Project::get_sheet_tracks() const
 {
         QList<Track*> tracks;
-        foreach(Sheet* sheet, m_sheets) {
+        for (Sheet* sheet : m_sheets) {
                 tracks.append(sheet->get_tracks());
                 tracks.append(sheet->get_master_out_bus_track());
         }
@@ -908,7 +912,7 @@ Track* Project::get_track(qint64 id) const
 {
         QList<Track*> tracks = get_sheet_tracks();
         tracks.append(get_tracks());
-        foreach(Track* track, tracks) {
+        for (Track* track : tracks) {
                 if (track->get_id() == id) {
                         return track;
                 }
@@ -932,7 +936,7 @@ void Project::track_property_changed()
 QStringList Project::get_capture_buses_names( ) const
 {
         QStringList names;
-        foreach(AudioBus* bus, m_hardwareAudioBuses) {
+        for (AudioBus* bus : m_hardwareAudioBuses) {
                 if (bus->get_type() == ChannelIsInput) {
                         names.append(bus->get_name());
                 }
@@ -950,7 +954,7 @@ QStringList Project::get_capture_buses_names( ) const
 QStringList Project::get_playback_buses_names( ) const
 {
         QStringList names;
-        foreach(AudioBus* bus, m_hardwareAudioBuses) {
+        for (AudioBus* bus : m_hardwareAudioBuses) {
                 if (bus->get_type() == ChannelIsOutput) {
                         names.append(bus->get_name());
                 }
@@ -961,12 +965,12 @@ QStringList Project::get_playback_buses_names( ) const
 QList<AudioBus*> Project::get_hardware_buses() const
 {
         QList<AudioBus*> list;
-        foreach(AudioBus* bus, m_hardwareAudioBuses) {
+        for (AudioBus* bus : m_hardwareAudioBuses) {
                 if (bus->get_channel_names().count() == 1) {
                         list.append(bus);
                 }
         }
-        foreach(AudioBus* bus, m_hardwareAudioBuses) {
+        for (AudioBus* bus : m_hardwareAudioBuses) {
                 if (bus->get_channel_names().count() == 2) {
                         list.append(bus);
                 }
@@ -1061,7 +1065,7 @@ void Project::set_genre(int pGenre)
 
 bool Project::has_changed()
 {
-        foreach(Sheet* sheet, m_sheets) {
+        for (Sheet* sheet : m_sheets) {
                 if(sheet->is_changed())
 			return true;
 	}
@@ -1100,7 +1104,7 @@ Sheet* Project::get_sheet(qint64 id) const
 {
         Sheet* current = nullptr;
 
-        foreach(Sheet* sheet, m_sheets) {
+        for (Sheet* sheet : m_sheets) {
                 if (sheet->get_id() == id) {
                         current = sheet;
                         break;
@@ -1114,7 +1118,7 @@ TSession* Project::get_session(qint64 id)
 {
         QList<TSession*> sessions = get_sessions();
 
-        foreach(TSession* session, sessions) {
+        for (TSession* session : sessions) {
                 if (session->get_id() == id) {
                         return session;
                 }
@@ -1221,7 +1225,7 @@ int Project::start_export(ExportSpecification* spec)
 
         // determine which sheets to export, store them in sheetsToRender
 	if (spec->allSheets) {
-                foreach(Sheet* sheet, m_sheets) {
+                for (Sheet* sheet : m_sheets) {
                         sheetsToRender.append(sheet);
 		}
 	} else {
@@ -1234,7 +1238,7 @@ int Project::start_export(ExportSpecification* spec)
         // process each sheet in the list sheetsToRender. here we set the renderpass mode,
         // and then call Sheet::repare_export() and Sheet::render(), which do the actual
         // processing.
-        foreach(Sheet* sheet, sheetsToRender) {
+        for (Sheet* sheet : sheetsToRender) {
                 PMESG("Starting export for sheet %lld", sheet->get_id());
 		emit exportStartedForSheet(sheet);
 		spec->resumeTransport = false;
@@ -1319,7 +1323,7 @@ TimeRef Project::get_cd_totaltime(ExportSpecification* spec)
         spec->renderpass = ExportSpecification::CREATE_CDRDAO_TOC;
 
         if (spec->allSheets) {
-                foreach(Sheet* sheet, m_sheets) {
+                for (Sheet* sheet : m_sheets) {
                         sheet->prepare_export(spec);
                         totalTime += spec->totalTime;
                 }
@@ -1340,7 +1344,7 @@ int Project::create_cdrdao_toc(ExportSpecification* spec)
 	QString filename = spec->exportdir;
 	
 	if (spec->allSheets) {
-                foreach(Sheet* sheet, m_sheets) {
+                for (Sheet* sheet : m_sheets) {
                         sheets.append(sheet);
 		}
 
@@ -1379,7 +1383,7 @@ int Project::create_cdrdao_toc(ExportSpecification* spec)
 	bool pregap = true;
 	spec->renderpass = ExportSpecification::CREATE_CDRDAO_TOC;
 	
-	foreach(Sheet* sheet, sheets) {
+	for (Sheet* sheet : sheets) {
 		if (sheet->prepare_export(spec) < 0) {
 			return -1;
 		}
@@ -1471,9 +1475,9 @@ QList<TSession*> Project::get_sessions()
         QList<TSession*> sessions;
         sessions.append(this);
         sessions.append(get_child_sessions());
-        foreach(Sheet* sheet, m_sheets) {
+        for (Sheet* sheet : m_sheets) {
                 sessions.append(sheet);
-                foreach(TSession* session, sheet->get_child_sessions()) {
+                for (TSession* session : sheet->get_child_sessions()) {
                         sessions.append(session);
                 }
         }
@@ -1560,12 +1564,12 @@ void Project::audiodevice_params_changed()
 {
         setup_default_hardware_buses();
 
-        foreach(AudioBus* bus, m_hardwareAudioBuses) {
+        for (AudioBus* bus : m_hardwareAudioBuses) {
                 bus->audiodevice_params_changed();
         }
 
         uint bufferSize = audiodevice().get_buffer_size();
-        foreach(AudioChannel* channel, m_softwareAudioChannels) {
+        for (AudioChannel* channel : m_softwareAudioChannels) {
                 channel->set_buffer_size(bufferSize);
         }
 }
@@ -1699,7 +1703,7 @@ bool Project::is_save_to_close() const
 
 bool Project::is_recording() const
 {
-        foreach(Sheet* sheet, m_sheets) {
+        for (Sheet* sheet : m_sheets) {
                 if (sheet->is_recording() && sheet->is_transport_rolling()) {
 			return true;
 		}
@@ -1709,7 +1713,7 @@ bool Project::is_recording() const
 
 void Project::set_work_at(TimeRef worklocation, bool isFolder)
 {
-        foreach(Sheet* sheet, m_sheets) {
+        for (Sheet* sheet : m_sheets) {
                 sheet->set_work_at(worklocation, isFolder);
         }
 }
@@ -1776,7 +1780,7 @@ TimeRef Project::get_last_location() const
 {
         TimeRef lastLocation;
 
-        foreach(Sheet* sheet, m_sheets) {
+        for (Sheet* sheet : m_sheets) {
                 TimeRef location = sheet->get_last_location();
                 if (location > lastLocation) {
                         lastLocation = location;
@@ -1798,14 +1802,14 @@ QStringList Project::get_input_buses_for(TBusTrack *busTrack)
         QStringList buses;
 
         QList<AudioTrack*> audioTracks;
-        foreach(Sheet* sheet, m_sheets) {
+        for (Sheet* sheet : m_sheets) {
                 audioTracks.append(sheet->get_audio_tracks());
         }
 
-        foreach(AudioTrack* track, audioTracks) {
+        for (AudioTrack* track : audioTracks) {
                 // FIXME this is a temp fix!
                 QList<TSend*> sends = track->get_post_sends();
-                foreach(TSend* send, sends) {
+                for (TSend* send : sends) {
                         if (send->get_bus_id() == busTrack->get_id()) {
                                 buses.append(send->get_name());
                         }

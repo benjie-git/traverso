@@ -15,10 +15,10 @@
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
-    <widget class="QFrame" name="frame">
+    <widget class="QFrame" name="frame_1">
      <layout class="QHBoxLayout" name="horizontalLayout_2">
       <item>
-       <widget class="QFrame" name="frame">
+       <widget class="QFrame" name="frame_2">
         <layout class="QHBoxLayout" name="horizontalLayout_4">
          <item>
           <layout class="QVBoxLayout" name="verticalLayout_2">
@@ -44,7 +44,7 @@
           </layout>
          </item>
          <item>
-          <widget class="QFrame" name="frame">
+          <widget class="QFrame" name="frame_3">
            <property name="minimumSize">
             <size>
              <width>220</width>
@@ -155,7 +155,7 @@
                   <item>
                    <layout class="QHBoxLayout" name="horizontalLayout_3">
                     <item>
-                     <widget class="QFrame" name="frame_2">
+                     <widget class="QFrame" name="frame_4">
                       <property name="frameShape">
                        <enum>QFrame::NoFrame</enum>
                       </property>
@@ -184,7 +184,7 @@
                      </widget>
                     </item>
                     <item>
-                     <widget class="QFrame" name="frame_3">
+                     <widget class="QFrame" name="frame_5">
                       <property name="frameShape">
                        <enum>QFrame::NoFrame</enum>
                       </property>

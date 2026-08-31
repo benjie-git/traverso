@@ -101,7 +101,7 @@ void MarkerDialog::update_marker_treeview()
 
         TimeLine* tl = m_session->get_timeline();
 		
-	foreach(Marker* marker, tl->get_markers()) {
+	for (Marker* marker : tl->get_markers()) {
 		QString name = marker->get_description();
 		QString pos = timeref_to_cd_including_hours(marker->get_when());
 
@@ -204,7 +204,7 @@ Marker * MarkerDialog::get_marker(qint64 id)
 {
         TimeLine* tl = m_session->get_timeline();
 
-	foreach(Marker* marker, tl->get_markers()) {
+	for (Marker* marker : tl->get_markers()) {
 		if (marker->get_id() == id) {
 			return marker;
 		}
@@ -483,7 +483,7 @@ void MarkerDialog::export_toc()
 	out << "    <table>\n      <tr><th>Position (mm:ss:frames)</th><th>Title</th>\n";
 
         TimeLine* tl = m_session->get_timeline();
-	foreach(Marker* marker, tl->get_markers()) {
+	for (Marker* marker : tl->get_markers()) {
 		QString name = marker->get_description();
 		QString pos = timeref_to_cd(marker->get_when());
 
