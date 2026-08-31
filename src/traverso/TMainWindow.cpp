@@ -53,6 +53,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA.
 #include "TimeLine.h"
 #include "Themer.h"
 #include "AudioFileCopyConvert.h"
+#include "ClipTileCache.h"
 
 #include "../sheetcanvas/SheetWidget.h"
 
@@ -384,6 +385,8 @@ void TMainWindow::set_project(Project* project)
 
 	m_trackFinderModel->clear();
 	track_finder_show_initial_text();
+
+	ctcache().invalidate_all();
 
 	if ( m_project ) {
 		connect(m_project, SIGNAL(projectLoadFinished()), this, SLOT(project_load_finished()));
