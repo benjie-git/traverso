@@ -19,6 +19,16 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA.
 */
 
 #include "ClipTileCache.h"
+#include <QElapsedTimer>
+
+QElapsedTimer referenceTimer;
+
+
+ClipTileCache::ClipTileCache()
+{
+    m_numTiles = 0;
+    referenceTimer.start();
+}
 
 
 ClipTileCache& ctcache()
@@ -41,7 +51,14 @@ ClipTile* ClipTileCache::find(AudioClip* clip, quint128 hash)
 {
     // find a cached clip for this hash, or return nullptr
     auto tileIt = m_tiles[clip].find(hash);
-    return (tileIt == m_tiles[clip].end()) ? nullptr : &tileIt.value();
+    if (tileIt != m_tiles[clip].end()) {
+        ClipTile& tile = tileIt.value();
+        m_tileRefs.remove(tile.lastAccessed);
+        tile.lastAccessed = referenceTimer.nsecsElapsed();
+        m_tileRefs[tile.lastAccessed] = TileRef(clip, hash);
+        return &tile;
+    }
+    return nullptr;
 }
 
 ClipTile& ClipTileCache::insert(AudioClip* clip, quint128 hash, quint64 start, const QSize& size)
@@ -52,8 +69,26 @@ ClipTile& ClipTileCache::insert(AudioClip* clip, quint128 hash, quint64 start, c
     tile.image = QImage(size, QImage::Format_ARGB32_Premultiplied);
     tile.image.fill(Qt::transparent);
     tile.startX = start;
+    tile.lastAccessed = referenceTimer.nsecsElapsed();
+
+    if (!m_tiles[clip].contains(hash)) {
+        m_numTiles++;
+        if (m_numTiles > clipTileCacheMaxTiles) {
+            TileRef& ref = m_tileRefs.first();
+            m_tiles[ref.clip].remove(ref.hash);
+            m_tileRefs.remove(m_tileRefs.firstKey());
+            m_numTiles--;
+        }
+    }
+    else {
+        m_tileRefs.remove(m_tiles[clip][hash].lastAccessed);
+        m_numTiles--;
+    }
+
+    m_tileRefs[tile.lastAccessed] = TileRef(clip, hash);
+
     m_tiles[clip][hash] = tile;
-    // printf("inserted: %d, %d\n", m_tiles.size(), m_tiles[clip].size());
+    // printf("inserted: %lld, %lld, %d, %lld\n", m_tiles.size(), m_tiles[clip].size(), m_numTiles, m_tileRefs.size());
     return m_tiles[clip][hash];
 }
 
@@ -61,12 +96,15 @@ void ClipTileCache::invalidate_clip(AudioClip* clip)
 {
     // Invalidate all tiles for a clip
 
-    // printf("invalidate_clip_pre: %d, %d  --  ", m_tiles.size(), m_tiles[clip].size());
     auto clipIt = m_tiles.find(clip);
-    if (clipIt != m_tiles.cend() && clipIt.key() == clip) {
+    if (clipIt != m_tiles.cend()) {
+        m_numTiles -= clipIt.value().size();
+        for (ClipTile& tile : clipIt.value()) {
+            m_tileRefs.remove(tile.lastAccessed);
+        }
         clipIt = m_tiles.erase(clipIt);
     }
-    // printf("post: %d, %d\n", m_tiles.size(), m_tiles[clip].size());
+    // printf("invalidate_clip: %lld, %lld, %d, %lld  --  ", m_tiles.size(), m_tiles[clip].size(), m_numTiles, m_tileRefs.size());
 }
 
 void ClipTileCache::invalidate_clip_range(AudioClip* clip, int zoom, qreal start, qreal end)
@@ -78,19 +116,27 @@ void ClipTileCache::invalidate_clip_range(AudioClip* clip, int zoom, qreal start
         const ClipTile& tile = it.value();
         if (tile.zoom == zoom) {
             if (end > tile.startX && start < tile.startX + ClipTileWidth) {
+                if (m_tileRefs.remove(it.value().lastAccessed) == 0) printf("tile not removed 1\n");
                 it = m_tiles[clip].erase(it);
+                m_numTiles--;
             } else {
                 ++it;
             }
         }
         else {
+            if (m_tileRefs.remove(it.value().lastAccessed) == 0) printf("tile not removed 2\n");
             it = m_tiles[clip].erase(it);
+            m_numTiles--;
         }
     }
+    // printf("invalidate_clip_range: %lld, %lld, %d, %lld  --  ", m_tiles.size(), m_tiles[clip].size(), m_numTiles, m_tileRefs.size());
 }
 
 void ClipTileCache::invalidate_all()
 {
     // nuke the whole cache (on a theme change, etc.)
     m_tiles.clear();
+    m_tileRefs.clear();
+    m_numTiles = 0;
 }
+
