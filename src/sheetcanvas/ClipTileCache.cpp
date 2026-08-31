@@ -37,17 +37,7 @@ ClipTileCache& ctcache()
     return clipTileCache;
 }
 
-quint128 ClipTileCache::hash(qint32 tileX, int height, int zoom, qreal devicePixelRatio, bool selected, bool hover)
-{
-    // generate a hash value / id for this tile.  It is unique per audio clip.
-    quint128 hash = tileX;
-    hash = (hash << 32) + height;
-    hash = (hash << 32) + zoom;
-    hash = (hash << 32) + quint32(((selected) ? 1 : 0) + ((hover) ? 2 : 0) + ((int(devicePixelRatio * 100) << 4)));
-    return hash;
-}
-
-ClipTile* ClipTileCache::find(AudioClip* clip, quint128 hash)
+ClipTile* ClipTileCache::find(AudioClip* clip, TileHash hash)
 {
     // find a cached clip for this hash, or return nullptr
     auto tileIt = m_tiles[clip].find(hash);
@@ -61,7 +51,7 @@ ClipTile* ClipTileCache::find(AudioClip* clip, quint128 hash)
     return nullptr;
 }
 
-ClipTile& ClipTileCache::insert(AudioClip* clip, quint128 hash, quint64 start, const QSize& size)
+ClipTile& ClipTileCache::insert(AudioClip* clip, TileHash hash, quint64 start, const QSize& size)
 {
     // insert or replace a cached clip for this hash.
     ClipTile tile;

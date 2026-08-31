@@ -259,7 +259,7 @@ void AudioClipView::paint_tile(QPainter* painter, qreal xstart, int pixelcount)
     const bool microView = zoom < 64;
 
     // The hash/ID of this tile in the cache
-    quint128 hash = ctcache().hash(tileX, m_height, zoom, devicePixelRatio, m_clip->is_selected(), 
+    TileHash hash = TileHash(tileX, m_height, zoom, int(devicePixelRatio *100), m_clip->is_selected(), 
         m_clip->has_active_context() || m_clip->is_moving());
     ClipTile* cachedTile = microView ? nullptr : ctcache().find(m_clip, hash);
     QImage cachedImage = (cachedTile) ? cachedTile->image : QImage();

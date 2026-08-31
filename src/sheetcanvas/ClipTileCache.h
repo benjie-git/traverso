@@ -22,6 +22,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA.
 #define CLIP_TILE_CACHE_H
 
 #include <QHash>
+#include <QMap>
 #include <QImage>
 #include <QtGlobal>
 #include "AudioClip.h"
@@ -31,6 +32,35 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA.
 const qint32 ClipTileWidth = 512;
 const int clipTileCacheMaxTiles = 512;
 
+
+// Used as a unique value per clip, to hash tiles
+class TileHash
+{
+    public:
+        TileHash() : tileX(0), height(0), zoom(0), devicePixelRatio(0), selected(0), hover(0) {}
+        TileHash(qint32 tileX, int height, int zoom, int devicePixelRatio, bool selected, bool hover) : 
+            tileX(tileX), height(height), zoom(zoom), devicePixelRatio(devicePixelRatio), selected(selected), hover(hover) {}
+        TileHash(const TileHash& other) : tileX(other.tileX), height(other.height), zoom(other.zoom), devicePixelRatio(other.devicePixelRatio), selected(other.selected), hover(other.hover) {}
+
+        qint32 tileX         : 32;
+        int zoom             : 32;
+        int height           : 16;
+        int devicePixelRatio : 16;
+        bool selected        : 1;
+        bool hover           : 1;
+
+        bool operator==(const TileHash& other) const {
+            return (this->tileX == other.tileX) && (this->height == other.height) && (this->zoom == other.zoom) && 
+                (this->devicePixelRatio == other.devicePixelRatio) && (this->selected == other.selected) && (this->hover == other.hover);
+        }
+        bool operator!=(const TileHash& other) const {
+            return (this->tileX != other.tileX) || (this->zoom != other.zoom) || (this->height != other.height) ||
+                (this->devicePixelRatio != other.devicePixelRatio) || (this->selected != other.selected) || (this->hover != other.hover);
+        }
+        friend inline size_t qHash(const TileHash& key, size_t seed = 0) noexcept {
+            return qHashMulti(seed, key.tileX, key.height, key.zoom, key.devicePixelRatio, key.selected, key.hover);
+        }
+};
 
 // Hold the image data for one tile of an AudioClipView's painted waveform
 class ClipTile
@@ -42,14 +72,15 @@ class ClipTile
         QImage image;
 };
 
+// Reference a tile -- used to keep an ordered list of least recently used tiles, for culling the cache
 class TileRef
 {
     public:
-        TileRef() : clip(0), hash(0) {}
-        TileRef(AudioClip *clip, quint128 hash) : clip(clip), hash(hash) {}
+        TileRef() : clip(0) {}
+        TileRef(AudioClip *clip, TileHash hash) : clip(clip), hash(hash) {}
         TileRef(const TileRef& other) : clip(other.clip), hash(other.hash) {}
         AudioClip *clip;
-        quint128 hash;
+        TileHash hash;
 };
 
 
@@ -65,16 +96,14 @@ class ClipTileCache
 public:
     ClipTileCache();
 
-    quint128 hash(qint32 tileX, int height, int zoom, qreal devicePixelRatio, bool selected, bool hover);
-
-    ClipTile* find(AudioClip* clip, quint128 hash);
-    ClipTile& insert(AudioClip* clip, quint128 hash, quint64 start, const QSize& size);
+    ClipTile* find(AudioClip* clip, TileHash hash);
+    ClipTile& insert(AudioClip* clip, TileHash hash, quint64 start, const QSize& size);
     void invalidate_clip(AudioClip* clip);
     void invalidate_clip_range(AudioClip* clip, int zoom, qreal left, qreal right);
     void invalidate_all();
 
 private:
-    QHash<AudioClip*, QHash<quint128, ClipTile> > m_tiles;
+    QHash<AudioClip*, QHash<TileHash, ClipTile> > m_tiles;
     QMap<qint64, TileRef> m_tileRefs; // ordered by lastUpdated
     int m_numTiles;
 };
