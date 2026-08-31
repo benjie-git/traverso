@@ -302,22 +302,32 @@ void AudioClipView::paint_tile(QPainter* painter, qreal xstart, int pixelcount)
         auto fadeIn = m_clip->get_fade_in();
         auto fadeOut = m_clip->get_fade_out();
 
-        if (clipCurve && !clipCurve->is_trivial()) {
+        if (clipCurve && (!clipCurve->is_trivial() || !qFuzzyCompare(clipCurve->get_trivial_gain(), 1.0f))) {
             // apply the clip's gain curve to curveMixdown, if it exists
             hasCurve = true;
             // this is the first gain curve, so just replace the original 1.0 values
-            clipCurve->get_vector((renderStart + clipCurveOffset) * m_sv->timeref_scalefactor,
-                                    (renderStart + clipCurveOffset + width) * m_sv->timeref_scalefactor,
-                                    curveMixdown.data(), width);
+            if (clipCurve->is_trivial()) {
+                curveMixdown = QVarLengthArray<float>(width, clipCurve->get_trivial_gain());
+            }
+            else {
+                clipCurve->get_vector((renderStart + clipCurveOffset) * m_sv->timeref_scalefactor,
+                                        (renderStart + clipCurveOffset + width) * m_sv->timeref_scalefactor,
+                                        curveMixdown.data(), width);
+            }
         }
-        if (trackGainCurve && !trackGainCurve->is_trivial()) {
+        if (trackGainCurve && (!trackGainCurve->is_trivial() || !qFuzzyCompare(trackGainCurve->get_trivial_gain(), 1.0f))) {
             // apply the cltrack's gain curve to curveMixdown, if it exists
             hasCurve = true;
             QVarLengthArray<float> trackMixdown(width);
             const qreal trackRenderStart = renderStart + trackCurveOffset - tilePadding;
-            trackGainCurve->get_vector(trackRenderStart * m_sv->timeref_scalefactor,
-                                        (trackRenderStart + width) * m_sv->timeref_scalefactor,
-                                        trackMixdown.data(), width);
+            if (trackGainCurve->is_trivial()) {
+                trackMixdown = QVarLengthArray<float>(width, trackGainCurve->get_trivial_gain());
+            }
+            else {
+                trackGainCurve->get_vector(trackRenderStart * m_sv->timeref_scalefactor,
+                                            (trackRenderStart + width) * m_sv->timeref_scalefactor,
+                                            trackMixdown.data(), width);
+            }
             // this is not necessarily the first gain curve, so multiply values into the existing ones
             // This should get optimized by the compiler into fancy vector operations
             for (int index = 0; index < width; ++index) {

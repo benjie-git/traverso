@@ -133,6 +133,11 @@ bool Curve::is_trivial()
 	return m_nodes.size() <= 1;
 }
 
+float Curve::get_trivial_gain()
+{
+	return (m_nodes.size() == 0) ? 1.0 : (static_cast<CurveNode*>(m_nodes.first()))->value;
+}
+
 int Curve::process(
 	audio_sample_t** buffer,
 	const TimeRef& startlocation,

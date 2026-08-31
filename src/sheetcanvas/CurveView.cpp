@@ -87,7 +87,8 @@ static bool smallerpoint(const QPointF& left, const QPointF& right) {
 void CurveView::updateNodeVisibility(int startx, int endx)
 {
     for (CurveNodeView* nodeView : m_nodeViews) {
-        nodeView->setVisible(nodeView->pos().x() > startx && nodeView->pos().x() < endx);
+        int pos = nodeView->pos().x()+4 ; // +4 for half width of the node view
+        nodeView->setVisible(pos >= startx && pos <= endx);
     }
 }
 
