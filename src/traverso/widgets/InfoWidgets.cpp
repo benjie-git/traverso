@@ -302,7 +302,7 @@ void HDDSpaceInfo::update_status( )
 	
 #if defined (Q_OS_WIN)
 	__int64 freebytestocaller, totalbytes, freebytes; 
-	if (! GetDiskFreeSpaceEx ((const CHAR*)(QS_C(m_project->get_root_dir())),
+	if (! GetDiskFreeSpaceEx (m_project->get_root_dir().toStdWString().c_str(),
 					(PULARGE_INTEGER)&freebytestocaller,
 					(PULARGE_INTEGER)&totalbytes,
 					(PULARGE_INTEGER)&freebytes)) 
