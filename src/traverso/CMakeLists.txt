@@ -83,7 +83,16 @@ if(APPLE)
 endif()
 
 if(WIN32)
-    target_link_libraries(traverso PRIVATE winmm)
+    target_link_libraries(traverso PRIVATE
+        brotlidec brotlicommon jbig lerc bz2 lzma deflate zstd tiff
+        flac mpg123 opus samplerate
+        harfbuzz graphite2
+        winmm )
+    add_custom_command(TARGET traverso POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy -t $<TARGET_FILE_DIR:traverso>
+            $<TARGET_RUNTIME_DLLS:traverso>
+            COMMAND_EXPAND_LISTS
+        )
 endif()
 
 if(WANT_PCH)
