@@ -86,7 +86,7 @@ if(WIN32)
     target_link_libraries(traverso PRIVATE
         brotlidec brotlicommon jbig lerc bz2 lzma deflate zstd tiff
         flac mpg123 opus samplerate
-        harfbuzz graphite2
+        harfbuzz graphite2 rpcrt4
         winmm )
     add_custom_command(TARGET traverso POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy -t $<TARGET_FILE_DIR:traverso>
