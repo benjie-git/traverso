@@ -447,7 +447,7 @@ void AudioClipView::paint_tile(QPainter* painter, qreal xstart, int pixelcount)
         cachedImage = renderedImage.copy(qRound(tilePadding * devicePixelRatio), 0,
                         qRound(ClipTileWidth * devicePixelRatio), qRound(m_height * devicePixelRatio));
 
-        if (!microView) {
+        if (!microView && !m_waitingForPeaks) {
             // Save the image into the cache, as long as it's not a microView tile
             // (microView tiles are too many to cache, and faster to paint, so it matters less.)
             ClipTile& tile = ctcache().insert(m_clip, hash, tileX, 
