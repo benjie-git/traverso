@@ -64,6 +64,7 @@ AudioClipView::AudioClipView(SheetView* sv, AudioTrackView* parent, AudioClip* c
     : ViewItem(parent->get_primary_lane_view(), clip)
     , m_tv(parent)
     , m_clip(clip)
+    , m_gainCurveView(nullptr)
 {
     PENTERCONS;
 
