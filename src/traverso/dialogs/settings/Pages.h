@@ -91,8 +91,8 @@ private:
 	
 private slots:
 	void update_latency_combobox();
-        void rate_combobox_index_changed(QString);
-        void driver_combobox_index_changed(QString);
+        void rate_combobox_index_changed(int index);
+        void driver_combobox_index_changed(int index);
 #if defined (PORTAUDIO_SUPPORT)
         void portaudio_host_api_combobox_index_changed(int);
 #endif
@@ -120,8 +120,8 @@ private:
 
 private slots:
 	void dirselect_button_clicked();
-	void style_index_changed(const QString& text);
-	void theme_index_changed(const QString& theme);
+	void style_index_changed(int index);
+	void theme_index_changed(int index);
 	void use_selected_styles_pallet_checkbox_toggled(bool);
 	void color_adjustbox_changed(int);
 	void theme_option_changed();

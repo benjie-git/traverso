@@ -62,7 +62,7 @@ ExternalProcessingDialog::ExternalProcessingDialog(QWidget * parent, AudioClipEx
 	connect(m_processor, SIGNAL(started()), this, SLOT(process_started()));
 	connect(m_processor, SIGNAL(finished(int, QProcess::ExitStatus)), this, SLOT(process_finished(int, QProcess::ExitStatus)));
 	connect(m_processor, SIGNAL(error( QProcess::ProcessError)), this, SLOT(process_error(QProcess::ProcessError)));
-	connect(argsComboBox, SIGNAL(activated(const QString&)), this, SLOT(arg_combo_index_changed(const QString&)));
+	connect(argsComboBox, SIGNAL(activated(int)), this, SLOT(arg_combo_index_changed(int)));
 	connect(programLineEdit, SIGNAL(textChanged(const QString&)), this, SLOT(command_lineedit_text_changed(const QString&)));
 	connect(startButton, SIGNAL(clicked()), this, SLOT(prepare_for_external_processing()));
 	connect(cancelButton, SIGNAL(clicked()), this, SLOT(reject()));
@@ -229,9 +229,9 @@ void ExternalProcessingDialog::query_options()
 	m_processor->start(m_program, QStringList() << "-h");
 }
 
-void ExternalProcessingDialog::arg_combo_index_changed(const QString & text)
+void ExternalProcessingDialog::arg_combo_index_changed(int index)
 {
-	argumentsLineEdit->setText(text);	
+	argumentsLineEdit->setText(argsComboBox->itemText(index));
 }
 
 void ExternalProcessingDialog::command_lineedit_text_changed(const QString & text)

@@ -149,6 +149,7 @@ private:
     QScrollBar*         m_hScrollBar;
     bool                m_actOnPlayHead;
     bool                m_viewportReady;
+	bool                m_setupDone;		
 
     static QHash<QString, QString> m_cursorsDict;
 

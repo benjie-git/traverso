@@ -74,7 +74,8 @@ SheetView::SheetView(SheetWidget* sheetwidget,
 	TrackPanelViewPort* tpvp,
 	TimeLineViewPort* tlvp,
 	TSession* session)
-	: ViewItem(nullptr, session)
+	: ViewItem(nullptr, session),
+	  m_setupDone(false)
 {
 	setZValue(1);
 
@@ -158,6 +159,7 @@ SheetView::SheetView(SheetWidget* sheetwidget,
 	QPoint p = m_session->get_scrollbar_xy();
 	m_session->set_scrollbar_x(p.x());
 	m_session->set_scrollbar_y(p.y());
+	m_setupDone = true;
 }
 
 SheetView::~SheetView()
@@ -174,6 +176,11 @@ void SheetView::scale_factor_changed( )
 		zoom = config().get_property("Sheet", "hzoomLevel", 8192).toInt();
 	}
 	timeref_scalefactor = qint64(zoom * (UNIVERSAL_SAMPLE_RATE / 44100));
+	
+	if (!m_setupDone) {
+		return;
+	}
+	
 	m_tlvp->scale_factor_changed();
 
 	update_tracks_bounding_rect();

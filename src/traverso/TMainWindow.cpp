@@ -149,8 +149,8 @@ TMainWindow::TMainWindow()
 	m_trackFinderCompleter->setModel(m_trackFinderModel);
 	m_trackFinderCompleter->setCaseSensitivity(Qt::CaseInsensitive);
 	m_trackFinder->setCompleter(m_trackFinderCompleter);
-	connect(m_trackFinderCompleter, SIGNAL(activated(const QModelIndex&)),
-		this, SLOT(track_finder_model_index_changed(const QModelIndex&)));
+	connect(m_trackFinderCompleter, SIGNAL(activated(int)),
+		this, SLOT(track_finder_model_index_changed(int)));
 	connect(m_trackFinder, SIGNAL(returnPressed()), this, SLOT(track_finder_return_pressed()));
 
 	m_trackFinderTreeView = new QTreeView;
@@ -1767,9 +1767,9 @@ TCommand* TMainWindow::show_track_finder()
 }
 
 
-void TMainWindow::track_finder_model_index_changed(const QModelIndex& index)
+void TMainWindow::track_finder_model_index_changed(int index)
 {
-	qlonglong id = index.data(Qt::UserRole).toLongLong();
+	qlonglong id = m_trackFinderModel->index(index, 0).data(Qt::UserRole).toLongLong();
 
 	foreach(SheetWidget* sw, m_sheetWidgets) {
         TSession* session = sw->get_session();
@@ -1794,7 +1794,7 @@ void TMainWindow::track_finder_return_pressed()
 	QString name = m_trackFinder->text();
 	QList<QStandardItem*> items = m_trackFinderModel->findItems(name, Qt::MatchStartsWith);
 	if (items.size()) {
-		track_finder_model_index_changed(m_trackFinderModel->indexFromItem(items.at(0)));
+		track_finder_model_index_changed(m_trackFinderModel->indexFromItem(items.at(0)).row());
 		return;
 	}
 }

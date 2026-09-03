@@ -75,9 +75,9 @@ AudioDriverConfigPage::AudioDriverConfigPage(QWidget *parent)
 	m_alsadevices->layout()->setContentsMargins(0, 0, 0, 0);
 	m_mainLayout->addWidget(m_alsadevices);
 	
-        connect(driverCombo, SIGNAL(currentIndexChanged(QString)), this, SLOT(driver_combobox_index_changed(QString)));
+        connect(driverCombo, SIGNAL(currentIndexChanged(int)), this, SLOT(driver_combobox_index_changed(int)));
 	connect(restartDriverButton, SIGNAL(clicked()), this, SLOT(restart_driver_button_clicked()));
-        connect(rateComboBox, SIGNAL(currentIndexChanged(QString)), this, SLOT(rate_combobox_index_changed(QString)));
+        connect(rateComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(rate_combobox_index_changed(int)));
         connect(&audiodevice(), SIGNAL(driverSetupMessage(QString,int)), this, SLOT(driver_setup_message(QString, int)));
 
 #if defined (PORTAUDIO_SUPPORT)
@@ -183,7 +183,7 @@ void AudioDriverConfigPage::load_config( )
 		driverCombo->setCurrentIndex(driverTypeIndex);
 	}
 	
-	driver_combobox_index_changed(driverType);
+	driver_combobox_index_changed(driverTypeIndex);
 	
 	int buffersizeIndex = periodBufferSizesList.indexOf(buffersize);
 	int samplerateIndex = rateComboBox->findText(QString::number(samplerate));
@@ -336,8 +336,9 @@ void AudioDriverConfigPage::restart_driver_button_clicked()
 
 
 
-void AudioDriverConfigPage::driver_combobox_index_changed(QString driver)
+void AudioDriverConfigPage::driver_combobox_index_changed(int index)
 {
+	QString driver = driverCombo->itemText(index);
 	m_mainLayout->removeWidget(m_alsadevices);
 	m_mainLayout->removeWidget(m_portaudiodrivers);
 	m_mainLayout->removeWidget(jackGroupBox);
@@ -412,7 +413,7 @@ void AudioDriverConfigPage::update_latency_combobox( )
 	latencyComboBox->setCurrentIndex(index);
 }
 
-void AudioDriverConfigPage::rate_combobox_index_changed(QString )
+void AudioDriverConfigPage::rate_combobox_index_changed(int index)
 {
 	update_latency_combobox();
 }
@@ -620,8 +621,8 @@ AppearenceConfigPage::AppearenceConfigPage(QWidget * parent)
 
 void AppearenceConfigPage::create_connections()
 {
-        connect(styleCombo, SIGNAL(activated(const QString)), this, SLOT(style_index_changed(const QString)));
-        connect(themeSelecterCombo, SIGNAL(activated(const QString)), this, SLOT(theme_index_changed(const QString)));
+        connect(styleCombo, SIGNAL(activated(int)), this, SLOT(style_index_changed(int)));
+        connect(themeSelecterCombo, SIGNAL(activated(int)), this, SLOT(theme_index_changed(int)));
 	connect(useStylePalletCheckBox, SIGNAL(toggled(bool)), this, SLOT(use_selected_styles_pallet_checkbox_toggled(bool)));
 	connect(pathSelectButton, SIGNAL(clicked()), this, SLOT(dirselect_button_clicked()));
 	connect(colorAdjustBox, SIGNAL(valueChanged(int)), this, SLOT(color_adjustbox_changed(int)));
@@ -633,17 +634,18 @@ void AppearenceConfigPage::create_connections()
         connect(editThemePushButton, SIGNAL(clicked()), this, SLOT(edit_theme_button_clicked()));
 }
 
-void AppearenceConfigPage::style_index_changed(const QString& text)
+void AppearenceConfigPage::style_index_changed(int index)
 {
+	QString text = styleCombo->itemText(index);
 	QApplication::setStyle(text);
 	QIcon icon = QApplication::style()->standardIcon(QStyle::SP_DirClosedIcon);
 	pathSelectButton->setIcon(icon);
 	use_selected_styles_pallet_checkbox_toggled(useStylePalletCheckBox->isChecked());
 }
 
-void AppearenceConfigPage::theme_index_changed(const QString & theme)
+void AppearenceConfigPage::theme_index_changed(int index)
 {
-	int index = themeSelecterCombo->findText(theme);
+	QString theme = themeSelecterCombo->itemText(index);
 	QString data = themeSelecterCombo->itemData(index).toString();
 	QString path = config().get_property("Themer", "themepath", "").toString();
 	

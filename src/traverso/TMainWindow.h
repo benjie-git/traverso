@@ -253,7 +253,7 @@ private slots:
 	void follow_state_changed(bool state);
 	void update_follow_state();
 	void update_temp_follow_state(bool state);
-        void track_finder_model_index_changed(const QModelIndex& index);
+        void track_finder_model_index_changed(int index);
         void track_finder_return_pressed();
 };
 
