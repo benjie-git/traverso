@@ -37,8 +37,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA.
 #define UC_(x) (const unsigned char* ) x.toLatin1().data()
 
 enum PortDirection {
-	INPUT,
-	OUTPUT
+	PORT_INPUT,
+	PORT_OUTPUT
 };
 
 enum PortType {
@@ -287,9 +287,9 @@ LV2ControlPort* LV2Plugin::create_port(uint32_t portIndex, float defaultValue)
         PortType type = UNKNOWN;
 
 	if (lilv_port_is_a(m_plugin, slv2_port, m_input_class)) {
-		direction = INPUT;
+		direction = PORT_INPUT;
 	} else if (lilv_port_is_a(m_plugin, slv2_port, m_output_class)) {
-		direction = OUTPUT;
+		direction = PORT_OUTPUT;
 /*	} else if (slv2_port_has_property(m_plugin, slv2_port, m_optional)) {
 		slv2_instance_connect_port(m_instance, port_index, NULL);*/
 	} else {
@@ -311,21 +311,21 @@ LV2ControlPort* LV2Plugin::create_port(uint32_t portIndex, float defaultValue)
 	switch (type) {
 		case CONTROL:
 			switch (direction) {
-			case INPUT:
+			case PORT_INPUT:
                 defaultValue = std::isnan(defaultValue) ? 0.0 : defaultValue;
                 ctrlport = new LV2ControlPort(this, int(portIndex), defaultValue);
 				break;
-			case OUTPUT:
+			case PORT_OUTPUT:
                 ctrlport = new LV2ControlPort(this, int(portIndex), 0);
 				break;
 			}
 			break;
 		case AUDIO:
 			switch (direction) {
-			case INPUT:
+			case PORT_INPUT:
                 m_audioInputPorts.append(new AudioInputPort(this, int(portIndex)));
 				break;
-			case OUTPUT:
+			case PORT_OUTPUT:
                 m_audioOutputPorts.append(new AudioOutputPort(this, int(portIndex)));
 				break;
 			}
