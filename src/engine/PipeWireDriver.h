@@ -44,6 +44,8 @@ public:
     ~PipeWireDriver() override;
 
     int _run_cycle() override { return 1; }
+    int _read(nframes_t nframes) override { Q_UNUSED(nframes); return 1; }
+    int _write(nframes_t nframes) override { Q_UNUSED(nframes); return 1; }
     int setup(bool capture = true, bool playback = true, const QString& cardDevice = "");
     int attach() override;
     int start() override;

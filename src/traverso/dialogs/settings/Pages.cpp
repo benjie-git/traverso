@@ -387,9 +387,7 @@ void AudioDriverConfigPage::driver_combobox_index_changed(int index)
 	m_mainLayout->removeWidget(m_alsadevices);
 	m_mainLayout->removeWidget(m_portaudiodrivers);
 	m_mainLayout->removeWidget(jackGroupBox);
-#if defined (COREAUDIO_SUPPORT)
 	m_mainLayout->removeWidget(coreAudioDeviceGroupBox);
-#endif
 
 	if (driver == "ALSA") {
 		m_alsadevices->show();
@@ -415,14 +413,12 @@ void AudioDriverConfigPage::driver_combobox_index_changed(int index)
 		m_mainLayout->removeWidget(jackGroupBox);
 	}
 	
-#if defined (COREAUDIO_SUPPORT)
 	if (driver == "CoreAudio") {
 		coreAudioDeviceGroupBox->show();
 		m_mainLayout->insertWidget(m_mainLayout->indexOf(driverConfigGroupBox), coreAudioDeviceGroupBox);
 	} else {
 		coreAudioDeviceGroupBox->hide();
 	}
-#endif
 }
 
 #if defined (PORTAUDIO_SUPPORT)
