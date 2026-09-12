@@ -114,6 +114,7 @@ private:
     friend class AlsaDriver;
     friend class PADriver;
     friend class PulseAudioDriver;
+    friend class PipeWireDriver;
     friend class TAudioDriver;
     friend class CoreAudioDriver;
 
