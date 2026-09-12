@@ -20,6 +20,10 @@ if(HAVE_PORTAUDIO)
     list(APPEND TRAVERSO_ENGINE_SOURCES PADriver.cpp)
 endif()
 
+if(HAVE_PIPEWIRE)
+    list(APPEND TRAVERSO_ENGINE_SOURCES PipeWireDriver.cpp)
+endif()
+
 if(HAVE_PULSEAUDIO)
     list(APPEND TRAVERSO_ENGINE_SOURCES PulseAudioDriver.cpp)
 endif()
@@ -59,6 +63,10 @@ endif()
 
 if(HAVE_PULSEAUDIO)
     target_link_libraries(traversoaudiobackend PUBLIC PkgConfig::PULSEAUDIO)
+endif()
+
+if(HAVE_PIPEWIRE)
+    target_link_libraries(traversoaudiobackend PUBLIC PkgConfig::PIPEWIRE)
 endif()
 
 if(HAVE_COREAUDIO)

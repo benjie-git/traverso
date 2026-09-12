@@ -45,6 +45,10 @@ RELAYTOOL_JACK
 #include "CoreAudioDriver.h"
 #endif
 
+#if defined (PIPEWIRE_SUPPORT)
+#include "PipeWireDriver.h"
+#endif
+
 
 #include "TAudioDriver.h"
 #include "TAudioDeviceClient.h"
@@ -188,6 +192,10 @@ AudioDevice::AudioDevice()
 
 #if defined (COREAUDIO_SUPPORT)
     m_availableDrivers << "CoreAudio";
+#endif
+
+#if defined (PIPEWIRE_SUPPORT)
+    m_availableDrivers << "PipeWire";
 #endif
 
 
@@ -379,7 +387,22 @@ void AudioDevice::set_parameters(AudioDeviceSetup ads)
     }
 #endif
 
-    if (ads.driverType == "PortAudio"|| /*(ads.driverType == "PulseAudio") ||*/ (ads.driverType == "CoreAudio")) {
+#if defined (PIPEWIRE_SUPPORT)
+    if (ads.driverType == "PipeWire") {
+        PipeWireDriver* pipeWireDriver = qobject_cast<PipeWireDriver*>(m_driver);
+        if (pipeWireDriver) {
+            connect(pipeWireDriver, &PipeWireDriver::pipewireShutDown, this, [this]() {
+                printf("pipewire shutdown detected\n");
+                driverSetupMessage(tr("The PipeWire server has been shutdown!"), CRITICAL);
+                delete m_driver;
+                m_driver = nullptr;
+                set_parameters(m_fallBackSetup);
+            }, Qt::QueuedConnection);
+        }
+    }
+#endif
+
+    if (ads.driverType == "PortAudio"|| /*(ads.driverType == "PulseAudio") ||*/ (ads.driverType == "CoreAudio") || (ads.driverType == "PipeWire")) {
         if (m_driver->start() == -1) {
             // PortAudio driver failed to start, fallback to Null Driver:
             set_parameters(m_fallBackSetup);
@@ -447,6 +470,22 @@ int AudioDevice::create_driver(const QString& driverType, bool capture, bool pla
         PulseAudioDriver* paDriver = qobject_cast<PulseAudioDriver*>(m_driver);
         if (paDriver && paDriver->setup(capture, playback, cardDevice) < 0) {
             message(tr("Audiodevice: Failed to create the PulseAudio Driver"), WARNING);
+            delete m_driver;
+            m_driver = nullptr;
+            return -1;
+        }
+        m_driverType = driverType;
+        return 1;
+    }
+#endif
+
+
+#if defined (PIPEWIRE_SUPPORT)
+    if (driverType == "PipeWire") {
+        m_driver = new PipeWireDriver(this, m_rate, m_bufferSize);
+        PipeWireDriver* pipeWireDriver = qobject_cast<PipeWireDriver*>(m_driver);
+        if (pipeWireDriver && pipeWireDriver->setup(capture, playback, cardDevice) < 0) {
+            message(tr("Audiodevice: Failed to create the PipeWire Driver"), WARNING);
             delete m_driver;
             m_driver = nullptr;
             return -1;

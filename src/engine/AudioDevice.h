@@ -49,6 +49,10 @@ class JackDriver;
 class CoreAudioDriver;
 #endif
 
+#if defined (PIPEWIRE_SUPPORT)
+class PipeWireDriver;
+#endif
+
 
 class AudioDevice : public QObject
 {
@@ -139,6 +143,9 @@ private:
 	friend class AudioDeviceThread;
 #if defined (COREAUDIO_SUPPORT)
 	friend class CoreAudioDriver;
+#endif
+#if defined (PIPEWIRE_SUPPORT)
+	friend class PipeWireDriver;
 #endif
 
         AudioDeviceSetup        m_setup;

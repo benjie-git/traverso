@@ -36,6 +36,10 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA.
 #include "PADriver.h"
 #endif
 
+#if defined (COREAUDIO_SUPPORT)
+#include "CoreAudioDriver.h"
+#endif
+
 #include "TConfig.h"
 #include <Utils.h>
 #include <Themer.h>
@@ -110,6 +114,13 @@ void AudioDriverConfigPage::save_config()
 	config().set_property("Hardware", "capture", capture);
 	config().set_property("Hardware", "playback", playback);
 
+#if defined (COREAUDIO_SUPPORT)
+	config().set_property("Hardware", "coreaudioinput",
+	                      coreAudioInputDeviceComboBox->currentData().toString());
+	config().set_property("Hardware", "coreaudiooutput",
+	                      coreAudioOutputDeviceComboBox->currentData().toString());
+#endif
+
 	
 #if defined (ALSA_SUPPORT)
 	int periods = m_alsadevices->periodsCombo->currentText().toInt();
@@ -160,6 +171,11 @@ void AudioDriverConfigPage::reset_default_config()
 	config().set_property("Hardware", "capture", 1);
 	config().set_property("Hardware", "playback", 1);
 	
+#if defined (COREAUDIO_SUPPORT)
+	config().set_property("Hardware", "coreaudioinput", "default");
+	config().set_property("Hardware", "coreaudiooutput", "default");
+#endif
+
 	config().set_property("Hardware", "jackslave", false);
 
 	load_config();
@@ -184,6 +200,35 @@ void AudioDriverConfigPage::load_config( )
 	}
 	
 	driver_combobox_index_changed(driverTypeIndex);
+	
+#if defined (COREAUDIO_SUPPORT)
+	coreAudioInputDeviceComboBox->clear();
+	coreAudioOutputDeviceComboBox->clear();
+	coreAudioInputDeviceComboBox->addItem(tr("System default"), QStringLiteral("default"));
+	coreAudioOutputDeviceComboBox->addItem(tr("System default"), QStringLiteral("default"));
+	for (const QString& device : CoreAudioDriver::devices_info(true)) {
+		const QStringList fields = device.split(QStringLiteral("###"));
+		if (fields.size() >= 2) {
+			coreAudioInputDeviceComboBox->addItem(fields.at(0), fields.at(1));
+		}
+	}
+	for (const QString& device : CoreAudioDriver::devices_info(false)) {
+		const QStringList fields = device.split(QStringLiteral("###"));
+		if (fields.size() >= 2) {
+			coreAudioOutputDeviceComboBox->addItem(fields.at(0), fields.at(1));
+		}
+	}
+	int coreAudioIndex = coreAudioInputDeviceComboBox->findData(
+		config().get_property("Hardware", "coreaudioinput", "default"));
+	if (coreAudioIndex >= 0) {
+		coreAudioInputDeviceComboBox->setCurrentIndex(coreAudioIndex);
+	}
+	coreAudioIndex = coreAudioOutputDeviceComboBox->findData(
+		config().get_property("Hardware", "coreaudiooutput", "default"));
+	if (coreAudioIndex >= 0) {
+		coreAudioOutputDeviceComboBox->setCurrentIndex(coreAudioIndex);
+	}
+#endif
 	
 	int buffersizeIndex = periodBufferSizesList.indexOf(buffersize);
 	int samplerateIndex = rateComboBox->findText(QString::number(samplerate));
@@ -342,6 +387,9 @@ void AudioDriverConfigPage::driver_combobox_index_changed(int index)
 	m_mainLayout->removeWidget(m_alsadevices);
 	m_mainLayout->removeWidget(m_portaudiodrivers);
 	m_mainLayout->removeWidget(jackGroupBox);
+#if defined (COREAUDIO_SUPPORT)
+	m_mainLayout->removeWidget(coreAudioDeviceGroupBox);
+#endif
 
 	if (driver == "ALSA") {
 		m_alsadevices->show();
@@ -366,6 +414,15 @@ void AudioDriverConfigPage::driver_combobox_index_changed(int index)
 		jackGroupBox->hide();
 		m_mainLayout->removeWidget(jackGroupBox);
 	}
+	
+#if defined (COREAUDIO_SUPPORT)
+	if (driver == "CoreAudio") {
+		coreAudioDeviceGroupBox->show();
+		m_mainLayout->insertWidget(m_mainLayout->indexOf(driverConfigGroupBox), coreAudioDeviceGroupBox);
+	} else {
+		coreAudioDeviceGroupBox->hide();
+	}
+#endif
 }
 
 #if defined (PORTAUDIO_SUPPORT)

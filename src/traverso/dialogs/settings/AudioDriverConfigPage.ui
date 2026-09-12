@@ -37,6 +37,35 @@
     </widget>
    </item>
    <item>
+    <widget class="QGroupBox" name="coreAudioDeviceGroupBox">
+     <property name="title">
+      <string>CoreAudio Devices</string>
+     </property>
+     <layout class="QFormLayout">
+      <item row="0" column="0">
+       <widget class="QLabel" name="coreAudioInputLabel">
+        <property name="text">
+         <string>Input:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QComboBox" name="coreAudioInputDeviceComboBox"/>
+      </item>
+      <item row="1" column="0">
+       <widget class="QLabel" name="coreAudioOutputLabel">
+        <property name="text">
+         <string>Output:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="QComboBox" name="coreAudioOutputDeviceComboBox"/>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
     <widget class="QGroupBox" name="jackGroupBox">
      <property name="title">
       <string>Jack Options</string>

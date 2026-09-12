@@ -24,6 +24,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA.
 #include <QTextStream>
 #include <QMessageBox>
 #include <QString>
+#include <QUrl>
 
 #include <cfloat>
 #include <unistd.h>
@@ -714,6 +715,23 @@ void Project::prepare_audio_device(QDomDocument doc)
                 }
         }
 #endif // end PORTAUDIO_SUPPORT
+
+#if defined (COREAUDIO_SUPPORT)
+        if (ads.driverType == "CoreAudio") {
+                if (ads.cardDevice.isEmpty()) {
+                        const QString input = config().get_property("Hardware", "coreaudioinput", "default").toString();
+                        const QString output = config().get_property("Hardware", "coreaudiooutput", "default").toString();
+                        if (ads.capture && ads.playback) {
+                                ads.cardDevice = QString::fromLatin1(QUrl::toPercentEncoding(input)) + "::" +
+                                                 QString::fromLatin1(QUrl::toPercentEncoding(output));
+                        } else if (ads.playback) {
+                                ads.cardDevice = output;
+                        } else {
+                                ads.cardDevice = input;
+                        }
+                }
+        }
+#endif // end COREAUDIO_SUPPORT
 
 
         audiodevice().set_parameters(ads);

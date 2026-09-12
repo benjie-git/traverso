@@ -156,6 +156,18 @@ void AudioChannel::read_from_hardware_port(audio_sample_t *buf, nframes_t nframe
         }
 }
 
+void AudioChannel::read_from_hardware_port_interleaved(const audio_sample_t *buf, nframes_t nframes, uint channelCount, uint channelNumber)
+{
+        audio_sample_t *dst = m_buffer.data();
+        for (nframes_t frame = 0; frame < nframes; ++frame) {
+                dst[frame] = buf[frame * channelCount + channelNumber];
+        }
+
+        if (m_monitoring) {
+                process_monitoring();
+        }
+}
+
 
 /**
  *

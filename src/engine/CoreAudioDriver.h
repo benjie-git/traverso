@@ -1,9 +1,5 @@
 /*
-Copyright (C) 2008 Remon Sijrier 
-Copyright (C) Grame, 2003.
-Copyright (C) Johnny Petrantoni, 2003.
-
-(November 2008) Ported to C++ for Traverso by Remon Sijrier
+Copyright (C) 2026 Ben Levitt
 
 This file is part of Traverso
 
@@ -21,120 +17,77 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA.
 
-Grame Research Laboratory, 9, rue du Garet 69001 Lyon - France
-grame@rd.grame.fr
-	
-Johnny Petrantoni, johnny@lato-b.com - Italy, Rome.
-
-30-01-04, Johnny Petrantoni: first code of the coreaudio driver.
-
 */
 
-#ifndef CORE_AUDIO_DRIVER_H
-#define CORE_AUDIO_DRIVER_H
+#ifndef COREAUDIODRIVER_H
+#define COREAUDIODRIVER_H
 
 #include "TAudioDriver.h"
+#include "RingBufferNPT.h"
 
-#include <CoreAudio/CoreAudio.h>
-#include <AudioToolbox/AudioConverter.h>
 #include <AudioUnit/AudioUnit.h>
+#include <CoreAudio/CoreAudio.h>
 
-#include "defines.h"
-
+#include <memory>
 
 class CoreAudioDriver : public TAudioDriver
 {
+    Q_OBJECT
+
 public:
-	CoreAudioDriver(AudioDevice* dev, int rate, nframes_t bufferSize);
-	~CoreAudioDriver();
-	
-// 	int start();
-// 	int stop();
-// 	int _read(nframes_t nframes);
-// 	int _write(nframes_t nframes);
-// 	int _null_cycle(nframes_t nframes);
-// 	int _run_cycle();
-	int attach();
-// 	int detach();
-// 	int bufsize(nframes_t nframes);
-// 	int restart();
-	int setup(bool capture=true, bool playback=true, const QString& cardDevice="none");
+    explicit CoreAudioDriver(AudioDevice* device, int rate, nframes_t bufferSize);
+    ~CoreAudioDriver() override;
 
+    int _read(nframes_t nframes) override;
+    int _write(nframes_t nframes) override;
+    int _run_cycle() override { return 1; }
+    int setup(bool capture = true, bool playback = true, const QString& cardDevice = "none");
+    int attach() override;
+    int start() override;
+    int stop() override;
 
-        AudioUnit m_au_hal;
-        AudioBufferList* m_input_list;
-        AudioDeviceID m_device_id;
-	int state;
-	
-        channel_t m_playback_nchannels;
-        channel_t m_capture_nchannels;
+    QString get_device_name() override;
+    QString get_device_longname() override;
+    static QStringList devices_info(bool input);
 
-        char m_capture_driver_name[256];
-        char m_playback_driver_name[256];
+private:
+    AudioUnit m_audioUnit{};
+    AudioUnit m_inputAudioUnit{};
+    AudioBufferList* m_inputList{};
+    audio_sample_t* m_inputBuffer{};
+    audio_sample_t* m_processInputBuffer{};
+    std::unique_ptr<RingBufferNPT<audio_sample_t>> m_inputRingBuffer;
+    AudioDeviceID m_deviceId{kAudioDeviceUnknown};
+    AudioDeviceID m_inputDeviceId{kAudioDeviceUnknown};
+    channel_t m_inputChannels{0};
+    channel_t m_outputChannels{0};
+    bool m_capture{false};
+    bool m_playback{false};
+    bool m_running{false};
+    OSStatus m_lastInputRenderStatus{noErr};
+    OSStatus m_reportedInputRenderStatus{noErr};
 
-        int m_xrun_detected;
-        int m_null_cycle_occured;
+    int process_callback(AudioUnitRenderActionFlags* flags,
+                         const AudioTimeStamp* timestamp,
+                         nframes_t nframes,
+                         AudioBufferList* output);
+    OSStatus capture_callback(AudioUnitRenderActionFlags* flags,
+                              const AudioTimeStamp* timestamp,
+                              nframes_t nframes);
+    int fail_setup(const QString& message, OSStatus status = noErr);
 
-	
-	void JCALog(char *fmt, ...);
-	void printError(OSStatus err);
-	OSStatus get_device_name_from_id(AudioDeviceID id, char name[256]);
-	OSStatus get_device_id_from_uid(char* UID, AudioDeviceID* id);
-	OSStatus get_default_device(AudioDeviceID * id);
-	OSStatus get_default_input_device(AudioDeviceID* id);
-	OSStatus get_default_output_device(AudioDeviceID* id);
-	OSStatus get_total_channels(AudioDeviceID device, int* channelCount, bool isInput);
-	OSStatus display_device_names();
-	
-	OSStatus render(AudioUnitRenderActionFlags 	*ioActionFlags,
-			const AudioTimeStamp 		*inTimeStamp,
-			UInt32 				inBusNumber,
-			UInt32 				inNumberFrames,
-			AudioBufferList 		*ioData);
-	OSStatus render_input(AudioUnitRenderActionFlags *ioActionFlags,
-			const AudioTimeStamp 		*inTimeStamp,
-			UInt32 				inBusNumber,
-			UInt32 				inNumberFrames,
-			AudioBufferList 		*ioData);
-	OSStatus sr_notification(
-			AudioDeviceID 		inDevice,
-			UInt32 			inChannel,
-			Boolean			isInput,
-			AudioDevicePropertyID 	inPropertyID);
-	OSStatus notification(
-			AudioDeviceID 		inDevice,
-			UInt32 			inChannel,
-			Boolean			isInput,
-			AudioDevicePropertyID 	inPropertyID);
-
-	
-	static OSStatus _render(void 				*inRefCon,
-			AudioUnitRenderActionFlags 	*ioActionFlags,
-			const AudioTimeStamp 		*inTimeStamp,
-			UInt32 				inBusNumber,
-			UInt32 				inNumberFrames,
-			AudioBufferList 		*ioData);
-	static OSStatus _render_input(
-			void 				*inRefCon,
-			AudioUnitRenderActionFlags 	*ioActionFlags,
-			const AudioTimeStamp 		*inTimeStamp,
-			UInt32 				inBusNumber,
-			UInt32 				inNumberFrames,
-			AudioBufferList 		*ioData);
-	static OSStatus _sr_notification(
-			AudioDeviceID 		inDevice,
-			UInt32 			inChannel,
-			Boolean			isInput,
-			AudioDevicePropertyID 	inPropertyID,
-			void* 			inClientData);
-	static OSStatus _notification(
-			AudioDeviceID 		inDevice,
-			UInt32 			inChannel,
-			Boolean			isInput,
-			AudioDevicePropertyID 	inPropertyID,
-			void* 			inClientData);
+    static OSStatus render_callback(void* refCon,
+                                    AudioUnitRenderActionFlags* flags,
+                                    const AudioTimeStamp* timestamp,
+                                    UInt32 bus,
+                                    UInt32 frames,
+                                    AudioBufferList* output);
+    static OSStatus input_render_callback(void* refCon,
+                                          AudioUnitRenderActionFlags* flags,
+                                          const AudioTimeStamp* timestamp,
+                                          UInt32 bus,
+                                          UInt32 frames,
+                                          AudioBufferList* output);
 };
- 
-#endif
 
-//eof
+#endif
