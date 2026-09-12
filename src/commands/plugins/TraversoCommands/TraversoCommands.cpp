@@ -83,6 +83,7 @@ TraversoCommands::TraversoCommands()
     tShortCutManager().add_meta_object(&FadeRange::staticMetaObject);
     tShortCutManager().add_meta_object(&SplitClip::staticMetaObject);
     tShortCutManager().add_meta_object(&TPanKnobView::staticMetaObject);
+    tShortCutManager().add_meta_object(&TGainKnobView::staticMetaObject);
     tShortCutManager().add_meta_object(&TMoveCommand::staticMetaObject);
     tShortCutManager().add_meta_object(&TTransport::staticMetaObject);
 
@@ -309,6 +310,12 @@ TraversoCommands::TraversoCommands()
     function->commandName = "PanKnobPanorama";
     add_function(function, TrackPanCommand);
 
+    function = new TFunction();
+    function->object = "TGainKnobView";
+    function->setDescription(tr("Gain"));
+    function->commandName = "GainKnobGain";
+    add_function(function, GainCommand);
+
     create_and_add_function("AudioClipView", tr("Copy"), "CopyClip", MoveClipCommand, QStringList() << "copy", "", true, true);
     create_and_add_function("AudioClipView", tr("Split"), "SplitClip", SplitClipCommand, QStringList(), "", true);
     create_and_add_function("AudioClipView", tr("Magnetic Cut"), "CropClip", CropClipCommand);
@@ -373,6 +380,8 @@ TCommand* TraversoCommands::create(QObject* obj, const QString& commandName, QVa
 
         if (item->metaObject()->className() == QString("TrackPanelGain")) {
             item = item->get_context();
+        } else if (TGainKnobView* knob = qobject_cast<TGainKnobView*>(item)) {
+            item = knob->get_track();
         } else if (AudioClipView* view = qobject_cast<AudioClipView*>(item)) {
             item = view->get_context();
         } else if (TrackView* view = qobject_cast<TrackView*>(item)) {
