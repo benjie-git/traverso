@@ -100,17 +100,20 @@ int PlayHeadMove::jog()
 {
     int x = cpointer().scene_x();
     int y = cpointer().scene_y();
-    if (x < 0) {
-        x = 0;
-    }
+
     if (x == m_newXPos && y == m_newYPos) {
         return 0;
     }
 
-    if (x != m_newXPos) {
-        m_playhead->setPos(x, 0);
+    int playheadX = x;
+    if (playheadX < 0) {
+        playheadX = 0;
+    }
 
-        m_newTransportLocation = TimeRef(x * d->sv->timeref_scalefactor);
+    if (playheadX != m_newXPos) {
+        m_playhead->setPos(playheadX, 0);
+
+        m_newTransportLocation = TimeRef(playheadX * d->sv->timeref_scalefactor);
 
         if (m_resync && m_session->is_transport_rolling()) {
             m_session->set_transport_pos(m_newTransportLocation);
