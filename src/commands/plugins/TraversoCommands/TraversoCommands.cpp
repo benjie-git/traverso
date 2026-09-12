@@ -330,8 +330,8 @@ TraversoCommands::TraversoCommands()
 
     create_and_add_function("FadeCurveView", tr("Length"), "FadeLength", FadeRangeCommand);
 
-    create_and_add_function("MarkerView", tr("Delete"), "RemoveMarker", RemoveMarkerCommand);
-    create_and_add_function("TimeLineView", tr("Delete Marker"), "RemoveMarker", RemoveMarkerCommand);
+    // create_and_add_function("MarkerView", tr("Delete"), "RemoveMarker", RemoveMarkerCommand);
+    // create_and_add_function("TimeLineView", tr("Delete Marker"), "RemoveMarker", RemoveMarkerCommand);
 
     create_and_add_function("PluginView", tr("Move"), "MovePlugin", MovePluginCommand, QStringList(), "MoveBase", true);
 
