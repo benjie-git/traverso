@@ -885,6 +885,8 @@ KeyboardConfigPage::KeyboardConfigPage(QWidget * parent)
 	setupUi(this);
 
 	load_config();
+
+	connect(shortcutsKeymapComboBox, &QComboBox::activated, this, &KeyboardConfigPage::keymap_index_changed);
 }
 
 void KeyboardConfigPage::load_config()
@@ -893,6 +895,7 @@ void KeyboardConfigPage::load_config()
 	int mouseClickTakesOverKeyboardNavigation = config().get_property("InputEventDispatcher", "mouseclicktakesoverkeyboardnavigation", false).toBool();
 	bool enterFinishesHold = config().get_property("InputEventDispatcher", "EnterFinishesHold", false).toBool();
 	bool allowArrowKeyBrowsing = config().get_property("InputEventDispatcher", "AllowArrowKeyBrowsing", false).toBool();
+	bool useSimplifiedShortcuts = config().get_property("InputEventDispatcher", "UseSimplifiedShortcuts", true).toBool();
 	
         mouseTreshHoldSpinBox->setValue(jogByPassDistance);
 
@@ -909,6 +912,8 @@ void KeyboardConfigPage::load_config()
 	}
 
 	allowArrowKeyBrowsingCheckBox->setChecked(allowArrowKeyBrowsing);
+
+	shortcutsKeymapComboBox->setCurrentIndex(useSimplifiedShortcuts ? 0 : 1);
 }
 
 void KeyboardConfigPage::save_config()
@@ -917,6 +922,7 @@ void KeyboardConfigPage::save_config()
 	config().set_property("InputEventDispatcher", "mouseclicktakesoverkeyboardnavigation", leftMouseClickRadioButton->isChecked());
     config().set_property("InputEventDispatcher", "EnterFinishesHold", enterPressedRadioButton->isChecked());
 	config().set_property("InputEventDispatcher", "AllowArrowKeyBrowsing", allowArrowKeyBrowsingCheckBox->isChecked());
+	config().set_property("InputEventDispatcher", "UseSimplifiedShortcuts", shortcutsKeymapComboBox->currentIndex() != 1);
 
         cpointer().set_jog_bypass_distance(mouseTreshHoldSpinBox->value());
         cpointer().set_left_mouse_click_bypasses_jog(leftMouseClickRadioButton->isChecked());
@@ -928,7 +934,20 @@ void KeyboardConfigPage::reset_default_config()
 	config().set_property("InputEventDispatcher", "mouseclicktakesoverkeyboardnavigation", false);
 	config().set_property("InputEventDispatcher", "EnterFinishesHold", false);
 	config().set_property("InputEventDispatcher", "AllowArrowKeyBrowsing", false);
+	config().set_property("InputEventDispatcher", "UseSimplifiedShortcuts", true);
 	load_config();
+}
+
+void KeyboardConfigPage::keymap_index_changed(int index)
+{
+	shortcutsKeymapComboBox->setCurrentIndex(index);
+	if (index != 1) {
+		config().set_property("InputEventDispatcher", "UseSimplifiedShortcuts", true);
+	} else {
+		config().set_property("InputEventDispatcher", "UseSimplifiedShortcuts", false);
+	}
+	tShortCutManager().unloadShortcuts();
+	tShortCutManager().loadShortcuts();
 }
 
 void KeyboardConfigPage::on_exportButton_clicked()

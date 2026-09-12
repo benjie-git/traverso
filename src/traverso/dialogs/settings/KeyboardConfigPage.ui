@@ -111,8 +111,33 @@
      <property name="title">
       <string>Keymap</string>
      </property>
-     <layout class="QVBoxLayout" name="verticalLayout_2">
-      <item>
+      <layout class="QVBoxLayout" name="verticalLayout_2">
+       <item>
+        <layout class="QHBoxLayout" name="horizontalLayout_3">
+         <item>
+          <widget class="QLabel" name="shortcutKeymapLabel">
+           <property name="text">
+            <string>Use Shortcut Layout</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QComboBox" name="shortcutsKeymapComboBox">
+           <item>
+            <property name="text">
+             <string>Simplified</string>
+            </property>
+           </item>
+           <item>
+            <property name="text">
+             <string>Advanced</string>
+            </property>
+           </item>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item>
        <layout class="QHBoxLayout">
         <property name="spacing">
          <number>6</number>

@@ -163,6 +163,7 @@ public:
 	void loadFunctions();
 	void saveFunction(TFunction* function);
 	void exportFunctions();
+	void unloadShortcuts();
 	void loadShortcuts();
 	void restoreDefaultFor(TFunction* function);
 	void restoreDefaults();

@@ -1198,7 +1198,7 @@ void TShortcutManager::exportFunctions()
 	}
 }
 
-void TShortcutManager::loadShortcuts()
+void TShortcutManager::unloadShortcuts()
 {
 	for (TShortcut* shortCut : m_shortcuts)
 	{
@@ -1206,8 +1206,14 @@ void TShortcutManager::loadShortcuts()
 	}
 
 	m_shortcuts.clear();
+}
 
-	QSettings defaultSettings(":/Traverso/shortcuts.ini", QSettings::IniFormat);
+void TShortcutManager::loadShortcuts()
+{
+	unloadShortcuts();
+
+	bool useSimplifiedShortcuts = config().get_property("InputEventDispatcher", "UseSimplifiedShortcuts", true).toBool();
+	QSettings defaultSettings(useSimplifiedShortcuts ? ":/Traverso/shortcuts-simplified.ini" : ":/Traverso/shortcuts-advanced.ini", QSettings::IniFormat);
 	QSettings userSettings(QSettings::IniFormat, QSettings::UserScope, "Traverso", "Shortcuts");
 	QSettings* settings;
 
