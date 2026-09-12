@@ -1,7 +1,10 @@
 Linux build setup:
 =================
-sudo apt install cmake qt6-base-dev qt6-svg-dev libjack-dev libfftw3-dev libsamplerate \
-libsndfile1-dev libwavpack-dev libflac-dev libfaad-dev libfaac-dev lame libmad0-dev
+sudo apt install cmake pkg-config qt6-base-dev qt6-svg-dev \
+libasound2-dev libjack-dev libpipewire-0.3-dev liblilv-dev \
+libfftw3-dev libsamplerate0-dev libsndfile1-dev libwavpack-dev \
+libflac-dev libogg-dev libvorbis-dev libfaad-dev libfaac-dev \
+libmp3lame-dev libmad0-dev
 
 # (or similar for rpm/etc.)
 
@@ -19,7 +22,8 @@ mingw-w64-ucrt-x86_64-brotli mingw-w64-ucrt-x86_64-jbigkit mingw-w64-ucrt-x86_64
 mingw-w64-ucrt-x86_64-cmake mingw-w64-ucrt-x86_64-fftw mingw-w64-ucrt-x86_64-portaudio mingw-w64-ucrt-x86_64-libsamplerate \
 mingw-w64-ucrt-x86_64-libsndfile mingw-w64-ucrt-x86_64-libmad mingw-w64-ucrt-x86_64-faad2 \
 mingw-w64-ucrt-x86_64-wavpack mingw-w64-ucrt-x86_64-mpg123 mingw-w64-ucrt-x86_64-flac mingw-w64-ucrt-x86_64-opus \
-mingw-w64-ucrt-x86_64-lame 
+mingw-w64-ucrt-x86_64-lame mingw-w64-ucrt-x86_64-libogg mingw-w64-ucrt-x86_64-libvorbis
+
 
 # Build faac static lib
 pacman -S mingw-w64-ucrt-x86_64-git
