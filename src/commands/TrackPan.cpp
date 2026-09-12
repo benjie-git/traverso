@@ -28,6 +28,7 @@
 #include "ContextPointer.h"
 #include "Track.h"
 #include "Mixer.h"
+#include "Utils.h"
 #include "TInputEventDispatcher.h"
 
 // Always put me below _all_ includes, this is needed
@@ -64,7 +65,7 @@ TrackPan::TrackPan(Track* track, QVariantList args)
 
 int TrackPan::prepare_actions()
 {
-	if (qFuzzyCompare(m_origPan, m_newPan))
+	if (fuzzy_compare(m_origPan, m_newPan))
 	{
 		// nothing happened
 		return -1;

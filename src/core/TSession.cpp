@@ -319,7 +319,7 @@ void TSession::set_hzoom(qreal hzoom )
 	qreal old_hzoom = get_hzoom();
 	m_hzoom = hzoom;
 
-    if (!qFuzzyCompare(old_hzoom, get_hzoom())) {
+    if (!fuzzy_compare(old_hzoom, get_hzoom())) {
 		emit hzoomChanged();
 	}
 }

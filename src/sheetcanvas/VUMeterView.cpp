@@ -27,6 +27,7 @@
 #include "AudioChannel.h"
 #include "TConfig.h"
 #include "Themer.h"
+#include "Utils.h"
 #include "Mixer.h"
 #include <AudioDevice.h>
 #include "Track.h"
@@ -438,7 +439,7 @@ void VUMeterLevelView::update_peak( )
         m_peak = m_monitor->get_peak_value();
 
         // if the meter drops to -inf, reset the 'over LED' and peak hold values
-        if (qFuzzyCompare(m_peak, 0.0f) && (m_tailDeltaY <= -70.0f)) {
+        if (fuzzy_equals_0(m_peak) && (m_tailDeltaY <= -70.0f)) {
                 m_peakHoldValue = -120.0;
 //                emit activate_over_led(false);
                 return;

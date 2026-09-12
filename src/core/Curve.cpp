@@ -156,7 +156,7 @@ int Curve::process(
 	if (endlocation > qint64(get_range())) {
         audio_sample_t gain = audio_sample_t((static_cast<CurveNode*>(m_nodes.last()))->value) * makeupgain;
 
-		if (qFuzzyCompare(gain, 1.0f)) {
+		if (fuzzy_equals_1(gain)) {
 			return 0;
 		}
 		
@@ -593,7 +593,7 @@ void Curve::set_range(double when)
 	
 	CurveNode* lastnode = (CurveNode*)m_nodes.last();
 	
-    if (qFuzzyCompare(lastnode->when, when)) {
+    if (fuzzy_compare(lastnode->when, when)) {
 // 		printf("Curve::set_range: new range == current range!\n");
 		return;
 	}
@@ -607,7 +607,7 @@ void Curve::set_range(double when)
 	
 	double factor = when / lastnode->when;
 	
-	if (qFuzzyCompare(factor, 1.0))
+	if (fuzzy_equals_1(factor))
 		return;
 	
 	x_scale (factor);
@@ -651,7 +651,7 @@ TCommand* Curve::add_node(CurveNode* node, bool historable)
 	PENTER2;
 	
     apill_foreach(CurveNode* cn, CurveNode*, m_nodes) {
-        if (qFuzzyCompare(node->when, cn->when) && qFuzzyCompare(node->value, cn->value)) {
+        if (fuzzy_compare(node->when, cn->when) && fuzzy_compare(node->value, cn->value)) {
 			info().warning(tr("There is allready a node at this exact position, not adding a new node"));
 			delete node;
             node = nullptr;

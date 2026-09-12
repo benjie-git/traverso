@@ -35,6 +35,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA.
 #include <AddRemove.h>
 #include "CommandGroup.h"
 #include "MoveCurveNode.h"
+#include "Utils.h"
 
 #include <Debugger.h>
 
@@ -211,7 +212,7 @@ void CurveView::paint( QPainter * painter, const QStyleOptionGraphicsItem * opti
 
 int CurveView::get_vector(qreal xstart, qreal pixelcount, float* arg)
 {
-    if (m_guicurve->get_nodes().size() == 1 && qFuzzyCompare(((CurveNode*)m_guicurve->get_nodes().first())->value, 1.0)) {
+    if (m_guicurve->get_nodes().size() == 1 && fuzzy_equals_1(((CurveNode*)m_guicurve->get_nodes().first())->value)) {
         return 0;
     }
 

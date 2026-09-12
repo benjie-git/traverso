@@ -25,6 +25,7 @@
 #include "AudioDevice.h"
 #include <Sheet.h>
 #include "TConfig.h"
+#include "Utils.h"
 #include <Themer.h>
 
 #include <QPen>
@@ -218,7 +219,7 @@ void PlayHead::set_animation_value(int /*value*/)
 {
 	// When the scalefactor changed, stop the animation here as it's no longer valid to run
 	// and reset the animation timeline time back to 0.
-    if (!qFuzzyCompare(m_animScaleFactor, m_sv->timeref_scalefactor)) {
+    if (!fuzzy_compare(m_animScaleFactor, m_sv->timeref_scalefactor)) {
 		m_animation.stop();
 		m_animation.setCurrentTime(0);
 		animation_finished();

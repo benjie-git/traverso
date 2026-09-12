@@ -22,6 +22,7 @@ $Id: CurveNode.cpp,v 1.8 2007/11/23 14:56:36 r_sijrier Exp $
 
 #include "CurveNode.h"
 #include "Curve.h"
+#include "Utils.h"
 
 // Always put me below _all_ includes, this is needed
 // in case we run with memory leak detection enabled!
@@ -54,7 +55,7 @@ void CurveNode::set_relative_when_and_value( double relwhen, double value )
 
 void CurveNode::set_when_and_value(double when, double value)
 {
-    if (qFuzzyCompare(this->when, when) && qFuzzyCompare(this->value, value)) {
+    if (fuzzy_compare(this->when, when) && fuzzy_compare(this->value, value)) {
         return;
     }
 	this->when = when;

@@ -474,7 +474,7 @@ void Track::process_send(TSend *send, nframes_t nframes)
 
                         gainFactor = panFactor * send->get_gain();
 
-                        if (qFuzzyCompare(gainFactor, 1.0f)) {
+                        if (fuzzy_equals_1(gainFactor)) {
                                 Mixer::mix_buffers_no_gain(receiver->get_buffer(nframes), sender->get_buffer(nframes), nframes);
                         } else {
                                 Mixer::mix_buffers_with_gain(receiver->get_buffer(nframes), sender->get_buffer(nframes), nframes, gainFactor);

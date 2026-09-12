@@ -42,6 +42,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA.
 #include "Information.h"
 #include "Themer.h"
 #include "TConfig.h"
+#include "Utils.h"
 #include <FadeCurve.h>
 #include <Curve.h>
 #include "TMainWindow.h"
@@ -302,7 +303,7 @@ void AudioClipView::paint_tile(QPainter* painter, qreal xstart, int pixelcount)
         auto fadeIn = m_clip->get_fade_in();
         auto fadeOut = m_clip->get_fade_out();
 
-        if (clipCurve && (!clipCurve->is_trivial() || !qFuzzyCompare(clipCurve->get_trivial_gain(), 1.0f))) {
+        if (clipCurve && (!clipCurve->is_trivial() || !fuzzy_equals_1(clipCurve->get_trivial_gain()))) {
             // apply the clip's gain curve to curveMixdown, if it exists
             hasCurve = true;
             // this is the first gain curve, so just replace the original 1.0 values
@@ -315,7 +316,7 @@ void AudioClipView::paint_tile(QPainter* painter, qreal xstart, int pixelcount)
                                         curveMixdown.data(), width);
             }
         }
-        if (trackGainCurve && (!trackGainCurve->is_trivial() || !qFuzzyCompare(trackGainCurve->get_trivial_gain(), 1.0f))) {
+        if (trackGainCurve && (!trackGainCurve->is_trivial() || !fuzzy_equals_1(trackGainCurve->get_trivial_gain()))) {
             // apply the cltrack's gain curve to curveMixdown, if it exists
             hasCurve = true;
             QVarLengthArray<float> trackMixdown(width);

@@ -81,6 +81,52 @@ static inline long nearest_power_of_two(unsigned long val, int& highbit)
 	return val;
 }
 
+static inline bool fuzzy_compare(float a, float b)
+{
+    bool az = qFuzzyIsNull(a);
+    bool bz = qFuzzyIsNull(b);
+    if (az && bz) {
+        return true;
+    }
+    if (az || bz) {
+        return false;
+    }
+    return qFuzzyCompare(a, b);
+}
+
+static inline bool fuzzy_compare(double a, double b)
+{
+    bool az = qFuzzyIsNull(a);
+    bool bz = qFuzzyIsNull(b);
+    if (az && bz) {
+        return true;
+    }
+    if (az || bz) {
+        return false;
+    }
+    return qFuzzyCompare(a, b);
+}
+
+static inline bool fuzzy_equals_1(double a)
+{
+    return qFuzzyCompare(a, 1.0);
+}
+
+static inline bool fuzzy_equals_1(float a)
+{
+    return qFuzzyCompare(a, 1.0f);
+}
+
+static inline bool fuzzy_equals_0(double a)
+{
+    return qFuzzyIsNull(a);
+}
+
+static inline bool fuzzy_equals_0(float a)
+{
+    return qFuzzyIsNull(a);
+}
+
 QPixmap find_pixmap(const QString& pixname);
 
 #endif

@@ -458,7 +458,7 @@ SystemValueBar::SystemValueBar(QWidget * parent)
 
 void SystemValueBar::set_value(float value)
 {
-    if (qFuzzyCompare(m_current, value)) {
+    if (fuzzy_compare(m_current, value)) {
 		return;
 	}
 	

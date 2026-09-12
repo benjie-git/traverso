@@ -29,6 +29,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-11  USA.
 #include "TInputEventDispatcher.h"
 #include "Sheet.h"
 #include "AudioClip.h"
+#include "Utils.h"
 #include "SnapList.h"
 #include "AudioTrack.h"
 #include "Marker.h"
@@ -169,7 +170,7 @@ SheetView::~SheetView()
 void SheetView::scale_factor_changed( )
 {
 	qreal zoom = m_session->get_hzoom();
-    if (qFuzzyCompare(zoom, 0.0)) {
+    if (fuzzy_equals_0(zoom)) {
 //		PERROR("Session %s return 0 hzoom factor!", m_session->get_name().toLatin1().data());
 		// Woopsy, zoom can't be zero, if we allow that, timeref_scalefactor
 		// will be zero too, and we use timeref_scalefactor as a divider so...:

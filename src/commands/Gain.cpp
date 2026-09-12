@@ -61,7 +61,7 @@ Gain::~Gain()
 
 int Gain::prepare_actions()
 {
-    if (qFuzzyCompare(m_origGain, m_newGain)) {
+    if (fuzzy_compare(m_origGain, m_newGain)) {
         // Nothing happened!
         return -1;
     }
@@ -85,7 +85,7 @@ int Gain::do_action()
     // however, do_action() is always called from the TInputEventDispatcher
     // So do not start the animated gain setting since it will start from
     // the m_oldgain value.
-    if (qFuzzyCompare(m_newGain, get_gain_from_object(m_gainObject))) {
+    if (fuzzy_compare(m_newGain, get_gain_from_object(m_gainObject))) {
         return 1;
     }
 
