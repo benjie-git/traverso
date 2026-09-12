@@ -389,8 +389,16 @@ int TInputEventDispatcher::dispatch_shortcut(TShortcut* shortCut, bool fromConte
 					m_holdEventCode = shortCut->getKeyValue();
                     set_holding(true);
 					m_enterFinishesHold = config().get_property("InputEventDispatcher", "EnterFinishesHold", false).toBool();
-                    if (fromContextMenu && command->supportsEnterFinishesHold())
+                    if (!command->supportsEnterFinishesHold())
 					{
+						m_enterFinishesHold = false;
+					}
+                    if (fromContextMenu)
+					{
+						// A command started from the context menu has no key held
+						// down, so Enter must always be able to finish it, even for
+						// commands that opt out of finishing on Enter (e.g. Sheet:Zoom,
+						// Track:Move Up/Down).
 						m_enterFinishesHold = true;
 					}
                     if (shortCutFunction->usesAutoRepeat())
@@ -398,10 +406,6 @@ int TInputEventDispatcher::dispatch_shortcut(TShortcut* shortCut, bool fromConte
 						PMESG("Function uses autorepeat");
 						process_press_event(shortCut->getKeyValue());
 					}
-                    if (!command->supportsEnterFinishesHold())
-					{
-						m_enterFinishesHold = false;
-                    }
 
                     bool showCursorShortCutHelp = config().get_property("ShortCuts", "ShowCursorHelp", false).toBool();
                     if (showCursorShortCutHelp && (fromContextMenu || m_enterFinishesHold)) {
