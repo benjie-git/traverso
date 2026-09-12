@@ -42,11 +42,6 @@ public:
 	TimeLineView* get_timeline_view() const {return m_timeLineView;}
 	
 
-protected:
-	void wheelEvent ( QWheelEvent * e ) override;
-    bool event(QEvent *event) override;
-
-
 private:
 	TimeLineView* 	m_timeLineView;
 };

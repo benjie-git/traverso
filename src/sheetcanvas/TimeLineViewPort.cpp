@@ -46,20 +46,6 @@ PENTERDES;
 }
 
 
-void TimeLineViewPort::wheelEvent ( QWheelEvent * e )
-{
-  	if (e->angleDelta().x() > 0) {
-  		m_sv->scroll_left_by(e->angleDelta().x());
-  	} else if (e->angleDelta().x() < 0) {
-  		m_sv->scroll_right_by(-e->angleDelta().x());
-  	}
-    if (e->angleDelta().y() > 0) {
-  		m_sv->scroll_up_by(e->angleDelta().y());
-  	} else if (e->angleDelta().y() < 0) {
-  		m_sv->scroll_down_by(-e->angleDelta().y());
-  	}
-}
-
 void TimeLineViewPort::set_sheetview( SheetView * view )
 {
 	m_timeLineView = new TimeLineView(view);
@@ -73,27 +59,6 @@ void TimeLineViewPort::scale_factor_changed()
 	if (m_timeLineView) {
 		m_timeLineView->calculate_bounding_rect();
 	}
-}
-
-// Catch native trackpad gestures
-bool TimeLineViewPort::event(QEvent *event)
-{
-    if (event->type() == QEvent::NativeGesture) {
-        QNativeGestureEvent *gestureEvent = static_cast<QNativeGestureEvent*>(event);
-        if (gestureEvent->gestureType() == Qt::ZoomNativeGesture) {
-            qreal zoomFactor = 2*gestureEvent->value(); 
-
-            if (ied().is_holding_modifier_key("SHIFT")) {
-                m_sv->vzoom(1+zoomFactor);
-            }
-            else {
-                m_sv->hzoom(1-zoomFactor);
-            }
-            
-            return true; // Event handled
-        }
-    }
-    return QWidget::event(event);
 }
 
 

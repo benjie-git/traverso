@@ -30,6 +30,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA.
 #include <QFile>
 #include <QHash>
 #include <QPair>
+#include <atomic>
 
 #include "defines.h"
 
@@ -130,6 +131,7 @@ private:
 	bool 		m_peaksAvailable;
 	bool		m_permanentFailure;
 	bool		m_interuptPeakBuild;
+	std::atomic<bool>	m_peakBuildRunning;
 	static QHash<int, int> chacheIndexLut;
 	
 	struct ProcessData {

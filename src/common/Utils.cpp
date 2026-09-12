@@ -31,7 +31,12 @@
 #include <QChar>
 #include <QTranslator>
 #include <QDir>
+#include <QDebug>
 #include <cmath>
+
+#ifdef Q_OS_MAC
+#include <ApplicationServices/ApplicationServices.h>
+#endif
 
 TimeRef msms_to_timeref(QString str)
 {
@@ -360,4 +365,32 @@ bool t_KeyStringToKeyValue(int &variable, const QString &text)
 
 	// Code found, return true
 	return true;
+}
+
+bool can_set_mouse_pos()
+{
+#ifdef Q_OS_MAC
+	static bool didShowAlert = false;
+
+	// Check if the macOS sandbox/system has trusted this app
+	if (AXIsProcessTrusted()) {
+		return true;
+	}
+
+	// Prompt the user or log that permissions are missing
+	qWarning("Accessibility permissions required to move the mouse position.");
+
+	if (!didShowAlert) {
+		// Open the Privacy settings panel automatically
+		CFStringRef keys[] = { kAXTrustedCheckOptionPrompt };
+		CFBooleanRef values[] = { kCFBooleanTrue };
+		CFDictionaryRef options = CFDictionaryCreate(NULL, (const void **)keys, (const void **)values, 1, &kCFCopyStringDictionaryKeyCallBacks, &kCFTypeDictionaryValueCallBacks);
+		AXIsProcessTrustedWithOptions(options);
+		CFRelease(options);
+		didShowAlert = true;
+	}
+	return false;
+#else
+	return true;
+#endif
 }

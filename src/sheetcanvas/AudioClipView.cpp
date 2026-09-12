@@ -31,6 +31,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA.
 #include "CurveView.h"
 
 #include "AudioClip.h"
+#include "AudioTrack.h"
 #include "ReadSource.h"
 #include "TInputEventDispatcher.h"
 #include "ContextPointer.h"
@@ -167,14 +168,12 @@ void AudioClipView::paint(QPainter* painter, const QStyleOptionGraphicsItem *opt
 
     if (m_clip->is_muted()) {
         m_waveBrush = m_brushFgMuted;
+    } else if (m_clip->get_track() && m_clip->get_track()->show_clip_volume_automation()) {
+        if (mousehover) m_waveBrush = m_brushFgEditHover;
+        else            m_waveBrush = m_brushFgEdit;
     } else {
-        if (m_sheet->get_mode() == Sheet::EDIT) {
-            if (mousehover) m_waveBrush = m_brushFgHover;
-            else            m_waveBrush = m_brushFg;
-        } else {
-            if (mousehover) m_waveBrush = m_brushFgEditHover;
-            else            m_waveBrush = m_brushFgEdit;
-        }
+        if (mousehover) m_waveBrush = m_brushFgHover;
+        else            m_waveBrush = m_brushFg;
     }
 
     int channels = m_clip->get_channel_count();

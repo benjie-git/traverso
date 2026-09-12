@@ -52,6 +52,8 @@ QString language_name_from_qm_file(const QString& lang);
 bool t_MetaobjectInheritsClass(const QMetaObject* mo, const QString & className);
 bool t_KeyStringToKeyValue(int & variable, const QString& text);
 
+bool can_set_mouse_pos();
+
 
 static inline unsigned int is_power_of_two (unsigned int n)
 {

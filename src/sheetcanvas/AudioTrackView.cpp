@@ -202,10 +202,12 @@ void AudioTrackView::automation_visibility_changed()
     if (m_track->show_clip_volume_automation()) {
         for (AudioClipView* acView : m_clipViews) {
             acView->get_gain_curve_view()->set_ignore_context(false);
+            acView->invalidate_clip_tiles();
         }
     } else {
         for (AudioClipView* acView : m_clipViews) {
             acView->get_gain_curve_view()->set_ignore_context(true);
+            acView->invalidate_clip_tiles();
         }
     }
 

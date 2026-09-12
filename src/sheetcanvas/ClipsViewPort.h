@@ -46,8 +46,6 @@ protected:
 	void dragEnterEvent(QDragEnterEvent *event) override;
 	void dropEvent(QDropEvent *event) override;
     void dragMoveEvent(QDragMoveEvent *event) override;
-    void wheelEvent(QWheelEvent * e) override;
-    bool event(QEvent *event) override;
 
 private:
 	SheetWidget*	m_sw;

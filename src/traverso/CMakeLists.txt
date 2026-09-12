@@ -79,7 +79,7 @@ target_link_libraries(traverso
 )
 
 if(APPLE)
-    target_link_libraries(traverso PRIVATE "-framework CoreFoundation" "-framework Accelerate")
+    target_link_libraries(traverso PRIVATE "-framework CoreFoundation" "-framework Accelerate" "-framework ApplicationServices")
 endif()
 
 if(WIN32)

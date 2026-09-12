@@ -22,6 +22,8 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA.
 #include <QMouseEvent>
 #include <QResizeEvent>
 #include <QEvent>
+#include <QWheelEvent>
+#include <QNativeGestureEvent>
 #include <QRect>
 #include <QPainter>
 #include <QPixmap>
@@ -126,6 +128,22 @@ bool ViewPort::event(QEvent * event)
 			return true;
 		}
     }
+
+	if (event->type() == QEvent::NativeGesture) {
+		QNativeGestureEvent *gestureEvent = static_cast<QNativeGestureEvent*>(event);
+		if (gestureEvent->gestureType() == Qt::ZoomNativeGesture) {
+			qreal zoomFactor = 2*gestureEvent->value();
+
+			if (ied().is_holding_modifier_key(Qt::Key_Shift)) {
+				m_sv->vzoom(1+zoomFactor);
+			}
+			else {
+				m_sv->hzoom(1-zoomFactor);
+			}
+
+			return true; // Event handled
+		}
+	}
 
 	return QGraphicsView::event(event);
 }
@@ -331,7 +349,27 @@ void ViewPort::mouseDoubleClickEvent( QMouseEvent * e )
 
 void ViewPort::wheelEvent( QWheelEvent * e )
 {
-	ied().catch_scroll(e);
+	bool handled = false;
+
+	if (e->angleDelta().x() > 0) {
+		m_sv->scroll_left_by(e->angleDelta().x());
+		handled = true;
+	} else if (e->angleDelta().x() < 0) {
+		m_sv->scroll_right_by(-e->angleDelta().x());
+		handled = true;
+	}
+	if (e->angleDelta().y() > 0) {
+		m_sv->scroll_up_by(e->angleDelta().y());
+		handled = true;
+	} else if (e->angleDelta().y() < 0) {
+		m_sv->scroll_down_by(-e->angleDelta().y());
+		handled = true;
+	}
+
+	if (!handled) {
+		// if not handled by the sheetview, let the input event dispatcher handle it
+		ied().catch_scroll(e);
+	}
 	e->accept();
 }
 

@@ -137,7 +137,17 @@ void Gain::set_new_gain_numerical_input(float newGain)
 int Gain::process_mouse_move(qreal diffY)
 {
     qreal of = 0;
-#if defined(Q_OS_MAC) || defined(Q_OS_LINUX)
+#if defined(Q_OS_MAC)
+    // On macOS the mouse only snaps back to its original position if the app
+    // has been granted accessibility permissions. Without them, integrate from
+    // the original gain to avoid the gain accumulating the total mouse travel.
+    audio_sample_t dbFactor;
+    if (can_set_mouse_pos()) {
+        dbFactor = coefficient_to_dB(m_newGain);
+    } else {
+        dbFactor = coefficient_to_dB(m_origGain);
+    }
+#elif defined(Q_OS_LINUX)
     audio_sample_t dbFactor = coefficient_to_dB(m_origGain);
 #else
     audio_sample_t dbFactor = coefficient_to_dB(m_newGain);

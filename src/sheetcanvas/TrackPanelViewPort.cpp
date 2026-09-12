@@ -42,41 +42,4 @@ TrackPanelViewPort::TrackPanelViewPort(QGraphicsScene* scene, SheetWidget* sw)
         setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 }
 
-void TrackPanelViewPort::wheelEvent ( QWheelEvent * e )
-{
-	SheetView* sv = m_sw->get_sheetview();
-	
-        if (e->angleDelta().x() > 0) {
-                sv->scroll_left_by(e->angleDelta().x());
-        } else if (e->angleDelta().x() < 0) {
-                sv->scroll_right_by(-e->angleDelta().x());
-        }
-        if (e->angleDelta().y() > 0) {
-  		sv->scroll_up_by(e->angleDelta().y());
-  	} else if (e->angleDelta().y() < 0) {
-  		sv->scroll_down_by(-e->angleDelta().y());
-  	}
-}
-
-// Catch native trackpad gestures
-bool TrackPanelViewPort::event(QEvent *event)
-{
-    if (event->type() == QEvent::NativeGesture) {
-        QNativeGestureEvent *gestureEvent = static_cast<QNativeGestureEvent*>(event);
-        if (gestureEvent->gestureType() == Qt::ZoomNativeGesture) {
-            qreal zoomFactor = 2*gestureEvent->value(); 
-
-            if (ied().is_holding_modifier_key("SHIFT")) {
-                m_sv->vzoom(1+zoomFactor);
-            }
-            else {
-                m_sv->hzoom(1-zoomFactor);
-            }
-            
-            return true; // Event handled
-        }
-    }
-    return QWidget::event(event);
-}
-
 //eof

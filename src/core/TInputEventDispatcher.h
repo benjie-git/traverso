@@ -58,7 +58,7 @@ public:
     void set_numerical_input(const QString& number);
 
     bool is_holding();
-    bool is_holding_modifier_key(const char *keyname);
+    bool is_holding_modifier_key(int keycode);
 
     TCommand* get_holding_command() const;
 
