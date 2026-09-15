@@ -690,6 +690,12 @@ void AudioDevice::set_live_output_bus(AudioBus* bus)
 
 int AudioDevice::enable_live_output(const QString& uid)
 {
+    // JACK owns the graph and exposes the live mix as extra ports on the
+    // existing client, so there is no separate sink to open.
+    if (get_driver_type() == "Jack") {
+        return 0;
+    }
+
     QMutexLocker locker(&m_liveOutputMutex);
     if (!uid.isEmpty() && uid != "none") {
         if (m_liveOutput && m_liveOutput->is_open() && m_liveOutputUid == uid) {

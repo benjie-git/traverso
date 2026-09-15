@@ -38,6 +38,10 @@ LiveOutput* create_coreaudio_live_output();
 LiveOutput* create_portaudio_live_output();
 #endif
 
+#if defined (PIPEWIRE_SUPPORT)
+LiveOutput* create_pipewire_live_output();
+#endif
+
 // Always put me below _all_ includes, this is needed
 // in case we run with memory leak detection enabled!
 #include "Debugger.h"
@@ -102,10 +106,19 @@ void BufferedLiveOutput::process(nframes_t nframes, const QList<AudioChannel*>& 
 			continue;
 		}
 
+		// The live sink tolerates clock drift; likewise it must tolerate a
+		// channel whose buffer is momentarily a different size than nframes
+		// (e.g. while the primary driver is being reinitialised).
+		const nframes_t available = nframes_t(channel->get_buffer_size());
+		const nframes_t bufferFrames = std::min(nframes, available);
+		if (bufferFrames == 0) {
+			continue;
+		}
+
 		RingBufferNPT<audio_sample_t>* ring = m_rings.at(i);
-		const audio_sample_t* source = channel->get_buffer(nframes);
+		const audio_sample_t* source = channel->get_buffer(bufferFrames);
 		const size_t space = ring->write_space();
-		const size_t toWrite = std::min<size_t>(space, nframes);
+		const size_t toWrite = std::min<size_t>(space, bufferFrames);
 
 		// Overrun: drop the excess rather than block.
 		if (toWrite > 0) {
@@ -176,6 +189,11 @@ LiveOutput* create_live_output(const QString& driverType)
 #if defined (PORTAUDIO_SUPPORT)
 	if (driverType == "PortAudio") {
 		return create_portaudio_live_output();
+	}
+#endif
+#if defined (PIPEWIRE_SUPPORT)
+	if (driverType == "PipeWire") {
+		return create_pipewire_live_output();
 	}
 #endif
 	Q_UNUSED(driverType);

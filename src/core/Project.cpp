@@ -738,6 +738,14 @@ void Project::prepare_audio_device(QDomDocument doc)
         }
 #endif // end COREAUDIO_SUPPORT
 
+#if defined (PIPEWIRE_SUPPORT)
+        if (ads.driverType == "PipeWire") {
+                if (ads.cardDevice.isEmpty()) {
+                        ads.cardDevice = config().get_property("Hardware", "pipewireoutput", "default").toString();
+                }
+        }
+#endif // end PIPEWIRE_SUPPORT
+
         ads.liveOutputDevice = config().get_property("Hardware", "liveoutputdevice", "").toString();
         ads.liveEnabled = config().get_property("Hardware", "liveenabled", false).toBool();
 
@@ -1685,34 +1693,43 @@ void Project::setup_live_output_bus()
         const AudioDeviceSetup liveSetup = audiodevice().get_device_setup();
         const QString liveDevice = liveSetup.liveOutputDevice;
         bool enabled = liveSetup.liveEnabled;
-        if (audiodevice().get_driver_type() == "Jack") {
-                // JACK routes the live output through its own ports.
-                enabled = false;
+        const bool isJack = (audiodevice().get_driver_type() == "Jack");
+
+        // JACK exposes the live mix as extra ports on the existing client
+        // (a software bus); every other backend uses an internal bus drained
+        // by a second output device. Rebuild if the kind no longer matches.
+        if (m_liveOutputBus && ((!m_liveOutputBus->is_internal_bus()) != isJack)) {
+                teardown_live_output_bus();
         }
 
         if (!enabled) {
+                teardown_live_output_bus();
+                return;
+        }
+
+        if (isJack) {
                 if (m_liveOutputBus) {
-                        // Stop the engine from pushing into the bus (and wait for
-                        // any in-flight push) before deleting it.
-                        audiodevice().set_live_output_bus(nullptr);
-                        TSend* send = m_masterOutBusTrack->get_send(m_liveOutputBus->get_id());
-                        if (send) {
-                                m_masterOutBusTrack->remove_post_send(send);
-                        }
-                        delete m_liveOutputBus;
-                        m_liveOutputBus = nullptr;
-                } else {
-                        audiodevice().set_live_output_bus(nullptr);
+                        return;
                 }
+
+                BusConfig conf;
+                conf.name = "Live Playback 1-2";
+                conf.channelNames << "live_playback_1" << "live_playback_2";
+                conf.type = "output";
+                conf.bustype = "software";
+
+                m_liveOutputBus = create_software_audio_bus(conf);
+                m_liveOutputBus->set_live_output(true);
+                m_masterOutBusTrack->add_post_send(m_liveOutputBus);
                 return;
         }
 
         if (m_liveOutputBus) {
                 audiodevice().set_live_output_bus(m_liveOutputBus);
                 audiodevice().enable_live_output(liveDevice);
-        if (m_activeSheet && m_activeSheet->is_live_transport_rolling()) {
-                audiodevice().start_live_output();
-        }
+                if (m_activeSheet && m_activeSheet->is_live_transport_rolling()) {
+                        audiodevice().start_live_output();
+                }
                 return;
         }
 
@@ -1734,6 +1751,45 @@ void Project::setup_live_output_bus()
                 audiodevice().start_live_output();
         }
 }
+
+void Project::teardown_live_output_bus()
+{
+        if (!m_liveOutputBus) {
+                return;
+        }
+
+        const bool isJackBus = !m_liveOutputBus->is_internal_bus();
+
+        if (isJackBus) {
+                // Unregister the JACK ports; the RT thread drops the
+                // port/channel pairs asynchronously, so the AudioChannels
+                // must outlive this bus and are intentionally not deleted.
+                remove_software_audio_bus(m_liveOutputBus);
+        } else {
+                // Stop the engine from pushing into the bus (and wait for
+                // any in-flight push) before deleting it.
+                audiodevice().set_live_output_bus(nullptr);
+        }
+
+        TSend* send = m_masterOutBusTrack->get_send(m_liveOutputBus->get_id());
+        if (send) {
+                m_masterOutBusTrack->remove_post_send(send);
+        }
+
+        if (isJackBus) {
+                m_softwareAudioBuses.remove(m_liveOutputBus->get_id());
+                for (uint i = 0; i < m_liveOutputBus->get_channel_count(); ++i) {
+                        AudioChannel* channel = m_liveOutputBus->get_channel(i);
+                        if (channel) {
+                                m_softwareAudioChannels.remove(channel->get_id());
+                        }
+                }
+        }
+
+        delete m_liveOutputBus;
+        m_liveOutputBus = nullptr;
+}
+
 
 void Project::private_add_sheet(Sheet * sheet)
 {

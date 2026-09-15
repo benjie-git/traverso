@@ -65,6 +65,7 @@ public :
         QList<TSend*> get_inputs_for_bus_track(TBusTrack* busTrack) const;
         void setup_default_hardware_buses();
         void setup_live_output_bus();
+        void teardown_live_output_bus();
 
         QStringList get_playback_buses_names( ) const;
         QStringList get_capture_buses_names( ) const;

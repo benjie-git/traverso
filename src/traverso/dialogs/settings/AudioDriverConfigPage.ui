@@ -66,6 +66,25 @@
     </widget>
    </item>
    <item>
+    <widget class="QGroupBox" name="pipeWireDeviceGroupBox">
+     <property name="title">
+      <string>PipeWire Devices</string>
+     </property>
+     <layout class="QFormLayout">
+      <item row="0" column="0">
+       <widget class="QLabel" name="pipeWireOutputLabel">
+        <property name="text">
+         <string>Output:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QComboBox" name="pipeWireOutputDeviceComboBox"/>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
     <widget class="QGroupBox" name="jackGroupBox">
      <property name="title">
       <string>Jack Options</string>

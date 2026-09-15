@@ -90,6 +90,8 @@ private:
         QStringList     m_driverSetupMessages;
 
 	void update_live_playhead_widgets();
+	QString current_main_output_device() const;
+	bool enforce_distinct_live_device(bool liveenabled);
 
 private slots:
 	void update_latency_combobox();

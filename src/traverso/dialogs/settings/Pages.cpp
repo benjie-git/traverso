@@ -40,6 +40,10 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA.
 #include "CoreAudioDriver.h"
 #endif
 
+#if defined (PIPEWIRE_SUPPORT)
+#include "PipeWireDriver.h"
+#endif
+
 #include "TConfig.h"
 #include <Utils.h>
 #include <Themer.h>
@@ -123,6 +127,11 @@ void AudioDriverConfigPage::save_config()
 	                      coreAudioOutputDeviceComboBox->currentData().toString());
 #endif
 
+#if defined (PIPEWIRE_SUPPORT)
+	config().set_property("Hardware", "pipewireoutput",
+	                      pipeWireOutputDeviceComboBox->currentData().toString());
+#endif
+
 	
 #if defined (ALSA_SUPPORT)
 	int periods = m_alsadevices->periodsCombo->currentText().toInt();
@@ -145,34 +154,55 @@ void AudioDriverConfigPage::save_config()
 	// device, so refuse to arm it on the same device as the main output.
 	bool liveenabled = enableLivePlayheadCheckBox->isChecked();
 	const QString liveDevice = liveOutputDeviceComboBox->currentData().toString();
-	QString mainDevice;
-	const QString liveDriver = driverCombo->currentText();
-#if defined (COREAUDIO_SUPPORT)
-	if (liveDriver == "CoreAudio") {
-		mainDevice = coreAudioOutputDeviceComboBox->currentData().toString();
-	}
-#endif
-#if defined (ALSA_SUPPORT)
-	if (liveDriver == "ALSA") {
-		const int alsaIndex = m_alsadevices->devicesCombo->currentIndex();
-		mainDevice = m_alsadevices->devicesCombo->itemData(alsaIndex).toString();
-	}
-#endif
-#if defined (PORTAUDIO_SUPPORT)
-	if (liveDriver == "PortAudio") {
-		mainDevice = m_portaudiodrivers->outputDevicesCombo->currentText();
-	}
-#endif
-
-	if (liveenabled && !mainDevice.isEmpty() && liveDevice == mainDevice) {
-		QMessageBox::warning(this, tr("Live Play Head"),
-		                     tr("The Live Play Head must use a different output device from the main output.\n\nThe Live Play Head has been disabled."));
-		liveenabled = false;
-		enableLivePlayheadCheckBox->setChecked(false);
-	}
+	liveenabled = enforce_distinct_live_device(liveenabled);
 
 	config().set_property("Hardware", "liveenabled", liveenabled);
 	config().set_property("Hardware", "liveoutputdevice", liveDevice);
+}
+
+QString AudioDriverConfigPage::current_main_output_device() const
+{
+	const QString driver = driverCombo->currentText();
+#if defined (COREAUDIO_SUPPORT)
+	if (driver == "CoreAudio") {
+		return coreAudioOutputDeviceComboBox->currentData().toString();
+	}
+#endif
+#if defined (ALSA_SUPPORT)
+	if (driver == "ALSA") {
+		const int alsaIndex = m_alsadevices->devicesCombo->currentIndex();
+		return m_alsadevices->devicesCombo->itemData(alsaIndex).toString();
+	}
+#endif
+#if defined (PORTAUDIO_SUPPORT)
+	if (driver == "PortAudio") {
+		return m_portaudiodrivers->outputDevicesCombo->currentText();
+	}
+#endif
+#if defined (PIPEWIRE_SUPPORT)
+	if (driver == "PipeWire") {
+		return pipeWireOutputDeviceComboBox->currentData().toString();
+	}
+#endif
+	return QString();
+}
+
+bool AudioDriverConfigPage::enforce_distinct_live_device(bool liveenabled)
+{
+	if (!liveenabled) {
+		return false;
+	}
+
+	const QString liveDevice = liveOutputDeviceComboBox->currentData().toString();
+	const QString mainDevice = current_main_output_device();
+	if (!mainDevice.isEmpty() && liveDevice == mainDevice) {
+		QMessageBox::warning(this, tr("Live Play Head"),
+		                     tr("The Live Play Head must use a different output device from the main output.\n\nThe Live Play Head has been disabled."));
+		enableLivePlayheadCheckBox->setChecked(false);
+		return false;
+	}
+
+	return true;
 }
 
 void AudioDriverConfigPage::reset_default_config()
@@ -209,6 +239,10 @@ void AudioDriverConfigPage::reset_default_config()
 #if defined (COREAUDIO_SUPPORT)
 	config().set_property("Hardware", "coreaudioinput", "default");
 	config().set_property("Hardware", "coreaudiooutput", "default");
+#endif
+
+#if defined (PIPEWIRE_SUPPORT)
+	config().set_property("Hardware", "pipewireoutput", "default");
 #endif
 
 	config().set_property("Hardware", "jackslave", false);
@@ -265,6 +299,22 @@ void AudioDriverConfigPage::load_config( )
 		config().get_property("Hardware", "coreaudiooutput", "default"));
 	if (coreAudioIndex >= 0) {
 		coreAudioOutputDeviceComboBox->setCurrentIndex(coreAudioIndex);
+	}
+#endif
+
+#if defined (PIPEWIRE_SUPPORT)
+	pipeWireOutputDeviceComboBox->clear();
+	pipeWireOutputDeviceComboBox->addItem(tr("System default"), QStringLiteral("default"));
+	for (const QString& device : PipeWireDriver::devices_info(false)) {
+		const QStringList fields = device.split(QStringLiteral("###"));
+		if (fields.size() >= 2) {
+			pipeWireOutputDeviceComboBox->addItem(fields.at(0), fields.at(1));
+		}
+	}
+	int pipeWireIndex = pipeWireOutputDeviceComboBox->findData(
+		config().get_property("Hardware", "pipewireoutput", "default"));
+	if (pipeWireIndex >= 0) {
+		pipeWireOutputDeviceComboBox->setCurrentIndex(pipeWireIndex);
 	}
 #endif
 	
@@ -417,6 +467,12 @@ void AudioDriverConfigPage::restart_driver_button_clicked()
 	}
 #endif
 
+#if defined (PIPEWIRE_SUPPORT)
+	if (driver == "PipeWire") {
+		ads.cardDevice = pipeWireOutputDeviceComboBox->currentData().toString();
+	}
+#endif
+
 #if defined (PORTAUDIO_SUPPORT)
 	if (driver == "PortAudio") {
 		int index = m_portaudiodrivers->driverCombo->currentIndex();
@@ -429,6 +485,7 @@ void AudioDriverConfigPage::restart_driver_button_clicked()
         ads.driverType = driver;
 	ads.liveEnabled = enableLivePlayheadCheckBox->isChecked();
 	ads.liveOutputDevice = liveOutputDeviceComboBox->currentData().toString();
+	ads.liveEnabled = enforce_distinct_live_device(ads.liveEnabled);
 	// Keep the in-memory config in sync so the View menu / Live Play Head
 	// toolbar visibility updates immediately when the driver is applied.
 	config().set_property("Hardware", "liveenabled", ads.liveEnabled);
@@ -451,6 +508,7 @@ void AudioDriverConfigPage::driver_combobox_index_changed(int index)
 	m_mainLayout->removeWidget(m_portaudiodrivers);
 	m_mainLayout->removeWidget(jackGroupBox);
 	m_mainLayout->removeWidget(coreAudioDeviceGroupBox);
+	m_mainLayout->removeWidget(pipeWireDeviceGroupBox);
 	m_mainLayout->removeWidget(livePlayheadGroupBox);
 
 	if (driver == "ALSA") {
@@ -484,6 +542,13 @@ void AudioDriverConfigPage::driver_combobox_index_changed(int index)
 		coreAudioDeviceGroupBox->hide();
 	}
 
+	if (driver == "PipeWire") {
+		pipeWireDeviceGroupBox->show();
+		m_mainLayout->insertWidget(m_mainLayout->indexOf(driverConfigGroupBox), pipeWireDeviceGroupBox);
+	} else {
+		pipeWireDeviceGroupBox->hide();
+	}
+
 	// The Live Play Head groupbox is always shown last, just above the
 	// general driver options, regardless of the selected driver.
 	livePlayheadGroupBox->show();
@@ -493,8 +558,9 @@ void AudioDriverConfigPage::driver_combobox_index_changed(int index)
 
 void AudioDriverConfigPage::live_playhead_toggled(bool checked)
 {
-	liveOutputDeviceComboBox->setEnabled(checked);
-	livePlayheadDeviceLabel->setEnabled(checked);
+	const bool hasDeviceSelector = (driverCombo->currentText() != "Jack");
+	liveOutputDeviceComboBox->setEnabled(checked && hasDeviceSelector);
+	livePlayheadDeviceLabel->setEnabled(checked && hasDeviceSelector);
 }
 
 void AudioDriverConfigPage::update_live_playhead_widgets()
@@ -546,11 +612,20 @@ void AudioDriverConfigPage::update_live_playhead_widgets()
 		supported = false;
 #endif
 	} else if (driver == "PipeWire") {
+#if defined (PIPEWIRE_SUPPORT)
 		liveOutputDeviceComboBox->addItem(tr("System default"), QString("default"));
-		livePlayheadInfoLabel->setText(tr("The Live Play Head uses the default output device in this version."));
-	} else if (driver == "Jack") {
+		QStringList list = PipeWireDriver::devices_info(false);
+		for (int i=0; i<list.size(); ++i) {
+			QStringList deviceInfo = list.at(i).split("###");
+			if (deviceInfo.size() > 1) {
+				liveOutputDeviceComboBox->addItem(deviceInfo.at(0), deviceInfo.at(1));
+			}
+		}
+#else
 		supported = false;
-		livePlayheadInfoLabel->setText(tr("The Live Play Head is not available with JACK. Route the live output bus via JACK ports instead."));
+#endif
+	} else if (driver == "Jack") {
+		livePlayheadInfoLabel->setText(tr("The Live Play Head is routed through JACK ports. Connect live_playback_1/live_playback_2 to your second device in a patchbay."));
 	} else {
 		supported = false;
 	}

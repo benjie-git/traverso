@@ -29,10 +29,13 @@
 
 #include <pipewire/pipewire.h>
 #include <pipewire/stream.h>
+#include <pipewire/main-loop.h>
+#include <pipewire/core.h>
 #include <spa/param/audio/format-utils.h>
 #include <spa/param/props.h>
 
 #include <QObject>
+#include <QStringList>
 #include <atomic>
 #include <memory>
 
@@ -53,6 +56,8 @@ public:
 
     QString get_device_name() override;
     QString get_device_longname() override;
+
+    static QStringList devices_info(bool capture = false);
 
     bool is_running() const { return m_running.load() == 1; }
 
@@ -89,7 +94,8 @@ private:
         const char* mediaCategory,
         enum pw_direction direction,
         uint32_t channelCount,
-        const struct pw_stream_events* events
+        const struct pw_stream_events* events,
+        const QString& targetDevice = QString()
     );
     void on_stream_state_changed(const char* streamName, enum pw_stream_state oldState, enum pw_stream_state state, const char *error);
 

@@ -22,7 +22,7 @@ if(HAVE_PORTAUDIO)
 endif()
 
 if(HAVE_PIPEWIRE)
-    list(APPEND TRAVERSO_ENGINE_SOURCES PipeWireDriver.cpp)
+    list(APPEND TRAVERSO_ENGINE_SOURCES PipeWireDriver.cpp PipeWireLiveOutput.cpp)
 endif()
 
 if(HAVE_PULSEAUDIO)
