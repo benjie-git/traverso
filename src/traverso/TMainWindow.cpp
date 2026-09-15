@@ -268,6 +268,7 @@ TMainWindow::TMainWindow()
 	m_transportConsole->setObjectName("Transport Console");
 
 	m_livePlayhead = new LivePlayheadToolbar(this);
+	connect(m_livePlayhead, SIGNAL(configure_requested()), this, SLOT(show_settings_dialog_sound_system_page()));
 	addToolBar(Qt::TopToolBarArea, m_livePlayhead);
 	m_livePlayhead->hide();
 
@@ -1713,13 +1714,14 @@ void TMainWindow::update_live_playhead_state()
 {
 	bool available = config().get_property("Hardware", "liveenabled", false).toBool();
 	bool shown = config().get_property("LivePlayhead", "Enabled", false).toBool();
-	const bool haveProject = (m_project != nullptr);
 
-	m_livePlayheadAction->setEnabled(available && haveProject);
-	m_livePlayheadAction->setChecked(available && shown);
+	// The toolbar can always be shown from the View menu; only the
+	// Start/Stop action depends on Live Play Head being configured.
+	m_livePlayheadAction->setEnabled(true);
+	m_livePlayheadAction->setChecked(shown);
 
-	m_livePlayhead->set_enabled(available && haveProject);
-	m_livePlayhead->setVisible(available && haveProject && shown);
+	m_livePlayhead->set_enabled(available);
+	m_livePlayhead->setVisible(shown);
 }
 
 void TMainWindow::live_playhead_visibility_changed(bool state)

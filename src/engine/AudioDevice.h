@@ -193,6 +193,7 @@ private:
 
 	int run_one_cycle(nframes_t nframes, float delayed_usecs);
 	void push_live_output(nframes_t nframes);
+	int open_live_output_locked();
 	void disable_live_output_locked();
 	int create_driver(const QString& driverType, bool capture, bool playback, const QString& cardDevice);	int transport_control(transport_state_t state);
 

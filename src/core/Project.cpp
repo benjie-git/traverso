@@ -135,7 +135,15 @@ Project::~Project()
         }
 
         delete m_masterOutBusTrack;
-        delete m_liveOutputBus;
+        if (m_liveOutputBus) {
+                // The engine's run_one_cycle() pushes this bus on the audio (IO)
+                // thread via AudioDevice::push_live_output(). Clear the engine's
+                // reference (and stop the sink) before freeing the bus, or the IO
+                // thread will dereference a dangling AudioBus during shutdown.
+                audiodevice().set_live_output_bus(nullptr);
+                delete m_liveOutputBus;
+                m_liveOutputBus = nullptr;
+        }
         delete m_hs;
 }
 
@@ -1771,9 +1779,18 @@ void Project::teardown_live_output_bus()
                 audiodevice().set_live_output_bus(nullptr);
         }
 
-        TSend* send = m_masterOutBusTrack->get_send(m_liveOutputBus->get_id());
-        if (send) {
-                m_masterOutBusTrack->remove_post_send(send);
+        // Remove every post send that targets this bus. get_send() matches on
+        // the *send* id, not the bus id, so find them by bus pointer instead.
+        // Clear the bus pointer first: remove_post_send() may defer the actual
+        // list removal to the RT thread while the transport is rolling, and a
+        // send that outlives its bus would make TSend::get_state() dereference
+        // a dangling m_bus while saving the project.
+        const QList<TSend*> liveSends = m_masterOutBusTrack->get_post_sends();
+        for (TSend* send : liveSends) {
+                if (send->get_bus() == m_liveOutputBus) {
+                        send->set_bus(nullptr);
+                        m_masterOutBusTrack->remove_post_send(send);
+                }
         }
 
         if (isJackBus) {

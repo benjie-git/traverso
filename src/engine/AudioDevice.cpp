@@ -705,25 +705,20 @@ int AudioDevice::enable_live_output(const QString& uid)
             // Switching to a different device: tear the old sink down first.
             disable_live_output_locked();
         }
-        m_liveOutput = create_live_output(get_driver_type());
-        if (!m_liveOutput || !m_liveOutput->is_supported()) {
-            delete m_liveOutput;
-            m_liveOutput = nullptr;
-            locker.unlock();
-            emit driverSetupMessage(tr("The Live Play Head output is not supported by this audio backend."),
-                                    DRIVER_SETUP_FAILURE);
-            return -1;
-        }
-        uint channels = m_liveOutputBus ? m_liveOutputBus->get_channel_count() : 2;
-        if (m_liveOutput->open(uid, m_rate, m_bufferSize, channels) < 0) {
-            delete m_liveOutput;
-            m_liveOutput = nullptr;
-            locker.unlock();
-            emit driverSetupMessage(tr("Could not open the Live Play Head output device '%1'.").arg(uid),
-                                    DRIVER_SETUP_FAILURE);
-            return -1;
-        }
         m_liveOutputUid = uid;
+        const int openResult = open_live_output_locked();
+        if (openResult < 0) {
+            m_liveOutputUid = QString();
+            locker.unlock();
+            if (openResult == -1) {
+                emit driverSetupMessage(tr("The Live Play Head output is not supported by this audio backend."),
+                                        DRIVER_SETUP_FAILURE);
+            } else {
+                emit driverSetupMessage(tr("Could not open the Live Play Head output device '%1'.").arg(uid),
+                                        DRIVER_SETUP_FAILURE);
+            }
+            return -1;
+        }
         const QString liveName = m_liveOutput->device_name();
         locker.unlock();
         emit driverSetupMessage(tr("Live Audio Output: %1").arg(liveName.isEmpty() ? uid : liveName),
@@ -734,19 +729,62 @@ int AudioDevice::enable_live_output(const QString& uid)
     return 0;
 }
 
+int AudioDevice::open_live_output_locked()
+{
+    // Caller must hold m_liveOutputMutex and must have set m_liveOutputUid.
+    // Returns 0 on success, -1 if the backend has no live-output support,
+    // -2 if the device could not be opened.
+    if (m_liveOutput && m_liveOutput->is_open()) {
+        return 0;
+    }
+    if (m_liveOutput) {
+        delete m_liveOutput;
+        m_liveOutput = nullptr;
+    }
+    if (m_liveOutputUid.isEmpty() || m_liveOutputUid == "none") {
+        return -2;
+    }
+
+    m_liveOutput = create_live_output(get_driver_type());
+    if (!m_liveOutput || !m_liveOutput->is_supported()) {
+        delete m_liveOutput;
+        m_liveOutput = nullptr;
+        return -1;
+    }
+
+    uint channels = m_liveOutputBus ? m_liveOutputBus->get_channel_count() : 2;
+    if (m_liveOutput->open(m_liveOutputUid, m_rate, m_bufferSize, channels) < 0) {
+        delete m_liveOutput;
+        m_liveOutput = nullptr;
+        return -2;
+    }
+    return 0;
+}
+
 void AudioDevice::start_live_output()
 {
     QMutexLocker locker(&m_liveOutputMutex);
-    if (m_liveOutput && m_liveOutput->is_open()) {
-        m_liveOutput->start();
+    // Stopping fully releases the second device, so re-open it on the way back
+    // up before rolling. This keeps the device free for other apps while the
+    // Live playhead is stopped.
+    if (!m_liveOutput || !m_liveOutput->is_open()) {
+        if (open_live_output_locked() < 0) {
+            return;
+        }
     }
+    m_liveOutput->start();
 }
 
 void AudioDevice::stop_live_output()
 {
     QMutexLocker locker(&m_liveOutputMutex);
-    if (m_liveOutput && m_liveOutput->is_open()) {
+    // Fully close the sink so the second device is released while stopped. The
+    // configured uid is kept so start_live_output() can re-open it.
+    if (m_liveOutput) {
         m_liveOutput->stop();
+        m_liveOutput->close();
+        delete m_liveOutput;
+        m_liveOutput = nullptr;
     }
 }
 
@@ -777,13 +815,18 @@ void AudioDevice::push_live_output(nframes_t nframes)
         return; // a switch/teardown is in progress; skip this cycle
     }
 
-    if (m_liveOutput && m_liveOutput->is_open() && m_liveOutputBus) {
+    if (m_liveOutput && m_liveOutput->is_open() && m_liveOutput->is_running() && m_liveOutputBus) {
         QList<AudioChannel*> channels;
         uint count = m_liveOutputBus->get_channel_count();
         for (uint i = 0; i < count; ++i) {
-            channels.append(m_liveOutputBus->get_channel(i));
+            AudioChannel* channel = m_liveOutputBus->get_channel(i);
+            if (channel) {
+                channels.append(channel);
+            }
         }
-        m_liveOutput->process(nframes, channels, count);
+        if (!channels.isEmpty()) {
+            m_liveOutput->process(nframes, channels, uint(channels.size()));
+        }
     }
 
     m_liveOutputMutex.unlock();

@@ -78,6 +78,11 @@ public:
 
 	bool is_open() const { return m_open; }
 
+	// True while the sink is actively streaming to the device. The primary
+	// audio thread only pushes when this is true, so a stopped Live playhead
+	// fully closes out the streaming operation (no push loop, device stopped).
+	virtual bool is_running() const { return false; }
+
 	// Human readable name of the device currently opened (empty if unknown).
 	virtual QString device_name() const { return QString(); }
 
@@ -98,6 +103,8 @@ class BufferedLiveOutput : public LiveOutput
 {
 public:
 	void process(nframes_t nframes, const QList<AudioChannel*>& channels, uint channelCount) override;
+
+	bool is_running() const override { return m_started; }
 
 protected:
 	BufferedLiveOutput();

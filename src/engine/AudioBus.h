@@ -125,7 +125,7 @@ signals:
  */
 inline AudioChannel * AudioBus::get_channel( uint channelNumber )
 {
-        if (channelNumber < m_channelCount) {
+        if (channelNumber < uint(m_channels.size())) {
                 return m_channels.at(channelNumber);
         }
         return nullptr;

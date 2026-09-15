@@ -40,15 +40,20 @@ public:
 
 	void set_enabled(bool enabled);
 
+signals:
+	void configure_requested();
+
 private:
 	Sheet*		m_sheet;
 	bool		m_enabled;
 	QAction*	m_playStopAction;
+	QAction*	m_configureAction;
 
 private slots:
 	void set_project(Project* project);
 	void set_session(TSession* session);
 	void play_stop_clicked();
+	void configure_clicked();
 	void update_state();
 };
 

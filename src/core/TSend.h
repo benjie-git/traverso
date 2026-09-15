@@ -51,6 +51,7 @@ public:
         };
 
         AudioBus* get_bus() const {return m_bus;}
+        void set_bus(AudioBus* bus) {m_bus = bus;}
         QString get_name() const;
         QString get_from_name() const ;
         qint64 get_id() const {return m_id;}

@@ -44,9 +44,12 @@ LivePlayheadToolbar::LivePlayheadToolbar(QWidget* parent)
 	m_sheet = 0;
 	m_enabled = false;
 
-	setEnabled(false);
-
+	// The toolbar itself is always enabled: its Configure button must remain
+	// usable even when Live Play Head is not configured yet. Only the
+	// Start/Stop action is gated on the feature being configured.
 	m_playStopAction = addAction(QIcon(":/playstart"), tr("Start Live Play Head"), this, SLOT(play_stop_clicked()));
+	m_configureAction = addAction(QIcon(":/audiosettings"), tr("Configure Live Play Head Audio Output"), this, SLOT(configure_clicked()));
+	m_configureAction->setToolTip(tr("Open the Sound System settings to configure the Live Play Head output device."));
 
 	connect(&pm(), SIGNAL(projectLoaded(Project*)), this, SLOT(set_project(Project*)));
 
@@ -62,9 +65,8 @@ LivePlayheadToolbar::~LivePlayheadToolbar()
 void LivePlayheadToolbar::set_enabled(bool enabled)
 {
 	m_enabled = enabled;
-	// The toolbar is created disabled; enable the widget itself as well as
-	// the Play/Stop action, otherwise the action can never be pressed.
-	setEnabled(enabled);
+	// Only the Start/Stop action is gated by this; the toolbar widget stays
+	// enabled so the Configure button always works.
 	update_state();
 }
 
@@ -117,30 +119,44 @@ void LivePlayheadToolbar::play_stop_clicked()
 	}
 
 	if (m_sheet->is_live_transport_rolling()) {
-		QMessageBox::StandardButton answer = QMessageBox::question(this,
-			tr("Stop Live Play Head"),
-			tr("Stop the Live play head?\n\nThe live output will be silenced."),
-			QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
+		QMessageBox box(this);
+		box.setIcon(QMessageBox::Question);
+		box.setWindowTitle(tr("Stop Live Play Head"));
+		box.setText(tr("Stop the Live play head?\n\nThe live output will be silenced."));
+		box.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
+		box.setDefaultButton(QMessageBox::Yes);
+		box.setEscapeButton(QMessageBox::No);
 
-		if (answer == QMessageBox::Yes) {
+		if (box.exec() == QMessageBox::Yes) {
 			m_sheet->stop_live_transport();
 		}
 	} else {
-		QMessageBox::StandardButton answer = QMessageBox::question(this,
-			tr("Start Live Play Head"),
-			tr("Start the Live play head from the current cue position (%1)?\n\nThe live output will start playing from there.")
-				.arg(timeref_to_ms_2(m_sheet->get_transport_location())),
-			QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
+		QMessageBox box(this);
+		box.setIcon(QMessageBox::Question);
+		box.setWindowTitle(tr("Start Live Play Head"));
+		box.setText(tr("Start the Live play head from the current cue position (%1)?\n\nThe live output will start playing from there.")
+				.arg(timeref_to_ms_2(m_sheet->get_transport_location())));
+		box.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
+		box.setDefaultButton(QMessageBox::Yes);
+		box.setEscapeButton(QMessageBox::No);
 
-		if (answer == QMessageBox::Yes) {
+		if (box.exec() == QMessageBox::Yes) {
 			m_sheet->start_live_transport();
 		}
 	}
 }
 
 
+void LivePlayheadToolbar::configure_clicked()
+{
+	emit configure_requested();
+}
+
+
 void LivePlayheadToolbar::update_state()
 {
+	m_configureAction->setEnabled(true);
+
 	if (!m_sheet) {
 		m_playStopAction->setEnabled(false);
 		m_playStopAction->setIcon(QIcon(":/playstart"));
