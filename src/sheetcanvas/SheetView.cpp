@@ -97,6 +97,7 @@ SheetView::SheetView(SheetWidget* sheetwidget,
 
 	m_playCursor = new PlayHead(this, m_session, m_clipsViewPort);
 	m_workCursor = new WorkCursor(this, m_session);
+	m_livePlayCursor = new LivePlayHead(this, m_session);
     m_canvasCursor = new TCanvasCursor(this);
     scene()->addItem(m_canvasCursor);
 
@@ -124,6 +125,7 @@ SheetView::SheetView(SheetWidget* sheetwidget,
 
 	m_clipsViewPort->scene()->addItem(m_playCursor);
 	m_clipsViewPort->scene()->addItem(m_workCursor);
+	m_clipsViewPort->scene()->addItem(m_livePlayCursor);
 
 	m_clipsViewPort->setSceneRect(0, 0, MAX_CANVAS_WIDTH, MAX_CANVAS_HEIGHT);
 	m_tlvp->setSceneRect(0, -TIMELINE_HEIGHT, MAX_CANVAS_WIDTH, 0);
@@ -451,6 +453,8 @@ void SheetView::update_scrollbars()
 	m_playCursor->update_position();
 	m_workCursor->set_bounding_rect(QRectF(0, 0, 1, m_vScrollBar->maximum() + m_clipsViewPort->height()));
 	m_workCursor->update_position();
+	m_livePlayCursor->set_bounding_rect(QRectF(0, 0, 4, m_vScrollBar->maximum() + m_clipsViewPort->height()));
+	m_livePlayCursor->update_position();
 
 	set_snap_range(m_hScrollBar->value());
 }

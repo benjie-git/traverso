@@ -24,6 +24,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA.
 
 #include "ContextItem.h"
 
+#include <atomic>
 #include <QDomNode>
 #include "APILinkedList.h"
 #include "defines.h"
@@ -54,6 +55,9 @@ public:
 	virtual TimeRef get_last_location() const;
 	TimeRef get_new_transport_location() const {return m_newTransportLocation;}
 	virtual TimeRef get_transport_location() const;
+	virtual TimeRef get_live_location() const;
+	virtual bool is_live_transport_rolling() const;
+	virtual TimeRef get_render_location(PlayheadId playhead) const;
 	virtual SnapList* get_snap_list() const;
 	Track* get_track(qint64 id) const;
 	TimeLine* get_timeline() const;
@@ -124,6 +128,14 @@ protected:
 	TimeRef                 m_workLocation;
 	TimeRef                 m_newTransportLocation;
 
+	// Independent "Live" playhead state. The audio thread advances the live
+	// frame position while the live transport is rolling; the GUI reads it.
+	// A plain atomic is used because TimeRef is not safely race-free.
+	std::atomic<bool>	m_liveTransport{false};
+	std::atomic<qint64>	m_liveFramePosition{0};
+	TimeRef			m_newLiveLocation;
+	volatile size_t		m_liveSeeking{};
+
 private:
 	friend class TimeLine;
 
@@ -133,6 +145,9 @@ private:
 public slots:
 	void set_temp_follow_state(bool state);
 	virtual void set_transport_pos(TimeRef location);
+	virtual void set_live_transport_pos(TimeRef location);
+	virtual void start_live_transport();
+	virtual void stop_live_transport();
 
 	TCommand* toggle_solo();
 	TCommand* toggle_mute();
@@ -160,6 +175,9 @@ signals:
 	void transportStopped();
 	void workingPosChanged();
 	void transportPosSet();
+	void liveTransportStarted();
+	void liveTransportStopped();
+	void liveTransportPosSet();
 	void horizontalScrollBarValueChanged();
 	void verticalScrollBarValueChanged();
 	void propertyChanged();

@@ -102,12 +102,12 @@ protected:
         AudioBus*       m_inputBus;
         QString         m_busInName;
 
-        void process_post_sends(nframes_t nframes);
-        void process_pre_sends(nframes_t nframes);
+        void process_post_sends(nframes_t nframes, PlayheadId playhead = CuePlayhead);
+        void process_pre_sends(nframes_t nframes, PlayheadId playhead = CuePlayhead);
         void remove_input_bus(AudioBus* bus);
 
 private:
-        void process_send(TSend* send, nframes_t nframes);
+        void process_send(TSend* send, nframes_t nframes, PlayheadId playhead = CuePlayhead);
 
 public slots:
         TCommand* solo();

@@ -63,6 +63,9 @@ public:
         void set_monitoring(bool monitor);
         bool is_input() {return m_type == ChannelIsInput;}
         bool is_output() {return m_type == ChannelIsOutput;}
+        bool is_internal_bus() const {return m_isInternalBus;}
+        bool is_live_output() const {return m_isLiveOutput;}
+        void set_live_output(bool live) {m_isLiveOutput = live;}
         bool is_valid() const;
         int get_type() const {return m_type;}
         int get_bus_type() const {return m_busType;}
@@ -102,6 +105,7 @@ private:
 	
         bool            		m_isMonitoring;
         bool                    m_isInternalBus;
+        bool                    m_isLiveOutput{false};
         uint         			m_channelCount;
         int                     m_type;
         int                     m_busType;

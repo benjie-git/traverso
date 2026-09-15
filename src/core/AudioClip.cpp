@@ -77,6 +77,8 @@ AudioClip::AudioClip(const QString& name)
     m_sheet = nullptr;
     m_track = nullptr;
     m_readSource = nullptr;
+    m_liveReadSource = nullptr;
+    m_liveSourceRegistered = false;
     m_writer = nullptr;
     m_peak = nullptr;
     m_recordingStatus = NO_RECORDING;
@@ -126,6 +128,12 @@ AudioClip::~AudioClip()
     if (m_readSource) {
         m_sheet->get_diskio()->unregister_read_source(m_readSource);
         delete m_readSource;
+    }
+    if (m_liveReadSource) {
+        if (m_liveSourceRegistered) {
+            m_sheet->get_diskio()->unregister_read_source(m_liveReadSource);
+        }
+        delete m_liveReadSource;
     }
     if (m_peak) {
         m_peak->close();
@@ -270,10 +278,21 @@ void AudioClip::set_sources_active_state()
         stopSyncDueMove = false;
     }
 
+    bool active = true;
     if ( m_track->is_muted() || m_track->is_muted_by_solo() || is_muted() || stopSyncDueMove) {
-        m_readSource->set_active(false);
-    } else {
-        m_readSource->set_active(true);
+        active = false;
+    }
+
+    m_readSource->set_active(active);
+
+    // The Live playhead streams from its own ReadSource, which must be marked
+    // active too, otherwise DiskIO never fills its ring buffer (get_buffer_status
+    // reports no free space while inactive) and the live pass reads silence.
+    // Only keep it active while the Live transport is actually rolling, so a
+    // stopped Live playhead doesn't double the disk read.
+    if (m_liveReadSource) {
+        const bool liveActive = active && m_sheet && m_sheet->is_live_transport_rolling();
+        m_liveReadSource->set_active(liveActive);
     }
 
 }
@@ -281,6 +300,9 @@ void AudioClip::set_sources_active_state()
 void AudioClip::removed_from_track()
 {
     m_readSource->set_active(false);
+    if (m_liveReadSource) {
+        m_liveReadSource->set_active(false);
+    }
 }
 
 void AudioClip::set_left_edge(TimeRef newLeftLocation)
@@ -415,7 +437,7 @@ void AudioClip::set_selected(bool /*selected*/)
 //
 //  Function called in RealTime AudioThread processing path
 //
-int AudioClip::process(nframes_t nframes)
+int AudioClip::process(nframes_t nframes, PlayheadId playhead)
 {
     Q_ASSERT(m_sheet);
 
@@ -425,7 +447,10 @@ int AudioClip::process(nframes_t nframes)
     }
 
     if (m_recordingStatus == RECORDING) {
-        process_capture(nframes);
+        // Recording only happens on the Cue playhead.
+        if (playhead == CuePlayhead) {
+            process_capture(nframes);
+        }
         return 0;
     }
 
@@ -438,6 +463,14 @@ int AudioClip::process(nframes_t nframes)
     }
 
     Q_ASSERT(m_readSource);
+
+    // Each playhead reads from its own ReadSource so the two positions can
+    // stream independently. Fall back to the cue source if the live one is
+    // not available (e.g. the clip was created before the feature existed).
+    ReadSource* readSource = m_readSource;
+    if (playhead == LivePlayhead && m_liveReadSource) {
+        readSource = m_liveReadSource;
+    }
 
     AudioBus* bus = m_sheet->get_clip_render_bus();
     bus->silence_buffers(nframes);
@@ -452,8 +485,8 @@ int AudioClip::process(nframes_t nframes)
     uint framesToProcess = nframes;
 
 
-    uint outputRate = m_readSource->get_output_rate();
-    TimeRef transportLocation = m_sheet->get_transport_location();
+    uint outputRate = readSource->get_output_rate();
+    TimeRef transportLocation = m_sheet->get_render_location(playhead);
     TimeRef upperRange = transportLocation + TimeRef(framesToProcess, outputRate);
 
 
@@ -492,10 +525,10 @@ int AudioClip::process(nframes_t nframes)
 
     uint read_frames = 0;
 
-    if (m_sheet->realtime_path()) {
-        read_frames = uint(m_readSource->rb_read(static_cast<audio_sample_t**>(mixdown), mix_pos, framesToProcess));
+    if (playhead == LivePlayhead || m_sheet->realtime_path()) {
+        read_frames = uint(readSource->rb_read(static_cast<audio_sample_t**>(mixdown), mix_pos, framesToProcess));
     } else {
-        read_frames = uint(m_readSource->file_read(m_sheet->renderDecodeBuffer, mix_pos, framesToProcess));
+        read_frames = uint(readSource->file_read(m_sheet->renderDecodeBuffer, mix_pos, framesToProcess));
         if (read_frames > 0) {
             for (uint chan=0; chan<channelcount; ++chan) {
                 memcpy(mixdown[chan], m_sheet->renderDecodeBuffer->destination[chan], read_frames * sizeof(audio_sample_t));
@@ -514,7 +547,7 @@ int AudioClip::process(nframes_t nframes)
 
 
     apill_foreach(FadeCurve* fade, FadeCurve*, m_fades) {
-        fade->process(bus, nframes);
+        fade->process(bus, nframes, playhead);
     }
 
     TimeRef endlocation = mix_pos + TimeRef(read_frames, get_rate());
@@ -708,6 +741,17 @@ void AudioClip::set_audio_source(ReadSource* rs)
         m_isReadSourceValid = true;
     }
 
+    // If the clip is being pointed at a different source, drop the previous
+    // Live ReadSource; it will be recreated for the new source below.
+    if (m_liveReadSource && m_readSource != rs) {
+        if (m_liveSourceRegistered && m_sheet) {
+            m_sheet->get_diskio()->unregister_read_source(m_liveReadSource);
+        }
+        m_liveSourceRegistered = false;
+        delete m_liveReadSource;
+        m_liveReadSource = nullptr;
+    }
+
     m_readSource = rs;
     m_readSourceId = rs->get_id();
     m_sourceLength = rs->get_length();
@@ -725,6 +769,23 @@ void AudioClip::set_audio_source(ReadSource* rs)
 
     rs->set_audio_clip(this);
 
+    // Create an independent ReadSource for the Live playhead, so both
+    // playheads can stream this clip from different positions. This doubles
+    // the disk working set for the clip.
+    // Use the ResourcesManager API, which is the sanctioned way to obtain an
+    // independent, properly ref-counted and initialised ReadSource.
+    if (!m_liveReadSource) {
+        m_liveReadSource = resources_manager()->get_readsource(m_readSourceId);
+        if (m_liveReadSource) {
+            m_liveReadSource->set_playhead(LivePlayhead);
+            m_liveReadSource->set_audio_clip(this);
+            register_live_read_source();
+        }
+    }
+
+    // Apply the audible state now that the Live ReadSource exists as well.
+    set_sources_active_state();
+
 
     if (m_recordingStatus == NO_RECORDING) {
         if (m_peak) {
@@ -737,6 +798,16 @@ void AudioClip::set_audio_source(ReadSource* rs)
 
     // This will also emit positionChanged() which is more or less what we want.
     set_track_end_location(m_trackStartLocation + m_sourceLength - m_sourceStartLocation);
+}
+
+void AudioClip::register_live_read_source()
+{
+    if (m_liveSourceRegistered || !m_sheet || !m_liveReadSource) {
+        return;
+    }
+
+    m_sheet->get_diskio()->register_read_source(m_liveReadSource);
+    m_liveSourceRegistered = true;
 }
 
 void AudioClip::finish_write_source()
@@ -807,6 +878,8 @@ void AudioClip::set_sheet( Sheet * sheet )
     } else {
         PWARN("AudioClip::set_sheet() : Setting Sheet, but no ReadSource available!!");
     }
+
+    register_live_read_source();
     
     m_sheetId = sheet->get_id();
     

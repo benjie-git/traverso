@@ -165,8 +165,13 @@ void Sheet::init()
 	connect (m_diskio, SIGNAL(readSourceBufferUnderRun()), this, SLOT(handle_diskio_readbuffer_underrun()));
 	connect (m_diskio, SIGNAL(writeSourceBufferOverRun()), this, SLOT(handle_diskio_writebuffer_overrun()));
 	connect(&config(), SIGNAL(configChanged()), this, SLOT(config_changed()));
-	connect(this, SIGNAL(transportStarted()), m_diskio, SLOT(start_io()));
-	connect(this, SIGNAL(transportStopped()), m_diskio, SLOT(stop_io()));
+	connect(this, SIGNAL(transportStarted()), this, SLOT(update_disk_io_state()));
+	connect(this, SIGNAL(transportStopped()), this, SLOT(update_disk_io_state()));
+	connect(this, SIGNAL(liveTransportStarted()), this, SLOT(update_disk_io_state()));
+	connect(this, SIGNAL(liveTransportStopped()), this, SLOT(update_disk_io_state()));
+	connect(this, SIGNAL(liveTransportStarted()), this, SLOT(update_live_sources_active_state()));
+	connect(this, SIGNAL(liveTransportStopped()), this, SLOT(update_live_sources_active_state()));
+	connect(this, SIGNAL(liveTransportStarted()), m_diskio, SLOT(seek_live()), Qt::QueuedConnection);
 
     mixdown = gainbuffer = nullptr;
 
@@ -709,60 +714,94 @@ void Sheet::solo_track(Track *track)
 //
 int Sheet::process( nframes_t nframes )
 {
-	if (m_startSeek) {
-                // printf("process: starting seek\n");
-		start_seek();
+	return render_pass(CuePlayhead, nframes);
+}
+
+TimeRef Sheet::get_render_location(PlayheadId playhead) const
+{
+	if (playhead == LivePlayhead) {
+		return get_live_location();
+	}
+
+	return get_transport_location();
+}
+
+//
+//  Renders one playhead pass. The Cue pass follows the traditional transport
+//  semantics (including seeks), while the Live pass is independent and keeps
+//  rolling during cue seeks.
+//
+int Sheet::render_pass( PlayheadId playhead, nframes_t nframes )
+{
+	const bool isLive = (playhead == LivePlayhead);
+	const bool rolling = isLive ? is_live_transport_rolling() : is_transport_rolling();
+
+	if (!isLive) {
+		if (m_startSeek) {
+			// printf("process: starting seek\n");
+			start_seek();
+			return 0;
+		}
+
+		if (m_seeking) {
+			return 0;
+		}
+	}
+
+	// If this playhead isn't rolling, make sure the buses it would render
+	// into are silent for this cycle.
+	if (!rolling) {
+		m_masterOutBusTrack->get_process_bus()->silence_buffers(nframes);
+		apill_foreach(TBusTrack* busTrack, TBusTrack*, m_rtBusTracks) {
+			busTrack->get_process_bus()->silence_buffers(nframes);
+		}
 		return 0;
 	}
 
-        if (m_seeking) {
-                return 0;
-        }
-	
-	// If no need for playback/record, return.
-	if (!is_transport_rolling()) {
-		return 0;
-	}
-
-	if (m_stopTransport) {
-        m_transport = 0;
+	if (!isLive && m_stopTransport) {
+		m_transport = 0;
 		m_realtimepath = false;
 		m_stopTransport = false;
-		
-                RT_THREAD_EMIT(this, nullptr, transportStopped())
+
+		RT_THREAD_EMIT(this, nullptr, transportStopped())
 
 		return 0;
-    }
+	}
 
 	// zero the m_masterOut buffers
-        m_masterOutBusTrack->get_process_bus()->silence_buffers(nframes);
-        apill_foreach(TBusTrack* busTrack, TBusTrack*, m_rtBusTracks) {
-                busTrack->get_process_bus()->silence_buffers(nframes);
-        }
+	m_masterOutBusTrack->get_process_bus()->silence_buffers(nframes);
+	apill_foreach(TBusTrack* busTrack, TBusTrack*, m_rtBusTracks) {
+		busTrack->get_process_bus()->silence_buffers(nframes);
+	}
 
 
 	int processResult = 0;
 
 
 	// Process all Tracks.
-        apill_foreach(AudioTrack* track, AudioTrack*, m_rtAudioTracks) {
-		processResult |= track->process(nframes);
+	apill_foreach(AudioTrack* track, AudioTrack*, m_rtAudioTracks) {
+		processResult |= track->process(nframes, playhead);
 	}
 
-        apill_foreach(TBusTrack* busTrack, TBusTrack*, m_rtBusTracks) {
-                busTrack->process(nframes);
-        }
+	apill_foreach(TBusTrack* busTrack, TBusTrack*, m_rtBusTracks) {
+		busTrack->process(nframes, playhead);
+	}
 
 	// update the transport location
-    m_transportLocation.add_frames(nframes, int(audiodevice().get_sample_rate()));
+	if (isLive) {
+		qint64 delta = (UNIVERSAL_SAMPLE_RATE / audiodevice().get_sample_rate()) * nframes;
+		m_liveFramePosition.fetch_add(delta);
+	} else {
+		m_transportLocation.add_frames(nframes, int(audiodevice().get_sample_rate()));
+	}
 
 	if (!processResult) {
 		return 0;
 	}
 
-        // Mix the result into the AudioDevice "physical" buffers
-        m_masterOutBusTrack->process(nframes);
-	
+	// Mix the result into the AudioDevice "physical" buffers
+	m_masterOutBusTrack->process(nframes, playhead);
+
 	return 1;
 }
 
@@ -980,6 +1019,55 @@ TCommand* Sheet::start_transport()
 	}
 	
 	return ied().succes();
+}
+
+// Function is only to be called from GUI thread.
+void Sheet::start_live_transport()
+{
+	if (is_live_transport_rolling()) {
+		return;
+	}
+
+	// v1 manual-move policy: the only way to move the Live playhead is to
+	// start it from wherever the cue playhead currently is.
+	set_live_transport_pos(m_transportLocation);
+
+	m_liveTransport.store(true);
+	emit liveTransportStarted();
+}
+
+// Function is only to be called from GUI thread.
+void Sheet::stop_live_transport()
+{
+	if (!is_live_transport_rolling()) {
+		return;
+	}
+
+	m_liveTransport.store(false);
+	emit liveTransportStopped();
+}
+
+void Sheet::update_disk_io_state()
+{
+	// DiskIO must keep running while either playhead is rolling, because the
+	// Live playhead can roll independently of the cue transport.
+	if (is_transport_rolling() || is_live_transport_rolling()) {
+		m_diskio->start_io();
+	} else {
+		m_diskio->stop_io();
+	}
+}
+
+// Keep the per-clip Live ReadSources active only while the Live playhead is
+// actually rolling (see AudioClip::set_sources_active_state), so a stopped
+// Live playhead doesn't pay for a second disk read of every clip.
+void Sheet::update_live_sources_active_state()
+{
+	for (AudioTrack* track : m_audioTracks) {
+		for (AudioClip* clip : track->get_audioclips()) {
+			clip->track_audible_state_changed();
+		}
+	}
 }
 
 // Function can be called either from the GUI or RT thread.

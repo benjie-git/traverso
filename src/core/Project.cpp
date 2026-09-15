@@ -116,6 +116,8 @@ Project::Project(const QString& title)
 
         connect(this, SIGNAL(privateSheetRemoved(Sheet*)), this, SLOT(sheet_removed(Sheet*)));
         connect(this, SIGNAL(privateSheetAdded(Sheet*)), this, SLOT(sheet_added(Sheet*)));
+        connect(this, SIGNAL(liveTransportStarted()), this, SLOT(start_live_output()));
+        connect(this, SIGNAL(liveTransportStopped()), this, SLOT(stop_live_output()));
 	connect(this, SIGNAL(exportFinished()), this, SLOT(export_finished()), Qt::QueuedConnection);
         connect(&audiodevice(), SIGNAL(driverParamsChanged()), this, SLOT(audiodevice_params_changed()), Qt::DirectConnection);
 }
@@ -133,6 +135,7 @@ Project::~Project()
         }
 
         delete m_masterOutBusTrack;
+        delete m_liveOutputBus;
         delete m_hs;
 }
 
@@ -386,8 +389,10 @@ int Project::load(const QString& projectfile)
                 }
         }
 
-        QDomNode busTracksNode = docElem.firstChildElement("BusTracks");
-        QDomNode busTrackNode = busTracksNode.firstChild();
+        // Set up the second, independent Live playhead output if enabled.
+        setup_live_output_bus();
+
+        QDomNode busTracksNode = docElem.firstChildElement("BusTracks");        QDomNode busTrackNode = busTracksNode.firstChild();
 
         while(!busTrackNode.isNull()) {
                 TBusTrack* busTrack = new TBusTrack(this, busTrackNode);
@@ -733,6 +738,8 @@ void Project::prepare_audio_device(QDomDocument doc)
         }
 #endif // end COREAUDIO_SUPPORT
 
+        ads.liveOutputDevice = config().get_property("Hardware", "liveoutputdevice", "").toString();
+        ads.liveEnabled = config().get_property("Hardware", "liveenabled", false).toBool();
 
         audiodevice().set_parameters(ads);
 }
@@ -1582,6 +1589,9 @@ void Project::audiodevice_params_changed()
 {
         setup_default_hardware_buses();
 
+        // The Live Play Head output sink depends on the current driver/config.
+        setup_live_output_bus();
+
         for (AudioBus* bus : m_hardwareAudioBuses) {
                 bus->audiodevice_params_changed();
         }
@@ -1662,12 +1672,74 @@ void Project::setup_default_hardware_buses()
         }
 }
 
+//
+//  Creates the independent Live playhead output sink. In this phase it is an
+//  internal bus (a silent sink); a native second output device connects to it
+//  in a later phase. The Project master gets an extra post send to it, which
+//  is only processed during the Live render pass.
+//
+void Project::setup_live_output_bus()
+{
+        // Use the device setup (rather than config) so that applying driver
+        // changes takes effect immediately, without needing to persist first.
+        const AudioDeviceSetup liveSetup = audiodevice().get_device_setup();
+        const QString liveDevice = liveSetup.liveOutputDevice;
+        bool enabled = liveSetup.liveEnabled;
+        if (audiodevice().get_driver_type() == "Jack") {
+                // JACK routes the live output through its own ports.
+                enabled = false;
+        }
+
+        if (!enabled) {
+                if (m_liveOutputBus) {
+                        // Stop the engine from pushing into the bus (and wait for
+                        // any in-flight push) before deleting it.
+                        audiodevice().set_live_output_bus(nullptr);
+                        TSend* send = m_masterOutBusTrack->get_send(m_liveOutputBus->get_id());
+                        if (send) {
+                                m_masterOutBusTrack->remove_post_send(send);
+                        }
+                        delete m_liveOutputBus;
+                        m_liveOutputBus = nullptr;
+                } else {
+                        audiodevice().set_live_output_bus(nullptr);
+                }
+                return;
+        }
+
+        if (m_liveOutputBus) {
+                audiodevice().set_live_output_bus(m_liveOutputBus);
+                audiodevice().enable_live_output(liveDevice);
+        if (m_activeSheet && m_activeSheet->is_live_transport_rolling()) {
+                audiodevice().start_live_output();
+        }
+                return;
+        }
+
+        BusConfig conf;
+        conf.name = "Live Playback 1-2";
+        conf.type = "output";
+        conf.bustype = "software";
+        conf.isInternalBus = true;
+        conf.channelcount = 2;
+
+        m_liveOutputBus = new AudioBus(conf);
+        m_liveOutputBus->set_live_output(true);
+
+        m_masterOutBusTrack->add_post_send(m_liveOutputBus);
+
+        audiodevice().set_live_output_bus(m_liveOutputBus);
+        audiodevice().enable_live_output(liveDevice);
+        if (m_activeSheet && m_activeSheet->is_live_transport_rolling()) {
+                audiodevice().start_live_output();
+        }
+}
+
 void Project::private_add_sheet(Sheet * sheet)
 {
 	PENTER;
         m_RtSheets.append(sheet);
 }
-
 void Project::private_remove_sheet(Sheet * sheet)
 {
 	PENTER;
@@ -1690,6 +1762,19 @@ void Project::sheet_added(Sheet *sheet)
 {
         m_sheets.append(sheet);
         emit sheetAdded(sheet);
+}
+
+// The Live output device only runs while the Live playhead is rolling, so a
+// stopped Live playhead can't keep repeating its final buffer through the
+// second device.
+void Project::start_live_output()
+{
+	audiodevice().start_live_output();
+}
+
+void Project::stop_live_output()
+{
+	audiodevice().stop_live_output();
 }
 
 QString Project::get_import_dir() const
@@ -1747,17 +1832,23 @@ void Project::set_sheets_are_tracks_folder(bool isFolder)
 }
 
 
-int Project::process( nframes_t nframes )
+int Project::render_pass( PlayheadId playhead, nframes_t nframes )
 {
         int result = 0;
 
+        if (playhead == LivePlayhead && m_liveOutputBus) {
+                // The Live sink is not a driver channel, so it isn't silenced
+                // by the driver. Clear it before anything is mixed into it.
+                m_liveOutputBus->silence_buffers(nframes);
+        }
+
         apill_foreach(Sheet* sheet, Sheet*, m_RtSheets) {
-                result |= sheet->process(nframes);
+                result |= sheet->render_pass(playhead, nframes);
         }
 
 
         apill_foreach(TBusTrack* busTrack, TBusTrack*, m_rtBusTracks) {
-                busTrack->process(nframes);
+                busTrack->process(nframes, playhead);
         }
 
 
@@ -1770,15 +1861,32 @@ int Project::process( nframes_t nframes )
         // somewhere
         // To process them here is a temporary solution since the m_masterOutBusTrack->process()
         // is called after procssing the signal for the Meters hence we miss some signal processing.
-        if (m_correlationMeter) {
-                m_correlationMeter->process(m_masterOutBusTrack->get_process_bus(), nframes);
-        }
-        if (m_spectralMeter) {
-                m_spectralMeter->process(m_masterOutBusTrack->get_process_bus(), nframes);
+        // The meters only monitor the cue mix.
+        if (playhead == CuePlayhead) {
+                if (m_correlationMeter) {
+                        m_correlationMeter->process(m_masterOutBusTrack->get_process_bus(), nframes);
+                }
+                if (m_spectralMeter) {
+                        m_spectralMeter->process(m_masterOutBusTrack->get_process_bus(), nframes);
+                }
         }
 
         // Mix the result into the AudioDevice "physical" buffers
-        m_masterOutBusTrack->process(nframes);
+        m_masterOutBusTrack->process(nframes, playhead);
+
+        return result;
+}
+
+
+int Project::process( nframes_t nframes )
+{
+        int result = render_pass(CuePlayhead, nframes);
+
+        // The Live playhead is fully independent and is rendered as a second
+        // pass after the cue pass, into its own output sink.
+        if (is_live_transport_rolling()) {
+                result |= render_pass(LivePlayhead, nframes);
+        }
 
         return result;
 }

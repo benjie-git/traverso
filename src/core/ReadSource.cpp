@@ -631,7 +631,7 @@ void ReadSource::prepare_rt_buffers( )
 	}
 
         // FIXME: does this really make sense to do still ? :
-        TimeRef synclocation = m_clip->get_sheet()->get_transport_location();
+        TimeRef synclocation = m_clip->get_sheet()->get_render_location(m_playhead);
         start_resync(synclocation);
 }
 
@@ -644,7 +644,7 @@ BufferStatus* ReadSource::get_buffer_status()
 	int freespace = m_buffers.at(0)->write_space();
 	
 // 	printf("m_rbFileReadPos, m_length %lld, %lld\n", m_rbFileReadPos.universal_frame(), m_length.universal_frame());
-	TimeRef transport = m_clip->get_sheet()->get_transport_location();
+	TimeRef transport = m_clip->get_sheet()->get_render_location(m_playhead);
 	TimeRef syncstartlocation = m_clip->get_track_start_location();
 	bool transportBeforeSyncStartLocation = transport < (syncstartlocation - (3 * UNIVERSAL_SAMPLE_RATE));
 	bool transportAfterClipEndLocation = transport > (m_clip->get_track_end_location() + (3 * UNIVERSAL_SAMPLE_RATE));

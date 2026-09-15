@@ -436,21 +436,21 @@ void Track::add_input_bus(const QString &name)
         }
 }
 
-void Track::process_post_sends(nframes_t nframes)
+void Track::process_post_sends(nframes_t nframes, PlayheadId playhead)
 {
         apill_foreach(TSend* postSend, TSend*, m_postSends) {
-                process_send(postSend, nframes);
+                process_send(postSend, nframes, playhead);
         }
 }
 
-void Track::process_pre_sends(nframes_t nframes)
+void Track::process_pre_sends(nframes_t nframes, PlayheadId playhead)
 {
         apill_foreach(TSend* preSend, TSend*, m_preSends) {
-                process_send(preSend, nframes);
+                process_send(preSend, nframes, playhead);
         }
 }
 
-void Track::process_send(TSend *send, nframes_t nframes)
+void Track::process_send(TSend *send, nframes_t nframes, PlayheadId playhead)
 {
         AudioChannel* sender;
         AudioChannel* receiver;
@@ -458,6 +458,26 @@ void Track::process_send(TSend *send, nframes_t nframes)
         float panFactor;
 
         AudioBus* receiverBus = send->get_bus();
+        if (!receiverBus) {
+                return;
+        }
+
+        // Route sends according to the render pass that is currently running:
+        //  - Live output buses only receive the Live pass.
+        //  - Internal buses (track/bus routing, incl. the Project master) are
+        //    part of both passes so the mix topology is identical.
+        //  - Other hardware/software output buses (physical cue output, JACK,
+        //    export) only receive the Cue pass.
+        if (receiverBus->is_live_output()) {
+                if (playhead != LivePlayhead) {
+                        return;
+                }
+        } else if (!receiverBus->is_internal_bus()) {
+                if (playhead != CuePlayhead) {
+                        return;
+                }
+        }
+
         for (int i=0; i<m_processBus->get_channel_count(); i++) {
                 sender = m_processBus->get_channel(i);
                 receiver = receiverBus->get_channel(i);

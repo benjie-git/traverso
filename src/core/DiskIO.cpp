@@ -195,6 +195,11 @@ void DiskIO::seek()
     TimeRef location = m_sheet->get_new_transport_location();
 
     for (ReadSource* source : m_readSources) {
+        if (source->get_playhead() != CuePlayhead) {
+            // Live playhead sources are resynced independently, when the
+            // live transport starts or moves.
+            continue;
+        }
         if (m_sampleRateChanged) {
             source->set_diskio(this);
         }
@@ -213,6 +218,39 @@ void DiskIO::seek()
     m_seeking = false;
 
     emit seekFinished();
+}
+
+void DiskIO::seek_live()
+{
+    PENTER;
+
+    mutex.lock();
+
+    m_stopWork = 0;
+    m_seeking = true;
+
+    TimeRef location = m_sheet->get_live_location();
+
+    for (ReadSource* source : m_readSources) {
+        if (source->get_playhead() != LivePlayhead) {
+            continue;
+        }
+        if (m_sampleRateChanged) {
+            source->set_diskio(this);
+        }
+        source->rb_seek_to_file_position(location);
+    }
+
+    m_sampleRateChanged = false;
+
+    mutex.unlock();
+
+    // Now, fill the buffers like normal
+    do_work();
+
+    t_atomic_int_set(&m_readBufferFillStatus, 0);
+
+    m_seeking = false;
 }
 
 

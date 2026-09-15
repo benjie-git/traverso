@@ -65,6 +65,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA.
 #include "widgets/CorrelationMeterWidget.h"
 #include "widgets/SpectralMeterWidget.h"
 #include "widgets/TransportConsoleWidget.h"
+#include "widgets/LivePlayheadToolbar.h"
 #include "widgets/WelcomeWidget.h"
 #include "widgets/TSessionTabWidget.h"
 #include "widgets/TContextHelpWidget.h"
@@ -266,6 +267,10 @@ TMainWindow::TMainWindow()
 	m_transportConsole = new TransportConsoleWidget(this);
 	m_transportConsole->setObjectName("Transport Console");
 
+	m_livePlayhead = new LivePlayheadToolbar(this);
+	addToolBar(Qt::TopToolBarArea, m_livePlayhead);
+	m_livePlayhead->hide();
+
 #if defined (Q_OS_MAC)
 	// this is important only when setUnifiedTitleAndToolBarOnMac() is true,
 	// because in that case the toolbars in the TopToolBarArea can't be moved
@@ -292,6 +297,7 @@ TMainWindow::TMainWindow()
 	int iconsize = config().get_property("Themer", "iconsize", "22").toInt();
 	m_projectToolBar->setIconSize(QSize(iconsize, iconsize));
 	m_editToolBar->setIconSize(QSize(iconsize, iconsize));
+	m_livePlayhead->setIconSize(QSize(iconsize, iconsize));
 
 
 	addToolBarBreak();
@@ -350,7 +356,10 @@ TMainWindow::TMainWindow()
 
 	connect(&config(), SIGNAL(configChanged()), this, SLOT(config_changed()));
 	connect(&config(), SIGNAL(configChanged()), this, SLOT(update_follow_state()));
+	connect(&config(), SIGNAL(configChanged()), this, SLOT(update_live_playhead_state()));
+	connect(&audiodevice(), SIGNAL(driverParamsChanged()), this, SLOT(update_live_playhead_state()));
 	update_follow_state();
+	update_live_playhead_state();
 
 //	setUnifiedTitleAndToolBarOnMac(true);
 
@@ -401,6 +410,8 @@ void TMainWindow::set_project(Project* project)
 		set_project_actions_enabled(false);
 		show_welcome_page();
 	}
+
+	update_live_playhead_state();
 }
 
 void TMainWindow::project_load_started()
@@ -880,6 +891,12 @@ void TMainWindow::create_menus( )
 
 	menu->addAction(m_transportConsole->toggleViewAction());
 	m_transportConsole->toggleViewAction()->setText(tr("Transport Console"));
+
+	m_livePlayheadAction = menu->addAction(tr("Live Play Head"));
+	m_livePlayheadAction->setCheckable(true);
+	m_livePlayheadAction->setIcon(QIcon(":/playstart"));
+	m_livePlayheadAction->setToolTip(tr("Show or hide the Live Play Head toolbar."));
+	connect(m_livePlayheadAction, SIGNAL(triggered(bool)), this, SLOT(live_playhead_visibility_changed(bool)));
 
 	// if unifiedTitleAndToolBarOnMac == true we don't want the main toolbars
 	// to be hidden. thus only add the menu entries on systems != OS X
@@ -1688,6 +1705,28 @@ void TMainWindow::update_temp_follow_state(bool state)
 	if (m_project->get_current_session()->is_transport_rolling() && m_isFollowing) {
 		m_followAction->setChecked(state);
 	}
+}
+
+// The Live Play Head is a capability (Settings -> Audio Driver) that can be
+// separately shown/hidden from the View menu.
+void TMainWindow::update_live_playhead_state()
+{
+	bool available = config().get_property("Hardware", "liveenabled", false).toBool();
+	bool shown = config().get_property("LivePlayhead", "Enabled", false).toBool();
+	const bool haveProject = (m_project != nullptr);
+
+	m_livePlayheadAction->setEnabled(available && haveProject);
+	m_livePlayheadAction->setChecked(available && shown);
+
+	m_livePlayhead->set_enabled(available && haveProject);
+	m_livePlayhead->setVisible(available && haveProject && shown);
+}
+
+void TMainWindow::live_playhead_visibility_changed(bool state)
+{
+	config().set_property("LivePlayhead", "Enabled", state);
+	config().save();
+	update_live_playhead_state();
 }
 
 void TMainWindow::follow_state_changed(bool state)

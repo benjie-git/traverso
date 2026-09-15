@@ -295,6 +295,83 @@ void PlayHead::load_theme_data()
 }
 
 /**************************************************************/
+/*                    LivePlayHead                           */
+/**************************************************************/
+
+
+LivePlayHead::LivePlayHead(SheetView* sv, TSession* session)
+        : ViewItem(nullptr, session)
+        , m_session(session)
+	, m_sv(sv)
+{
+	connect(m_session, SIGNAL(liveTransportStarted()), this, SLOT(play_start()));
+	connect(m_session, SIGNAL(liveTransportStopped()), this, SLOT(play_stop()));
+
+	connect(&m_playTimer, SIGNAL(timeout()), this, SLOT(update_position()));
+        connect(themer(), SIGNAL(themeLoaded()), this, SLOT(load_theme_data()), Qt::QueuedConnection);
+        load_theme_data();
+
+	setZValue(99);
+
+	// The Live playhead is only visible while the live transport is rolling.
+	hide();
+}
+
+LivePlayHead::~LivePlayHead( )
+{
+        PENTERDES2;
+}
+
+void LivePlayHead::paint( QPainter * painter, const QStyleOptionGraphicsItem * option, QWidget * widget )
+{
+	Q_UNUSED(option);
+	Q_UNUSED(widget);
+
+	if (m_pixActive.height() != int(m_boundingRect.height())) {
+		create_pixmap();
+	}
+
+	painter->drawPixmap(0, 0, int(m_boundingRect.width()), int(m_boundingRect.height()), m_pixActive);
+}
+
+void LivePlayHead::create_pixmap()
+{
+	m_pixActive = QPixmap(int(m_boundingRect.width()), int(m_boundingRect.height()));
+	m_pixActive.fill(Qt::transparent);
+
+	QPainter p(&m_pixActive);
+	p.fillRect(QRectF(0, 0, m_boundingRect.width() - 2, m_boundingRect.height()), m_brushActive);
+}
+
+void LivePlayHead::play_start()
+{
+	update_position();
+	show();
+	m_playTimer.start(20);
+}
+
+void LivePlayHead::play_stop()
+{
+	m_playTimer.stop();
+	hide();
+}
+
+void LivePlayHead::update_position()
+{
+	setPos(m_session->get_live_location() / m_sv->timeref_scalefactor, 1);
+}
+
+void LivePlayHead::set_bounding_rect( QRectF rect )
+{
+	m_boundingRect = rect;
+}
+
+void LivePlayHead::load_theme_data()
+{
+	m_brushActive = themer()->get_brush("LivePlayhead:active");
+}
+
+/**************************************************************/
 /*                    WorkCursor                              */
 /**************************************************************/
 

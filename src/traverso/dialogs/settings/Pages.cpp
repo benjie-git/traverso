@@ -48,6 +48,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA.
 #include "TMainWindow.h"
 #include "TShortcutManager.h"
 #include <QDomDocument>
+#include <QUrl>
 
 
 /****************************************/
@@ -82,6 +83,7 @@ AudioDriverConfigPage::AudioDriverConfigPage(QWidget *parent)
         connect(driverCombo, SIGNAL(currentIndexChanged(int)), this, SLOT(driver_combobox_index_changed(int)));
 	connect(restartDriverButton, SIGNAL(clicked()), this, SLOT(restart_driver_button_clicked()));
         connect(rateComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(rate_combobox_index_changed(int)));
+        connect(enableLivePlayheadCheckBox, SIGNAL(toggled(bool)), this, SLOT(live_playhead_toggled(bool)));
         connect(&audiodevice(), SIGNAL(driverSetupMessage(QString,int)), this, SLOT(driver_setup_message(QString, int)));
 
 #if defined (PORTAUDIO_SUPPORT)
@@ -138,6 +140,39 @@ void AudioDriverConfigPage::save_config()
 #endif
 	
 	config().set_property("Hardware", "jackslave", jackTransportCheckBox->isChecked());
+
+	// The Live Play Head exists to feed a second, physically separate output
+	// device, so refuse to arm it on the same device as the main output.
+	bool liveenabled = enableLivePlayheadCheckBox->isChecked();
+	const QString liveDevice = liveOutputDeviceComboBox->currentData().toString();
+	QString mainDevice;
+	const QString liveDriver = driverCombo->currentText();
+#if defined (COREAUDIO_SUPPORT)
+	if (liveDriver == "CoreAudio") {
+		mainDevice = coreAudioOutputDeviceComboBox->currentData().toString();
+	}
+#endif
+#if defined (ALSA_SUPPORT)
+	if (liveDriver == "ALSA") {
+		const int alsaIndex = m_alsadevices->devicesCombo->currentIndex();
+		mainDevice = m_alsadevices->devicesCombo->itemData(alsaIndex).toString();
+	}
+#endif
+#if defined (PORTAUDIO_SUPPORT)
+	if (liveDriver == "PortAudio") {
+		mainDevice = m_portaudiodrivers->outputDevicesCombo->currentText();
+	}
+#endif
+
+	if (liveenabled && !mainDevice.isEmpty() && liveDevice == mainDevice) {
+		QMessageBox::warning(this, tr("Live Play Head"),
+		                     tr("The Live Play Head must use a different output device from the main output.\n\nThe Live Play Head has been disabled."));
+		liveenabled = false;
+		enableLivePlayheadCheckBox->setChecked(false);
+	}
+
+	config().set_property("Hardware", "liveenabled", liveenabled);
+	config().set_property("Hardware", "liveoutputdevice", liveDevice);
 }
 
 void AudioDriverConfigPage::reset_default_config()
@@ -177,6 +212,9 @@ void AudioDriverConfigPage::reset_default_config()
 #endif
 
 	config().set_property("Hardware", "jackslave", false);
+
+	config().set_property("Hardware", "liveenabled", false);
+	config().set_property("Hardware", "liveoutputdevice", "default");
 
 	load_config();
 }
@@ -317,6 +355,10 @@ void AudioDriverConfigPage::load_config( )
 
 	bool usetransport = config().get_property("Hardware", "jackslave", false).toBool();
 	jackTransportCheckBox->setChecked(usetransport);
+
+	bool liveenabled = config().get_property("Hardware", "liveenabled", false).toBool();
+	enableLivePlayheadCheckBox->setChecked(liveenabled);
+	update_live_playhead_widgets();
 }
 
 
@@ -360,6 +402,21 @@ void AudioDriverConfigPage::restart_driver_button_clicked()
 	}
 #endif
 	
+#if defined (COREAUDIO_SUPPORT)
+	if (driver == "CoreAudio") {
+		const QString input = coreAudioInputDeviceComboBox->currentData().toString();
+		const QString output = coreAudioOutputDeviceComboBox->currentData().toString();
+		if (ads.capture && ads.playback) {
+			ads.cardDevice = QString::fromLatin1(QUrl::toPercentEncoding(input)) + "::" +
+			                 QString::fromLatin1(QUrl::toPercentEncoding(output));
+		} else if (ads.playback) {
+			ads.cardDevice = output;
+		} else {
+			ads.cardDevice = input;
+		}
+	}
+#endif
+
 #if defined (PORTAUDIO_SUPPORT)
 	if (driver == "PortAudio") {
 		int index = m_portaudiodrivers->driverCombo->currentIndex();
@@ -370,6 +427,12 @@ void AudioDriverConfigPage::restart_driver_button_clicked()
 #endif
 			
         ads.driverType = driver;
+	ads.liveEnabled = enableLivePlayheadCheckBox->isChecked();
+	ads.liveOutputDevice = liveOutputDeviceComboBox->currentData().toString();
+	// Keep the in-memory config in sync so the View menu / Live Play Head
+	// toolbar visibility updates immediately when the driver is applied.
+	config().set_property("Hardware", "liveenabled", ads.liveEnabled);
+	config().set_property("Hardware", "liveoutputdevice", ads.liveOutputDevice);
         audiodevice().set_parameters(ads);
 	
 #if defined (ALSA_SUPPORT)
@@ -388,6 +451,7 @@ void AudioDriverConfigPage::driver_combobox_index_changed(int index)
 	m_mainLayout->removeWidget(m_portaudiodrivers);
 	m_mainLayout->removeWidget(jackGroupBox);
 	m_mainLayout->removeWidget(coreAudioDeviceGroupBox);
+	m_mainLayout->removeWidget(livePlayheadGroupBox);
 
 	if (driver == "ALSA") {
 		m_alsadevices->show();
@@ -419,6 +483,89 @@ void AudioDriverConfigPage::driver_combobox_index_changed(int index)
 	} else {
 		coreAudioDeviceGroupBox->hide();
 	}
+
+	// The Live Play Head groupbox is always shown last, just above the
+	// general driver options, regardless of the selected driver.
+	livePlayheadGroupBox->show();
+	m_mainLayout->insertWidget(m_mainLayout->indexOf(driverConfigGroupBox), livePlayheadGroupBox);
+	update_live_playhead_widgets();
+}
+
+void AudioDriverConfigPage::live_playhead_toggled(bool checked)
+{
+	liveOutputDeviceComboBox->setEnabled(checked);
+	livePlayheadDeviceLabel->setEnabled(checked);
+}
+
+void AudioDriverConfigPage::update_live_playhead_widgets()
+{
+	const QString driver = driverCombo->currentText();
+	const QString saved = config().get_property("Hardware", "liveoutputdevice", "default").toString();
+
+	liveOutputDeviceComboBox->clear();
+	livePlayheadInfoLabel->setText("");
+	liveOutputDeviceComboBox->setEnabled(false);
+	livePlayheadDeviceLabel->setEnabled(false);
+
+	bool supported = true;
+
+	if (driver == "CoreAudio") {
+#if defined (COREAUDIO_SUPPORT)
+		liveOutputDeviceComboBox->addItem(tr("System default"), QString("default"));
+		QStringList list = CoreAudioDriver::devices_info(false);
+		for (int i=0; i<list.size(); ++i) {
+			QStringList deviceInfo = list.at(i).split("###");
+			if (deviceInfo.size() > 1) {
+				liveOutputDeviceComboBox->addItem(deviceInfo.at(0), deviceInfo.at(1));
+			}
+		}
+#else
+		supported = false;
+#endif
+	} else if (driver == "ALSA") {
+#if defined (ALSA_SUPPORT)
+		liveOutputDeviceComboBox->addItem(tr("System default"), QString("default"));
+		for (int i=0; i<6; ++i) {
+			QString name = AlsaDriver::alsa_device_name(i);
+			QString longname = AlsaDriver::alsa_device_longname(i);
+			if (!name.isEmpty()) {
+				liveOutputDeviceComboBox->addItem(longname, name);
+			}
+		}
+#else
+		supported = false;
+#endif
+	} else if (driver == "PortAudio") {
+#if defined (PORTAUDIO_SUPPORT)
+		liveOutputDeviceComboBox->addItem(tr("System default"), QString("default"));
+		for (int i=0; i<m_portaudiodrivers->outputDevicesCombo->count(); ++i) {
+			const QString text = m_portaudiodrivers->outputDevicesCombo->itemText(i);
+			liveOutputDeviceComboBox->addItem(text, text);
+		}
+#else
+		supported = false;
+#endif
+	} else if (driver == "PipeWire") {
+		liveOutputDeviceComboBox->addItem(tr("System default"), QString("default"));
+		livePlayheadInfoLabel->setText(tr("The Live Play Head uses the default output device in this version."));
+	} else if (driver == "Jack") {
+		supported = false;
+		livePlayheadInfoLabel->setText(tr("The Live Play Head is not available with JACK. Route the live output bus via JACK ports instead."));
+	} else {
+		supported = false;
+	}
+
+	if (!supported) {
+		enableLivePlayheadCheckBox->setChecked(false);
+	}
+	enableLivePlayheadCheckBox->setEnabled(supported);
+
+	const int savedIndex = liveOutputDeviceComboBox->findData(saved);
+	if (savedIndex >= 0) {
+		liveOutputDeviceComboBox->setCurrentIndex(savedIndex);
+	}
+
+	live_playhead_toggled(supported && enableLivePlayheadCheckBox->isChecked());
 }
 
 #if defined (PORTAUDIO_SUPPORT)
@@ -448,6 +595,8 @@ void AudioDriverConfigPage::portaudio_host_api_combobox_index_changed(int index)
                         m_portaudiodrivers->outputDevicesCombo->setCurrentIndex(i);
                 }
         }
+
+        update_live_playhead_widgets();
 }
 #endif
 

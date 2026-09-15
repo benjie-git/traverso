@@ -260,7 +260,7 @@ void AudioTrack::add_input_bus(AudioBus *bus)
 //
 //  Function called in RealTime AudioThread processing path
 //
-int AudioTrack::process( nframes_t nframes )
+int AudioTrack::process( nframes_t nframes, PlayheadId playhead )
 {
     int processResult = 0;
 
@@ -285,7 +285,7 @@ int AudioTrack::process( nframes_t nframes )
         }
 
 
-        result = clip->process(nframes);
+        result = clip->process(nframes, playhead);
 
         if (result <= 0) {
             continue;
@@ -295,11 +295,13 @@ int AudioTrack::process( nframes_t nframes )
     }
 
     // Then do the pre-send:
-    process_pre_sends(nframes);
+    process_pre_sends(nframes, playhead);
 
 
-    // Then apply the pre fader plugins;
-    m_pluginChain->process_pre_fader(m_processBus, nframes);
+    // Then apply the pre fader plugins; the Live pass is dry (no plugins).
+    if (playhead == CuePlayhead) {
+        m_pluginChain->process_pre_fader(m_processBus, nframes);
+    }
 
 
     // Apply PAN
@@ -322,24 +324,26 @@ int AudioTrack::process( nframes_t nframes )
         mixdown[chan] = m_processBus->get_buffer(chan, nframes);
     }
 
-    TimeRef location = m_sheet->get_transport_location();
+    TimeRef location = m_sheet->get_render_location(playhead);
     TimeRef endlocation = location + TimeRef(nframes, audiodevice().get_sample_rate());
     // Apply fader Gain/envelope
     m_fader->process_gain(mixdown, location, endlocation, nframes, m_processBus->get_channel_count());
 
 
-    // Post fader plugins now
-    processResult |= m_pluginChain->process_post_fader(m_processBus, nframes);
+    // Post fader plugins now (Cue pass only)
+    if (playhead == CuePlayhead) {
+        processResult |= m_pluginChain->process_post_fader(m_processBus, nframes);
+    }
 
     // TODO: is there a situation where we still want to call process_post_sends
     // even if processresult == 0?
     if (processResult) {
-        if (!m_isArmed) {
+        if (!m_isArmed && playhead == CuePlayhead) {
             m_processBus->process_monitoring(m_vumonitors);
         }
 
         // And finally do the post sends
-        process_post_sends(nframes);
+        process_post_sends(nframes, playhead);
     }
 
     return processResult;

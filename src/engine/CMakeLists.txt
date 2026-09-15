@@ -5,6 +5,7 @@ set(TRAVERSO_ENGINE_SOURCES
     AudioDeviceThread.cpp
     TAudioDeviceClient.cpp
     TAudioDriver.cpp
+    LiveOutput.cpp
     memops.cpp
 )
 
@@ -17,7 +18,7 @@ if(HAVE_JACK)
 endif()
 
 if(HAVE_PORTAUDIO)
-    list(APPEND TRAVERSO_ENGINE_SOURCES PADriver.cpp)
+    list(APPEND TRAVERSO_ENGINE_SOURCES PADriver.cpp PADriverLiveOutput.cpp)
 endif()
 
 if(HAVE_PIPEWIRE)
@@ -29,7 +30,7 @@ if(HAVE_PULSEAUDIO)
 endif()
 
 if(HAVE_COREAUDIO)
-    list(APPEND TRAVERSO_ENGINE_SOURCES CoreAudioDriver.cpp)
+    list(APPEND TRAVERSO_ENGINE_SOURCES CoreAudioDriver.cpp CoreAudioLiveOutput.cpp)
 endif()
 
 add_library(traversoaudiobackend STATIC ${TRAVERSO_ENGINE_SOURCES})

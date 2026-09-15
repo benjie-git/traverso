@@ -45,6 +45,7 @@ class AudioTrackView;
 class Track;
 class PlayHead;
 class WorkCursor;
+class LivePlayHead;
 class TCanvasCursor;
 class Curve;
 
@@ -89,7 +90,6 @@ public :
 	TimeLineViewPort* get_timeline_viewport() const;
 	PlayHead* get_play_cursor() const {return m_playCursor;}
 	WorkCursor* get_work_cursor() const {return m_workCursor;}
-
     AudioTrackView* get_audio_trackview_at_scene_pos(QPointF point);
     TrackView* get_trackview_at_scene_pos(QPointF point);
 	QList<TrackView*> get_track_views() const;
@@ -141,6 +141,7 @@ private:
     TrackView*          m_sheetMasterOutView;
     TrackView*          m_projectMasterOutView;
     WorkCursor*         m_workCursor;
+    LivePlayHead*       m_livePlayCursor;
     TCanvasCursor*      m_canvasCursor;
     QPropertyAnimation* m_canvasCursorMoveAnimation;
     int                 m_sceneHeight{};

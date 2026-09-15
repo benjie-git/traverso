@@ -52,6 +52,7 @@ public :
 	~Project();
 
         int process(nframes_t nframes);
+        int render_pass(PlayheadId playhead, nframes_t nframes);
         // jackd only feature
         int transport_control(transport_state_t state);
 
@@ -63,6 +64,7 @@ public :
         void remove_software_audio_bus(AudioBus* bus);
         QList<TSend*> get_inputs_for_bus_track(TBusTrack* busTrack) const;
         void setup_default_hardware_buses();
+        void setup_live_output_bus();
 
         QStringList get_playback_buses_names( ) const;
         QStringList get_capture_buses_names( ) const;
@@ -175,6 +177,7 @@ private:
         CorrelationMeter*       m_correlationMeter;
 
         QList<AudioBus* >       m_hardwareAudioBuses;
+        AudioBus*               m_liveOutputBus{};
 
         QHash<qint64, AudioBus* >       m_softwareAudioBuses;
         QHash<qint64, AudioChannel* >   m_softwareAudioChannels;
@@ -222,6 +225,8 @@ private slots:
 	void private_remove_sheet(Sheet* sheet);
         void sheet_removed(Sheet* sheet);
         void sheet_added(Sheet* sheet);
+        void start_live_output();
+        void stop_live_output();
         void export_finished();
 
 signals:

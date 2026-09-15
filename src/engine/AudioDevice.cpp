@@ -54,6 +54,7 @@ RELAYTOOL_JACK
 #include "TAudioDeviceClient.h"
 #include "AudioChannel.h"
 #include "AudioBus.h"
+#include "LiveOutput.h"
 #include "Tsar.h"
 #include "Mixer.h"
 
@@ -159,6 +160,9 @@ AudioDevice::AudioDevice()
     m_runAudioThread = false;
     m_driver = nullptr;
     m_masterOutBus = nullptr;
+    m_liveOutput = nullptr;
+    m_liveOutputBus = nullptr;
+    m_liveOutputUid = QString();
     m_audioThread = nullptr;
     m_bufferSize = 1024;
     m_rate = 0;
@@ -292,6 +296,8 @@ int AudioDevice::run_one_cycle( nframes_t nframes, float  )
     apill_foreach(TAudioDeviceClient* client, TAudioDeviceClient*, m_clients) {
         client->process(nframes);
     }
+
+    push_live_output(nframes);
 
     if (m_driver->write(nframes) < 0) {
         qDebug("driver write failed!");
@@ -555,6 +561,10 @@ int AudioDevice::shutdown( )
     }
 
 
+    if (m_liveOutput || m_liveOutputBus) {
+        set_live_output_bus(nullptr);
+    }
+
     if (m_driver) {
         m_driver->stop();
 
@@ -667,6 +677,110 @@ void AudioDevice::send_to_master_out(AudioChannel* channel, nframes_t nframes)
     }
     Mixer::mix_buffers_no_gain(m_masterOutBus->get_buffer(0, nframes), channel->get_buffer(nframes), nframes);
     Mixer::mix_buffers_no_gain(m_masterOutBus->get_buffer(1, nframes), channel->get_buffer(nframes), nframes);
+}
+
+void AudioDevice::set_live_output_bus(AudioBus* bus)
+{
+    QMutexLocker locker(&m_liveOutputMutex);
+    m_liveOutputBus = bus;
+    if (!bus) {
+        disable_live_output_locked();
+    }
+}
+
+int AudioDevice::enable_live_output(const QString& uid)
+{
+    QMutexLocker locker(&m_liveOutputMutex);
+    if (!uid.isEmpty() && uid != "none") {
+        if (m_liveOutput && m_liveOutput->is_open() && m_liveOutputUid == uid) {
+            return 0;
+        }
+        if (m_liveOutput) {
+            // Switching to a different device: tear the old sink down first.
+            disable_live_output_locked();
+        }
+        m_liveOutput = create_live_output(get_driver_type());
+        if (!m_liveOutput || !m_liveOutput->is_supported()) {
+            delete m_liveOutput;
+            m_liveOutput = nullptr;
+            locker.unlock();
+            emit driverSetupMessage(tr("The Live Play Head output is not supported by this audio backend."),
+                                    DRIVER_SETUP_FAILURE);
+            return -1;
+        }
+        uint channels = m_liveOutputBus ? m_liveOutputBus->get_channel_count() : 2;
+        if (m_liveOutput->open(uid, m_rate, m_bufferSize, channels) < 0) {
+            delete m_liveOutput;
+            m_liveOutput = nullptr;
+            locker.unlock();
+            emit driverSetupMessage(tr("Could not open the Live Play Head output device '%1'.").arg(uid),
+                                    DRIVER_SETUP_FAILURE);
+            return -1;
+        }
+        m_liveOutputUid = uid;
+        const QString liveName = m_liveOutput->device_name();
+        locker.unlock();
+        emit driverSetupMessage(tr("Live Audio Output: %1").arg(liveName.isEmpty() ? uid : liveName),
+                                DRIVER_SETUP_SUCCESS);
+        return 0;
+    }
+    disable_live_output_locked();
+    return 0;
+}
+
+void AudioDevice::start_live_output()
+{
+    QMutexLocker locker(&m_liveOutputMutex);
+    if (m_liveOutput && m_liveOutput->is_open()) {
+        m_liveOutput->start();
+    }
+}
+
+void AudioDevice::stop_live_output()
+{
+    QMutexLocker locker(&m_liveOutputMutex);
+    if (m_liveOutput && m_liveOutput->is_open()) {
+        m_liveOutput->stop();
+    }
+}
+
+void AudioDevice::disable_live_output()
+{
+    QMutexLocker locker(&m_liveOutputMutex);
+    disable_live_output_locked();
+}
+
+void AudioDevice::disable_live_output_locked()
+{
+    if (m_liveOutput) {
+        m_liveOutput->stop();
+        m_liveOutput->close();
+        delete m_liveOutput;
+        m_liveOutput = nullptr;
+    }
+    m_liveOutputUid = QString();
+}
+
+void AudioDevice::push_live_output(nframes_t nframes)
+{
+    // This runs on the audio (CoreAudio IO) thread. It must NEVER block on the
+    // mutex: teardown holds it while calling AudioOutputUnitStop(), which waits
+    // for this very IO thread. If we blocked here, the two would deadlock
+    // (HAL lock held by the IO thread, our mutex held by the GUI thread).
+    if (!m_liveOutputMutex.tryLock()) {
+        return; // a switch/teardown is in progress; skip this cycle
+    }
+
+    if (m_liveOutput && m_liveOutput->is_open() && m_liveOutputBus) {
+        QList<AudioChannel*> channels;
+        uint count = m_liveOutputBus->get_channel_count();
+        for (uint i = 0; i < count; ++i) {
+            channels.append(m_liveOutputBus->get_channel(i));
+        }
+        m_liveOutput->process(nframes, channels, count);
+    }
+
+    m_liveOutputMutex.unlock();
 }
 
 AudioChannel* AudioDevice::get_capture_channel_by_name(const QString &name)

@@ -87,9 +87,38 @@ public slots:
 
 
 
-class WorkCursor : public ViewItem
+class LivePlayHead : public ViewItem
 {
         Q_OBJECT
+
+public:
+        LivePlayHead(SheetView* sv, TSession* session);
+        ~LivePlayHead();
+
+	void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget);
+	void set_bounding_rect(QRectF rect);
+
+private:
+        TSession*	m_session;
+        SheetView*	m_sv;
+        QTimer		m_playTimer;
+        QBrush		m_brushActive;
+        QPixmap		m_pixActive;
+
+        void create_pixmap();
+
+private slots:
+	void load_theme_data();
+	void play_start();
+	void play_stop();
+
+public slots:
+        void update_position();
+};
+
+
+class WorkCursor : public ViewItem
+{        Q_OBJECT
 
 public:
         WorkCursor(SheetView* sv, TSession* session);

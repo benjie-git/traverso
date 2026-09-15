@@ -47,8 +47,20 @@ typedef uint32_t     nframes_t;
 enum {
 	TransportStopped = 0,
 	TransportRolling = 1,
-  	TransportLooping = 2,
-  	TransportStarting = 3
+   	TransportLooping = 2,
+   	TransportStarting = 3
+};
+
+/**
+ * Identifies which of the two independent playheads an operation belongs to.
+ * The Cue playhead is the traditional editing/cueing transport; the Live
+ * playhead plays the same session from an independent position to a second
+ * output device.
+ */
+enum PlayheadId {
+	CuePlayhead = 0,
+	LivePlayhead = 1,
+	PlayheadCount = 2
 };
 
 // Universal samplerate for the frequences 22050, 32000, 44100, 88200, 96000 and 192000 Hz
@@ -310,6 +322,8 @@ struct AudioDeviceSetup {
                 playback = capture = true;
                 cardDevice = "";
                 ditherShape = "None";
+                liveOutputDevice = "";
+                liveEnabled = false;
         }
 
         QList<BusConfig>        busConfigs;
@@ -322,6 +336,8 @@ struct AudioDeviceSetup {
         bool            playback;
         QString         cardDevice;
         QString         ditherShape;
+        QString         liveOutputDevice;
+        bool            liveEnabled;
 };
 
 #define MouseScrollHorizontalLeft -1

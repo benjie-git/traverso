@@ -88,11 +88,14 @@ private:
 	PaDriverPage* m_portaudiodrivers;
 	QList<int>	periodBufferSizesList;
         QStringList     m_driverSetupMessages;
-	
+
+	void update_live_playhead_widgets();
+
 private slots:
 	void update_latency_combobox();
         void rate_combobox_index_changed(int index);
         void driver_combobox_index_changed(int index);
+        void live_playhead_toggled(bool checked);
 #if defined (PORTAUDIO_SUPPORT)
         void portaudio_host_api_combobox_index_changed(int);
 #endif

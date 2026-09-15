@@ -30,6 +30,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA.
 #include <QByteArray>
 #include <QTimer>
 #include <QVariant>
+#include <QMutex>
 
 
 #include "RingBufferNPT.h"
@@ -41,6 +42,7 @@ class TAudioDriver;
 class TAudioDeviceClient;
 class AudioChannel;
 class AudioBus;
+class LiveOutput;
 #if defined (JACK_SUPPORT)
 class JackDriver;
 #endif
@@ -88,6 +90,12 @@ public:
 
         void set_master_out_bus(AudioBus* bus);
         void send_to_master_out(AudioChannel* channel, nframes_t nframes);
+
+        void set_live_output_bus(AudioBus* bus);
+        int enable_live_output(const QString& uid);
+        void disable_live_output();
+        void start_live_output();
+        void stop_live_output();
 
 	QStringList get_capture_channel_names() const;
 	QStringList get_playback_channel_names() const;
@@ -151,6 +159,12 @@ private:
         AudioDeviceSetup        m_setup;
         AudioDeviceSetup        m_fallBackSetup;
         AudioBus*               m_masterOutBus;
+        LiveOutput*             m_liveOutput;
+        AudioBus*               m_liveOutputBus;
+        QString                 m_liveOutputUid;
+        // Guards m_liveOutput/m_liveOutputBus: the live sink is created and
+        // destroyed from the GUI thread while the audio thread pushes into it.
+        QMutex                  m_liveOutputMutex;
         TAudioDriver* 		m_driver;
         AudioDeviceThread* 	m_audioThread;
         APILinkedList		m_clients;
@@ -178,8 +192,9 @@ private:
 	QHash<QString, QVariant> m_driverProperties;
 
 	int run_one_cycle(nframes_t nframes, float delayed_usecs);
-	int create_driver(const QString& driverType, bool capture, bool playback, const QString& cardDevice);
-	int transport_control(transport_state_t state);
+	void push_live_output(nframes_t nframes);
+	void disable_live_output_locked();
+	int create_driver(const QString& driverType, bool capture, bool playback, const QString& cardDevice);	int transport_control(transport_state_t state);
 
     void post_run_cycle();
 

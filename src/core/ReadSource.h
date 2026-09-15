@@ -23,6 +23,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA.
 #define READSOURCE_H
 
 #include "AudioSource.h"
+#include "defines.h"
 
 #include <QDomDocument>
 
@@ -69,6 +70,8 @@ public :
 	
 	void set_audio_clip(AudioClip* clip);
 	void set_diskio(DiskIO* diskio);
+	void set_playhead(PlayheadId playhead) {m_playhead = playhead;}
+	PlayheadId get_playhead() const {return m_playhead;}
 	nframes_t get_nframes() const;
     uint get_file_rate() const;
     uint get_output_rate() const {return m_outputRate;}
@@ -86,6 +89,7 @@ private:
     ResampleAudioReader*	m_audioReader{};
     AudioClip* 		m_clip{};
     DiskIO*			m_diskio{};
+    PlayheadId		m_playhead{CuePlayhead};
     int			m_refcount{};
     int			m_error{};
 	bool			m_silent;

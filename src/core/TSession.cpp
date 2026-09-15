@@ -77,6 +77,9 @@ void TSession::set_parent_session(TSession *parentSession)
 			disconnect(m_parentSession, SIGNAL(transportStarted()), this, SIGNAL(transportStarted()));
 			disconnect(m_parentSession, SIGNAL(transportStopped()), this, SIGNAL(transportStopped()));
 			disconnect(m_parentSession, SIGNAL(transportPosSet()), this, SIGNAL(transportPosSet()));
+			disconnect(m_parentSession, SIGNAL(liveTransportStarted()), this, SIGNAL(liveTransportStarted()));
+			disconnect(m_parentSession, SIGNAL(liveTransportStopped()), this, SIGNAL(liveTransportStopped()));
+			disconnect(m_parentSession, SIGNAL(liveTransportPosSet()), this, SIGNAL(liveTransportPosSet()));
 			disconnect(m_parentSession, SIGNAL(workingPosChanged()), this, SIGNAL(workingPosChanged()));
 			disconnect(m_parentSession, SIGNAL(hzoomChanged()), this, SIGNAL(hzoomChanged()));
 			disconnect(m_parentSession, SIGNAL(horizontalScrollBarValueChanged()), this, SIGNAL(horizontalScrollBarValueChanged()));
@@ -84,6 +87,9 @@ void TSession::set_parent_session(TSession *parentSession)
 		connect(parentSession, SIGNAL(transportStarted()), this, SIGNAL(transportStarted()));
 		connect(parentSession, SIGNAL(transportStopped()), this, SIGNAL(transportStopped()));
 		connect(parentSession, SIGNAL(transportPosSet()), this, SIGNAL(transportPosSet()));
+		connect(parentSession, SIGNAL(liveTransportStarted()), this, SIGNAL(liveTransportStarted()));
+		connect(parentSession, SIGNAL(liveTransportStopped()), this, SIGNAL(liveTransportStopped()));
+		connect(parentSession, SIGNAL(liveTransportPosSet()), this, SIGNAL(liveTransportPosSet()));
 		connect(parentSession, SIGNAL(workingPosChanged()), this, SIGNAL(workingPosChanged()));
 		connect(parentSession, SIGNAL(hzoomChanged()), this, SIGNAL(hzoomChanged()));
 		connect(parentSession, SIGNAL(horizontalScrollBarValueChanged()), this, SIGNAL(horizontalScrollBarValueChanged()));
@@ -252,6 +258,33 @@ TimeRef TSession::get_transport_location() const
 	return m_transportLocation;
 }
 
+TimeRef TSession::get_live_location() const
+{
+	if (m_parentSession) {
+		return m_parentSession->get_live_location();
+	}
+
+	return TimeRef(m_liveFramePosition.load());
+}
+
+bool TSession::is_live_transport_rolling() const
+{
+	if (m_parentSession) {
+		return m_parentSession->is_live_transport_rolling();
+	}
+
+	return m_liveTransport.load();
+}
+
+TimeRef TSession::get_render_location(PlayheadId playhead) const
+{
+	if (playhead == LivePlayhead) {
+		return get_live_location();
+	}
+
+	return get_transport_location();
+}
+
 qreal TSession::get_hzoom() const
 {
 	if (m_parentSession) {
@@ -340,6 +373,34 @@ void TSession::set_transport_pos(TimeRef location)
 {
 	if (m_parentSession) {
 		m_parentSession->set_transport_pos(location);
+	}
+}
+
+void TSession::set_live_transport_pos(TimeRef location)
+{
+	if (location < TimeRef()) {
+		return;
+	}
+
+	if (m_parentSession) {
+		m_parentSession->set_live_transport_pos(location);
+		return;
+	}
+
+	m_liveFramePosition.store(location.universal_frame());
+}
+
+void TSession::start_live_transport()
+{
+	if (m_parentSession) {
+		m_parentSession->start_live_transport();
+	}
+}
+
+void TSession::stop_live_transport()
+{
+	if (m_parentSession) {
+		m_parentSession->stop_live_transport();
 	}
 }
 

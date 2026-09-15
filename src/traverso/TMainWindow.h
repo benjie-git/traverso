@@ -61,6 +61,7 @@ class SheetWidget;
 class CorrelationMeterWidget;
 class SpectralMeterWidget;
 class TransportConsoleWidget;
+class LivePlayheadToolbar;
 class SettingsDialog;
 class ProjectManagerDialog;
 class OpenProjectDialog;
@@ -141,6 +142,7 @@ private:
         QDockWidget*		m_correlationMeterDW;
         CorrelationMeterWidget*	m_correlationMeter;
         TransportConsoleWidget*	m_transportConsole;
+        LivePlayheadToolbar*	m_livePlayhead;
         QDockWidget*		m_spectralMeterDW;
         SpectralMeterWidget*	m_spectralMeter;
 	SettingsDialog*		m_settingsdialog;
@@ -168,6 +170,7 @@ private:
         QToolBar*               m_sessionTabsToolbar;
 	QAction*		m_snapAction{};
 	QAction*		m_followAction{};
+	QAction*		m_livePlayheadAction{};
 	QMenu*			m_encodingMenu{};
 	QMenu*			m_resampleQualityMenu{};
         QList<QAction*>         m_projectMenuToolbarActions;
@@ -253,6 +256,8 @@ private slots:
 	void follow_state_changed(bool state);
 	void update_follow_state();
 	void update_temp_follow_state(bool state);
+	void update_live_playhead_state();
+	void live_playhead_visibility_changed(bool state);
         void track_finder_model_index_changed(const QModelIndex &index);
         void track_finder_return_pressed();
 };

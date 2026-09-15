@@ -87,6 +87,8 @@ public:
 	
 
 	int process(nframes_t nframes);
+	int render_pass(PlayheadId playhead, nframes_t nframes);
+	TimeRef get_render_location(PlayheadId playhead) const;
 	// jackd only feature
 	int transport_control(transport_state_t state);
 	int process_export(nframes_t nframes);
@@ -173,6 +175,8 @@ public slots :
 	TCommand* set_recordable();
 	TCommand* set_recordable_and_start_transport();
 	TCommand* toggle_snap();
+	void start_live_transport();
+	void stop_live_transport();
 
 signals:
 	void seekStart();
@@ -188,6 +192,8 @@ private slots:
 	void prepare_recording();
 	void clip_finished_recording(AudioClip* clip);
 	void config_changed();
+	void update_disk_io_state();
+	void update_live_sources_active_state();
 };
 
 #endif

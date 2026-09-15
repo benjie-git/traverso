@@ -155,6 +155,7 @@
         <color alpha="100" red="40" blue="255" name="AudioClip:clipinfobackground" green="200"/>
         <color alpha="255" red="255" blue="255" name="VUMeter:background:widget" green="255"/>
         <color alpha="180" red="255" blue="0" name="Playhead:active" green="0"/>
+        <color alpha="180" red="0" blue="0" name="LivePlayhead:active" green="255"/>
     </colors>
     <gradients>
         <gradient name="CorrelationMeter:foreground">

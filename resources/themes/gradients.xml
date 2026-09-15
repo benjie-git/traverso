@@ -153,6 +153,7 @@
         <color alpha="200" red="240" blue="218" name="AudioClip:clipinfobackground" green="190"/>
         <color alpha="255" red="255" blue="255" name="VUMeter:background:widget" green="255"/>
         <color alpha="180" red="255" blue="0" name="Playhead:active" green="0"/>
+        <color alpha="180" red="0" blue="0" name="LivePlayhead:active" green="255"/>
     </colors>
     <gradients>
         <gradient name="AudioClip:wavemacroview:brush:hover">

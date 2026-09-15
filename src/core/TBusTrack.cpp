@@ -104,15 +104,18 @@ void TBusTrack::set_name( const QString & name )
         Track::set_name(name);
 }
 
-int TBusTrack::process(nframes_t nframes)
+int TBusTrack::process(nframes_t nframes, PlayheadId playhead)
 {
     if (m_isMuted || (get_gain() == 0.0f) ) {
         return 0;
     }
 
-    process_pre_sends(nframes);
+    process_pre_sends(nframes, playhead);
 
-    m_pluginChain->process_pre_fader(m_processBus, nframes);
+    // The Live pass is dry: plugin chains only run for the Cue playhead.
+    if (playhead == CuePlayhead) {
+        m_pluginChain->process_pre_fader(m_processBus, nframes);
+    }
 
     float panFactor;
 
@@ -133,16 +136,20 @@ int TBusTrack::process(nframes_t nframes)
     for(uint chan=0; chan<m_processBus->get_channel_count(); chan++) {
         mixdown[chan] = m_processBus->get_buffer(chan, nframes);
     }
-    TimeRef location = m_session->get_transport_location();
+    TimeRef location = m_session->get_render_location(playhead);
     TimeRef endlocation = location + TimeRef(nframes, audiodevice().get_sample_rate());
 
     m_fader->process_gain(mixdown, location, endlocation, nframes, m_processBus->get_channel_count());
 
-    m_pluginChain->process_post_fader(m_processBus, nframes);
+    if (playhead == CuePlayhead) {
+        m_pluginChain->process_post_fader(m_processBus, nframes);
+    }
 
-    m_processBus->process_monitoring(m_vumonitors);
+    if (playhead == CuePlayhead) {
+        m_processBus->process_monitoring(m_vumonitors);
+    }
 
-    process_post_sends(nframes);
+    process_post_sends(nframes, playhead);
 
     m_processBus->silence_buffers(nframes);
 

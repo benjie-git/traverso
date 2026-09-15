@@ -64,7 +64,7 @@ public :
         int arm();
         bool armed();
         int disarm();
-        int process(nframes_t nframes);
+        int process(nframes_t nframes, PlayheadId playhead = CuePlayhead);
 
 protected:
         void add_input_bus(AudioBus* bus);

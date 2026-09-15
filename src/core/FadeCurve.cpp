@@ -167,7 +167,7 @@ int FadeCurve::set_state( const QDomNode & node )
 }
 
 
-void FadeCurve::process(AudioBus *bus, nframes_t nframes)
+void FadeCurve::process(AudioBus *bus, nframes_t nframes, PlayheadId playhead)
 {
 
         if (is_bypassed()) {
@@ -184,7 +184,7 @@ void FadeCurve::process(AudioBus *bus, nframes_t nframes)
         TimeRef trackStartLocation, trackEndLocation, mix_pos;
         TimeRef fadeRange = TimeRef(get_range());
 
-        TimeRef transportLocation = m_session->get_transport_location();
+        TimeRef transportLocation = m_session->get_render_location(playhead);
         TimeRef upperRange = transportLocation + TimeRef(framesToProcess, outputRate);
 
 	

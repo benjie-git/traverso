@@ -31,6 +31,7 @@ set(TRAVERSO_GUI_SOURCES
     widgets/ResourcesWidget.cpp
     widgets/SpectralMeterWidget.cpp
     widgets/TransportConsoleWidget.cpp
+    widgets/LivePlayheadToolbar.cpp
     widgets/VUMeter.cpp
     widgets/WelcomeWidget.cpp
     widgets/TSessionTabWidget.cpp

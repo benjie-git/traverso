@@ -109,6 +109,7 @@ private:
 
 public slots:
 	void seek();
+	void seek_live();
 	void start_io();
         void stop_io();
 

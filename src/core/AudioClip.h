@@ -60,7 +60,7 @@ public:
 	
 	void set_audio_source(ReadSource* source);
     int init_recording();
-	int process(nframes_t nframes);
+	int process(nframes_t nframes, PlayheadId playhead = CuePlayhead);
 	
 	void set_track_start_location(const TimeRef& location);
 	void set_fade_in(double range);
@@ -113,9 +113,13 @@ public:
 
 
 private:
+	void register_live_read_source();
+
     Sheet*          m_sheet;
     AudioTrack* 	m_track;
     ReadSource*		m_readSource;
+    ReadSource*		m_liveReadSource;
+    bool            m_liveSourceRegistered;
     WriteSource*	m_writer;
     APILinkedList	m_fades;
 	Peak* 			m_peak;
