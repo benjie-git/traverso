@@ -52,6 +52,7 @@ private:
 		MoveTrackCommand,
 		MoveClipOrEdgeCommand,
 		SplitClipCommand,
+		AudioClipDualTrimCommand,
 		CropClipCommand,
 		ArmTracksCommand,
 		ZoomCommand,

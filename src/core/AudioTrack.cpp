@@ -423,6 +423,37 @@ AudioClip* AudioTrack::get_clip_before(const TimeRef& pos)
 }
 
 
+AudioClip* AudioTrack::get_clip_at_location(const TimeRef& location) const
+{
+    for(AudioClip* clip : m_audioClips) {
+        if (clip->get_track_start_location() < location && clip->get_track_end_location() > location) {
+            return clip;
+        }
+    }
+    return nullptr;
+}
+
+AudioClip* AudioTrack::get_audio_clip_after(AudioClip* audioClip) const
+{
+    auto index = m_audioClips.indexOf(audioClip);
+    if (index >= 0 && (index + 1) < m_audioClips.size()) {
+        return m_audioClips.at(index + 1);
+    }
+
+    return nullptr;
+}
+
+AudioClip* AudioTrack::get_audio_clip_before(AudioClip* audioClip) const
+{
+    auto index = m_audioClips.indexOf(audioClip);
+    if ((index - 1) >= 0) {
+        return m_audioClips.at(index - 1);
+    }
+
+    return nullptr;
+}
+
+
 TCommand* AudioTrack::remove_clip(AudioClip* clip, bool historable, bool ismove)
 {
         PENTER;

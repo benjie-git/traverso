@@ -82,6 +82,7 @@ TraversoCommands::TraversoCommands()
     tShortCutManager().add_meta_object(&CropClip::staticMetaObject);
     tShortCutManager().add_meta_object(&FadeRange::staticMetaObject);
     tShortCutManager().add_meta_object(&SplitClip::staticMetaObject);
+    tShortCutManager().add_meta_object(&AudioClipDualTrim::staticMetaObject);
     tShortCutManager().add_meta_object(&TPanKnobView::staticMetaObject);
     tShortCutManager().add_meta_object(&TGainKnobView::staticMetaObject);
     tShortCutManager().add_meta_object(&TMoveCommand::staticMetaObject);
@@ -103,6 +104,7 @@ TraversoCommands::TraversoCommands()
     tShortCutManager().add_translation("PlayHeadMove", tr("Move Play Head"));
     tShortCutManager().add_translation("Shuttle", tr("Shuttle"));
     tShortCutManager().add_translation("SplitClip", tr("Split Clip"));
+    tShortCutManager().add_translation("AudioClipDualTrim", tr("Audio Clip Dual Trim"));
     tShortCutManager().add_translation("TrackPan", tr("Track Pan"));
     tShortCutManager().add_translation("TPanKnob", tr("Pan Knob"));
     tShortCutManager().add_translation("TPanKnobView", tr("Pan Knob"));
@@ -318,6 +320,7 @@ TraversoCommands::TraversoCommands()
 
     create_and_add_function("AudioClipView", tr("Copy"), "CopyClip", MoveClipCommand, QStringList() << "copy", "", true, true);
     create_and_add_function("AudioClipView", tr("Split"), "SplitClip", SplitClipCommand, QStringList(), "", true);
+    create_and_add_function("AudioClipView", tr("Dual Trim"), "AudioClipDualTrim", AudioClipDualTrimCommand, QStringList(), "", true);
     create_and_add_function("AudioClipView", tr("Magnetic Cut"), "CropClip", CropClipCommand);
     create_and_add_function("AudioClipView", tr("Move"), "MoveClip", MoveClipCommand, QStringList() << "move", "MoveBase", true, true);
     create_and_add_function("AudioClipView", tr("Move Edge"), "MoveClipEdge", MoveEdgeCommand, QStringList() << "false", "", true);
@@ -677,6 +680,17 @@ TCommand* TraversoCommands::create(QObject* obj, const QString& commandName, QVa
             return 0;
         }
         return new SplitClip(view);
+    }
+
+    case AudioClipDualTrimCommand:
+    {
+        AudioClipView* view = qobject_cast<AudioClipView*>(obj);
+        if (!view) {
+            PERROR("TraversoCommands: Supplied QObject was not an AudioClipView! "
+                   "AudioClipDualTrimCommand needs an AudioClipView as argument");
+            return 0;
+        }
+        return new AudioClipDualTrim(view->get_sheetview(), view->get_clip()->get_track());
     }
 
     case CropClipCommand:

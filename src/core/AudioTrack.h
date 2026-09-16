@@ -49,6 +49,9 @@ public :
         TCommand* remove_clip(AudioClip* clip, bool historable=true, bool ismove=false);
         AudioClip* get_clip_after(const TimeRef& pos);
         AudioClip* get_clip_before(const TimeRef& pos);
+        AudioClip* get_clip_at_location(const TimeRef& location) const;
+        AudioClip* get_audio_clip_before(AudioClip* clip) const;
+        AudioClip* get_audio_clip_after(AudioClip* clip) const;
         Sheet* get_sheet() const {return m_sheet;}
         QDomNode get_state(QDomDocument doc, bool istemplate=false);
         QList<AudioClip*> get_audioclips() const {return  m_audioClips;}

@@ -2,6 +2,7 @@ add_subdirectory(plugins)
 
 set(TRAVERSO_COMMANDS_SOURCES
     ArrowKeyBrowser.cpp
+    AudioClipDualTrim.cpp
     AudioClipExternalProcessing.cpp
     AddRemove.cpp
     ClipSelection.cpp

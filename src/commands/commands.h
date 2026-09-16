@@ -1,4 +1,5 @@
 #include "SplitClip.h"
+#include "AudioClipDualTrim.h"
 #include "MoveClip.h"
 #include "MoveCurveNode.h"
 #include "MoveMarker.h"
