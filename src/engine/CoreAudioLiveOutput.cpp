@@ -84,58 +84,6 @@ AudioDeviceID default_output_device()
 	return device;
 }
 
-// A non-default CoreAudio device carries its own volume/mute state, which the
-// HAL output unit applies to our stream. Such a device can easily be muted or
-// left at zero, which would silence the live output. Make sure it is audible
-// before we start pushing audio into it (leave a non-zero user setting alone).
-void ensure_device_audible(AudioDeviceID device, uint channels)
-{
-	AudioObjectPropertyAddress muteAddress{kAudioDevicePropertyMute,
-					      kAudioObjectPropertyScopeOutput,
-					      kAudioObjectPropertyElementMain};
-	if (AudioObjectHasProperty(device, &muteAddress)) {
-		UInt32 mute = 0;
-		AudioObjectSetPropertyData(device, &muteAddress, 0, nullptr, sizeof(mute), &mute);
-	} else {
-		for (UInt32 ch = 1; ch <= channels; ++ch) {
-			AudioObjectPropertyAddress address{kAudioDevicePropertyMute,
-							  kAudioObjectPropertyScopeOutput,
-							  ch};
-			if (AudioObjectHasProperty(device, &address)) {
-				UInt32 mute = 0;
-				AudioObjectSetPropertyData(device, &address, 0, nullptr, sizeof(mute), &mute);
-			}
-		}
-	}
-
-	AudioObjectPropertyAddress volumeAddress{kAudioDevicePropertyVolumeScalar,
-						 kAudioObjectPropertyScopeOutput,
-						 kAudioObjectPropertyElementMain};
-	if (AudioObjectHasProperty(device, &volumeAddress)) {
-		Float32 volume = 0.0f;
-		UInt32 size = sizeof(volume);
-		if (AudioObjectGetPropertyData(device, &volumeAddress, 0, nullptr, &size, &volume) != noErr || volume <= 0.0f) {
-			volume = 1.0f;
-			AudioObjectSetPropertyData(device, &volumeAddress, 0, nullptr, sizeof(volume), &volume);
-		}
-	} else {
-		for (UInt32 ch = 1; ch <= channels; ++ch) {
-			AudioObjectPropertyAddress address{kAudioDevicePropertyVolumeScalar,
-							  kAudioObjectPropertyScopeOutput,
-							  ch};
-			if (!AudioObjectHasProperty(device, &address)) {
-				continue;
-			}
-			Float32 volume = 0.0f;
-			UInt32 size = sizeof(volume);
-			if (AudioObjectGetPropertyData(device, &address, 0, nullptr, &size, &volume) != noErr || volume <= 0.0f) {
-				volume = 1.0f;
-				AudioObjectSetPropertyData(device, &address, 0, nullptr, sizeof(volume), &volume);
-			}
-		}
-	}
-}
-
 AudioStreamBasicDescription client_format(double sampleRate, UInt32 channels)
 {
 	AudioStreamBasicDescription format{};
@@ -203,10 +151,6 @@ int CoreAudioLiveOutput::open(const QString& uid, uint rate, nframes_t bufferSiz
 
 	m_deviceId = deviceId;
 	m_deviceName = device_display_name(m_deviceId);
-
-	// The device's own volume/mute applies to our HAL unit, so make sure
-	// a non-default device is not muted or sitting at zero.
-	ensure_device_audible(m_deviceId, channels);
 
 	AudioComponentDescription description{kAudioUnitType_Output,
 					      kAudioUnitSubType_HALOutput,
