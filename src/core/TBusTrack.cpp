@@ -112,8 +112,11 @@ int TBusTrack::process(nframes_t nframes, PlayheadId playhead)
 
     process_pre_sends(nframes, playhead);
 
-    // The Live pass is dry: plugin chains only run for the Cue playhead.
-    if (playhead == CuePlayhead) {
+    // Plugin chains are skipped entirely while the Live transport is rolling,
+    // for both playheads. 
+    const bool processPlugins = (playhead == CuePlayhead) && !m_session->is_live_transport_rolling();
+
+    if (processPlugins) {
         m_pluginChain->process_pre_fader(m_processBus, nframes);
     }
 
@@ -141,7 +144,7 @@ int TBusTrack::process(nframes_t nframes, PlayheadId playhead)
 
     m_fader->process_gain(mixdown, location, endlocation, nframes, m_processBus->get_channel_count());
 
-    if (playhead == CuePlayhead) {
+    if (processPlugins) {
         m_pluginChain->process_post_fader(m_processBus, nframes);
     }
 

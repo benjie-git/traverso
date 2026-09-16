@@ -298,8 +298,11 @@ int AudioTrack::process( nframes_t nframes, PlayheadId playhead )
     process_pre_sends(nframes, playhead);
 
 
-    // Then apply the pre fader plugins; the Live pass is dry (no plugins).
-    if (playhead == CuePlayhead) {
+    // Plugin chains are skipped entirely while the Live transport is rolling,
+    // for both playheads.
+    const bool processPlugins = (playhead == CuePlayhead) && !m_session->is_live_transport_rolling();
+
+    if (processPlugins) {
         m_pluginChain->process_pre_fader(m_processBus, nframes);
     }
 
@@ -330,8 +333,8 @@ int AudioTrack::process( nframes_t nframes, PlayheadId playhead )
     m_fader->process_gain(mixdown, location, endlocation, nframes, m_processBus->get_channel_count());
 
 
-    // Post fader plugins now (Cue pass only)
-    if (playhead == CuePlayhead) {
+    // Post fader plugins now (Cue pass only, and only while Live is stopped)
+    if (processPlugins) {
         processResult |= m_pluginChain->process_post_fader(m_processBus, nframes);
     }
 
