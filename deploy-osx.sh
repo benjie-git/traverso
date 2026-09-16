@@ -8,6 +8,11 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 
+cmake --build . --target clean || echo "Not already built"
+rm -rf CMakeFiles CMakeCache.txt
+cmake .
+cmake --build . --target traverso --parallel
+
 # Find traverso binary
 BIN_PATH=""
 if [ -n "$1" ] && [ -f "$1" ]; then
@@ -102,4 +107,6 @@ codesign --force --deep -s "$SIGN_IDENTITY" ./Traverso.app
 echo "Verifying code signature..."
 codesign -vvv --deep --strict ./Traverso.app
 
-echo "Successfully built and signed Traverso.app"
+cmake --build . --target clean && rm -rf CMakeFiles CMakeCache.txt
+
+echo "Successfully built and signed Traverso.app, and cleaned up."
