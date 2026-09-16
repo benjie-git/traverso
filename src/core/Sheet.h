@@ -24,6 +24,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA.
 
 #include "TSession.h"
 #include <QDomNode>
+#include <QSet>
 #include <QTimer>
 #include "defines.h"
 #include "APILinkedList.h"
@@ -148,6 +149,14 @@ private:
         bool		m_recording{};
     bool		m_prepareRecording{};
     bool		m_readyToRecord{};
+
+	// Clips locked by the currently running Live transport. They are tracked
+	// by id so a clip deleted mid-run cannot leave a dangling pointer, and
+	// they are unlocked again when the Live transport is stopped. Clips that
+	// already were locked (by the user) are never added here, so stopping the
+	// Live transport cannot silently undo a manual lock.
+	QSet<qint64>	m_liveAutoLockedClipIds;
+	QSet<qint64>	m_liveHandledClipIds;
 	
 	void init();
 
@@ -177,6 +186,7 @@ public slots :
 	TCommand* toggle_snap();
 	void start_live_transport();
 	void stop_live_transport();
+	void lock_clips_reached_by_live();
 
 signals:
 	void seekStart();
@@ -194,6 +204,7 @@ private slots:
 	void config_changed();
 	void update_disk_io_state();
 	void update_live_sources_active_state();
+	void unlock_live_locked_clips();
 };
 
 #endif

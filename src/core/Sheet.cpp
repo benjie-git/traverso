@@ -1032,6 +1032,9 @@ void Sheet::start_live_transport()
 	// start it from wherever the cue playhead currently is.
 	set_live_transport_pos(m_transportLocation);
 
+	m_liveAutoLockedClipIds.clear();
+	m_liveHandledClipIds.clear();
+
 	m_liveTransport.store(true);
 	emit liveTransportStarted();
 }
@@ -1045,6 +1048,10 @@ void Sheet::stop_live_transport()
 
 	m_liveTransport.store(false);
 	emit liveTransportStopped();
+
+	// Release the clips that this Live run locked. Must happen after the
+	// transport is flagged stopped so no further locking can race it.
+	unlock_live_locked_clips();
 }
 
 void Sheet::update_disk_io_state()
@@ -1068,6 +1075,64 @@ void Sheet::update_live_sources_active_state()
 			clip->track_audible_state_changed();
 		}
 	}
+}
+
+// Called while the Live transport is rolling (from the GUI thread via the
+// LivePlayHead position timer). Locks every clip the Live playhead has
+// reached, so a clip that is (about to be) audible on the Live output cannot
+// be perturbed. Only clips that were not already locked are recorded as
+// auto-locked, so a user's manual lock is never undone when Live stops.
+// Manual unlocks during a Live run are respected: once a clip has been
+// considered it is remembered in m_liveHandledClipIds and is not re-locked
+// until the next Live transport start.
+void Sheet::lock_clips_reached_by_live()
+{
+	TimeRef liveLocation = get_live_location();
+
+	for (AudioTrack* track : m_audioTracks) {
+		for (AudioClip* clip : track->get_audioclips()) {
+			qint64 id = clip->get_id();
+
+			if (m_liveHandledClipIds.contains(id)) {
+				continue;
+			}
+
+			if (clip->is_moving()) {
+				// Still being dragged across the Live playhead: it has not
+				// started playing out yet, so don't lock it. It will be
+				// considered again on a later tick, once released.
+				continue;
+			}
+
+			if (clip->is_locked()) {
+				// Already locked (probably by the user); leave it alone.
+				m_liveHandledClipIds.insert(id);
+				continue;
+			}
+
+			if (liveLocation >= clip->get_track_start_location()) {
+				clip->set_locked(true);
+				m_liveAutoLockedClipIds.insert(id);
+				m_liveHandledClipIds.insert(id);
+			}
+		}
+	}
+}
+
+// Called when the Live transport stops: undo exactly the locks this Live run
+// applied, leaving manual locks in place.
+void Sheet::unlock_live_locked_clips()
+{
+	for (AudioTrack* track : m_audioTracks) {
+		for (AudioClip* clip : track->get_audioclips()) {
+			if (m_liveAutoLockedClipIds.contains(clip->get_id()) && clip->is_locked()) {
+				clip->set_locked(false);
+			}
+		}
+	}
+
+	m_liveAutoLockedClipIds.clear();
+	m_liveHandledClipIds.clear();
 }
 
 // Function can be called either from the GUI or RT thread.

@@ -163,6 +163,7 @@
         <color alpha="255" red="255" blue="255" name="VUMeter:background:widget" green="255"/>
         <color alpha="180" red="255" blue="0" name="Playhead:active" green="0"/>
         <color alpha="180" red="0" blue="0" name="LivePlayhead:active" green="255"/>
+        <color alpha="60" red="128" blue="128" name="LivePlayhead:playedbackground" green="128"/>
         <color alpha="255" red="207" blue="255" name="TrackPanel:header:background" green="207"/>
         <color name="TrackPanel:Mled"  red="255" green="250" blue="0"  alpha="255" />
         <color name="Track:laneseperator"  red="221" green="221" blue="221"  alpha="255" />

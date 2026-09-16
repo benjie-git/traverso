@@ -25,7 +25,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA.
 #include "SheetView.h"
 #include "AudioTrackView.h"
 #include "ViewItem.h"
+#include "Themer.h"
 #include <libtraversocore.h>
+#include <TSession.h>
 #include <Import.h>
 #include <CommandGroup.h>
 #include "RemoveClip.h"
@@ -35,6 +37,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA.
 
 #include <QScrollBar>
 #include <QSet>
+#include <QPainter>
 #include <QPaintEngine>
 #include <QUrl>
 #include <QFileInfo>
@@ -66,6 +69,27 @@ void ClipsViewPort::resizeEvent( QResizeEvent * e )
 void ClipsViewPort::paintEvent(QPaintEvent * e)
 {
 	QGraphicsView::paintEvent(e);
+}
+
+
+void ClipsViewPort::drawForeground(QPainter* painter, const QRectF& rect)
+{
+	TSession* session = m_sw->get_session();
+	if (!session || !session->is_live_transport_rolling()) {
+		return;
+	}
+
+	// Everything the Live playhead has already passed has been sent to the
+	// live speakers; veil it so the user can see what is "gone".
+	qreal liveX = session->get_live_location() / m_sw->get_sheetview()->timeref_scalefactor;
+	if (liveX <= rect.left()) {
+		return;
+	}
+
+	painter->save();
+	painter->fillRect(QRectF(rect.left(), rect.top(), liveX - rect.left(), rect.height()),
+			  themer()->get_color("LivePlayhead:playedbackground"));
+	painter->restore();
 }
 
 

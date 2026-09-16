@@ -348,17 +348,54 @@ void LivePlayHead::play_start()
 	update_position();
 	show();
 	m_playTimer.start(20);
+
+	// Paint the whole already-played region at once.
+	if (ClipsViewPort* vp = m_sv->get_clips_viewport()) {
+		vp->viewport()->update();
+	}
 }
 
 void LivePlayHead::play_stop()
 {
 	m_playTimer.stop();
 	hide();
+
+	// Clear the already-played veil immediately.
+	if (ClipsViewPort* vp = m_sv->get_clips_viewport()) {
+		vp->viewport()->update();
+	}
 }
 
 void LivePlayHead::update_position()
 {
+	int oldX = int(pos().x());
 	setPos(m_session->get_live_location() / m_sv->timeref_scalefactor, 1);
+	int newX = int(pos().x());
+
+	// The Live playhead advances the boundary of the veiled "already played"
+	// region. Repaint the strip between the old and new position so the newly
+	// covered background is veiled even if the head moved more than its own
+	// width in one tick.
+	if (newX != oldX) {
+		ClipsViewPort* vp = m_sv->get_clips_viewport();
+		if (vp) {
+			QPoint p0 = vp->mapFromScene(QPointF(oldX, 0));
+			QPoint p1 = vp->mapFromScene(QPointF(newX, 0));
+			int left = qMin(p0.x(), p1.x());
+			int right = qMax(p0.x(), p1.x());
+			vp->viewport()->update(QRect(left - 2, 0, right - left + 4, vp->viewport()->height()));
+		}
+	}
+
+	// Worksheet views use a plain child TSession, so walk up to the owning
+	// Sheet and let it lock the clips the Live playhead has reached.
+	TSession* session = m_session;
+	while (session && !qobject_cast<Sheet*>(session)) {
+		session = session->get_parent_session();
+	}
+	if (Sheet* sheet = qobject_cast<Sheet*>(session)) {
+		sheet->lock_clips_reached_by_live();
+	}
 }
 
 void LivePlayHead::set_bounding_rect( QRectF rect )

@@ -548,6 +548,9 @@ void Themer::load_defaults()
         c = p.color(QPalette::Highlight);
         c.setAlpha(50);
         m_defaultColors.insert("Fade:bypassed", c);
+        c = QColor(Qt::gray);
+        c.setAlpha(60);
+        m_defaultColors.insert("LivePlayhead:playedbackground", c);
         m_defaultColors.insert("CorrelationMeter:margin", p.color(QPalette::Window));
         m_defaultColors.insert("CorrelationMeter:background", p.color(QPalette::Base));
         m_defaultColors.insert("CorrelationMeter:grid", p.color(QPalette::Dark));

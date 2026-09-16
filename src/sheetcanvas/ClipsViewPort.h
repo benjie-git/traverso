@@ -43,6 +43,7 @@ public:
 protected:
     void resizeEvent(QResizeEvent* e) override;
 	void paintEvent( QPaintEvent* e) override;
+	void drawForeground(QPainter* painter, const QRectF& rect) override;
 	void dragEnterEvent(QDragEnterEvent *event) override;
 	void dropEvent(QDropEvent *event) override;
     void dragMoveEvent(QDragMoveEvent *event) override;

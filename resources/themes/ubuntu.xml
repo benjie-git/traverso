@@ -154,6 +154,7 @@
         <color alpha="255" red="239" blue="231" name="VUMeter:background:widget" green="236"/>
         <color alpha="180" red="255" blue="0" name="Playhead:active" green="0"/>
         <color alpha="180" red="0" blue="0" name="LivePlayhead:active" green="255"/>
+        <color alpha="60" red="128" blue="128" name="LivePlayhead:playedbackground" green="128"/>
     </colors>
     <gradients>
         <gradient name="CorrelationMeter:foreground">

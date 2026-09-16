@@ -254,6 +254,16 @@ void AudioClip::toggle_lock()
     emit lockChanged();
 }
 
+void AudioClip::set_locked(bool locked)
+{
+    if (m_isLocked == locked) {
+        return;
+    }
+
+    m_isLocked = locked;
+    emit lockChanged();
+}
+
 void AudioClip::track_audible_state_changed()
 {
     set_sources_active_state();
@@ -459,6 +469,13 @@ int AudioClip::process(nframes_t nframes, PlayheadId playhead)
     }
 
     if (m_isMuted || (get_gain() == 0.0f) ) {
+        return 0;
+    }
+
+    // A clip that is being dragged through the Live playhead must stay silent
+    // on the Live pass, so an accidental drag cannot perturb the live output.
+    // The Cue pass keeps playing it as usual.
+    if (playhead == LivePlayhead && m_isMoving) {
         return 0;
     }
 
