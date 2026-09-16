@@ -1689,10 +1689,10 @@ void Project::setup_default_hardware_buses()
 }
 
 //
-//  Creates the independent Live playhead output sink. In this phase it is an
-//  internal bus (a silent sink); a native second output device connects to it
-//  in a later phase. The Project master gets an extra post send to it, which
-//  is only processed during the Live render pass.
+//  Creates the independent Live playhead output sink. The dry mix rendered by
+//  the Live pass is routed here and played through the separate live output
+//  device (or exposed as extra JACK ports). The Project master gets an extra
+//  post send to it, which is only processed during the Live render pass.
 //
 void Project::setup_live_output_bus()
 {
