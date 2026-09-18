@@ -203,7 +203,10 @@ void DiskIO::seek()
         if (m_sampleRateChanged) {
             source->set_diskio(this);
         }
-        source->rb_seek_to_file_position(location);
+        // Discard any pending/half-finished resync and start a fresh one at the
+        // seek position. This keeps fast cue scrubbing from first filling the
+        // ring buffer at an older position and only then correcting it.
+        source->seek_and_resync(location);
     }
 
     m_sampleRateChanged = false;
@@ -238,12 +241,29 @@ void DiskIO::seek_live()
         if (m_sampleRateChanged) {
             source->set_diskio(this);
         }
-        source->rb_seek_to_file_position(location);
+        // Discard the stale resync that was seeded when this source was created
+        // (while the Live transport was stopped) and start a fresh one at the
+        // Live start position.
+        source->seek_and_resync(location, true);
     }
 
     m_sampleRateChanged = false;
 
     mutex.unlock();
+
+    // Prime the Live sources that are in the active window right now. A busy
+    // Cue pass can otherwise starve DiskIO's normal resync handling (a pending
+    // sync is only serviced when nothing else is processable), which would
+    // leave the Live pass silent after starting mid-clip.
+    for (ReadSource* source : m_readSources) {
+        if (source->get_playhead() != LivePlayhead) {
+            continue;
+        }
+        int guard = 0;
+        while (source->needs_sync() && source->get_buffer_status()->needSync && guard++ < 10000) {
+            source->sync(m_decodebuffer);
+        }
+    }
 
     // Now, fill the buffers like normal
     do_work();

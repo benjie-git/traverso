@@ -488,6 +488,34 @@ void ReadSource::rb_seek_to_file_position(TimeRef& position)
 }
 
 
+void ReadSource::seek_and_resync(TimeRef& position, bool force)
+{
+	// Abandon any pending (or half-finished) resync before starting a fresh
+	// one at the requested position. Live ReadSources are seeded with a resync
+	// when they are created, which happens while the Live transport is stopped
+	// and thus at the stale Live location. Without discarding it here, DiskIO
+	// would first fill the ring buffer from that stale position and only then
+	// correct it, leaving the Live pass silent for a while (or, if the Cue
+	// pass keeps DiskIO busy, indefinitely) after the Live transport starts.
+	//
+	// Unless |force| is set, a source that has no pending resync is treated as
+	// a plain seek, so ordinary cue seeks don't pay for an unnecessary resync.
+	if (!force && !m_needSync && !m_syncInProgress) {
+		rb_seek_to_file_position(position);
+		return;
+	}
+
+	m_syncInProgress = false;
+	m_needSync = 0;
+	m_rbReady = 0;
+
+	rb_seek_to_file_position(position);
+
+	m_syncPos = position;
+	m_needSync = 1;
+}
+
+
 void ReadSource::process_ringbuffer(DecodeBuffer* buffer, bool seeking)
 {
 	if (m_channelCount == 0) {
@@ -555,11 +583,20 @@ void ReadSource::process_ringbuffer(DecodeBuffer* buffer, bool seeking)
 void ReadSource::start_resync(TimeRef& position)
 {
 // 	printf("starting resync!\n");
-	if (m_needSync || m_syncInProgress) {
+	if (m_syncInProgress) {
 // 		printf("start_resync still in progress!\n");
 		return;
 	}
-		
+
+	if (m_needSync) {
+		// A resync is already pending, possibly at a stale position seeded
+		// while this source was inactive. Point it at the position we need now
+		// rather than leaving it where it was.
+		m_syncPos = position;
+		m_rbReady = 0;
+		return;
+	}
+
 	m_syncPos = position;
 	m_rbReady = 0;
 	m_needSync = 1;
