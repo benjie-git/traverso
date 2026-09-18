@@ -203,10 +203,17 @@ void DiskIO::seek()
         if (m_sampleRateChanged) {
             source->set_diskio(this);
         }
-        // Discard any pending/half-finished resync and start a fresh one at the
-        // seek position. This keeps fast cue scrubbing from first filling the
-        // ring buffer at an older position and only then correcting it.
-        source->seek_and_resync(location);
+        // If the new position is still covered by the samples already in the
+        // ring buffer, keep them and let the reader move its read pointer when
+        // playback reaches the new position. This makes short seeks and cue
+        // scrubbing reuse decoded audio instead of re-reading it from disk.
+        // Otherwise discard any pending/half-finished resync and start a fresh
+        // one at the seek position.
+        if (source->can_reuse_seek(location)) {
+            source->cancel_pending_resync();
+        } else {
+            source->seek_and_resync(location);
+        }
     }
 
     m_sampleRateChanged = false;

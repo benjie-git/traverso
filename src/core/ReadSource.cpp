@@ -392,26 +392,37 @@ int ReadSource::rb_read(audio_sample_t** dst, TimeRef& start, nframes_t count)
 	}
 	
 	if (start != m_rbRelativeFileReadPos) {
-		
-		TimeRef availabletime(nframes_t(m_buffers.at(0)->read_space()), m_outputRate);
-/*		printf("rb_read:: m_rbRelativeFileReadPos, start: %lld, %lld\n", m_rbRelativeFileReadPos.universal_frame(), start.universal_frame());
-		printf("rb_read:: availabletime %d\n", availabletime.to_frame(m_outputRate));*/
-		
-		if ( (start > m_rbRelativeFileReadPos) && ((m_rbRelativeFileReadPos + availabletime) > (start + TimeRef(count, m_outputRate))) ) {
-			
+
+		// The ring buffer still holds the most recent (bufsize - 1) samples.
+		// If the requested position lies within that window we can move the
+		// read pointer to it and reuse the already decoded audio instead of
+		// throwing the whole buffer away and resyncing from disk.
+		TimeRef window(nframes_t(m_buffers.at(0)->bufsize() - 1), m_outputRate);
+		TimeRef lower = m_rbFileReadPos - window;
+		if (m_rbBufferStartFilePos > lower) {
+			lower = m_rbBufferStartFilePos;
+		}
+
+		if ( (start > m_rbRelativeFileReadPos) && (start <= m_rbFileReadPos) ) {
+
 			TimeRef advance = start - m_rbRelativeFileReadPos;
-			if (availabletime < advance) {
-				printf("available < advance !!!!!!!\n");
-			}
 			for (int i=m_buffers.size()-1; i>=0; --i) {
 				m_buffers.at(i)->increment_read_ptr(advance.to_frame(m_outputRate));
 			}
-			
+
 			m_rbRelativeFileReadPos += advance;
-/*			printf("rb_read:: advance %d\n", advance.to_frame(m_outputRate));
-			printf("rb_read:: m_rbRelativeFileReadPos after advance %d\n", m_rbRelativeFileReadPos.to_frame(m_outputRate));*/
+		} else if ( (start < m_rbRelativeFileReadPos) && (start >= lower) ) {
+
+			TimeRef rewind = m_rbRelativeFileReadPos - start;
+			for (int i=m_buffers.size()-1; i>=0; --i) {
+				m_buffers.at(i)->decrement_read_ptr(rewind.to_frame(m_outputRate));
+			}
+
+			m_rbRelativeFileReadPos = start;
 		} else {
-			TimeRef synclocation = start + m_clip->get_track_start_location() + m_clip->get_source_start_location();
+			// Convert the requested file offset back to a sheet location so
+			// that rb_seek_to_file_position() (the inverse) lands on |start|.
+			TimeRef synclocation = start + m_clip->get_track_start_location() - m_clip->get_source_start_location();
 			start_resync(synclocation);
 			return 0;
 		}
@@ -459,7 +470,9 @@ void ReadSource::rb_seek_to_file_position(TimeRef& position)
 // 	printf("rb_seek_to_file_position:: seeking to %d\n", position);
 	
 	// calculate position relative to the file!
-	TimeRef fileposition = position - m_clip->get_track_start_location() - m_clip->get_source_start_location();
+	// A sheet location maps to the file offset (transport - trackStart),
+	// shifted by where the clip starts inside the source file.
+	TimeRef fileposition = position - m_clip->get_track_start_location() + m_clip->get_source_start_location();
 	
 	// Do nothing if we are allready at the seek position
 	if (m_rbFileReadPos == fileposition) {
@@ -484,7 +497,42 @@ void ReadSource::rb_seek_to_file_position(TimeRef& position)
 	
 	m_rbFileReadPos = fileposition;
 	m_rbRelativeFileReadPos = fileposition;
+	m_rbBufferStartFilePos = fileposition;
 // 	printf("rb_seek_to_file_position:: m_rbRelativeFileReadPos, synclocation: %d, %d\n", m_rbRelativeFileReadPos.to_frame(m_outputRate), fileposition.to_frame(m_outputRate));
+}
+
+
+void ReadSource::cancel_pending_resync()
+{
+	m_needSync = 0;
+	m_syncInProgress = false;
+}
+
+
+bool ReadSource::can_reuse_seek(const TimeRef& sheetLocation) const
+{
+	if (!m_clip || !m_rbReady || m_channelCount == 0 || m_buffers.isEmpty()) {
+		return false;
+	}
+
+	// The file position rb_read() will be asked for at this sheet location.
+	TimeRef trackStart = m_clip->get_track_start_location();
+	TimeRef desired;
+	if (sheetLocation <= trackStart) {
+		desired = m_clip->get_source_start_location();
+	} else {
+		desired = sheetLocation - trackStart + m_clip->get_source_start_location();
+	}
+
+	// The ring buffer keeps up to (bufsize - 1) samples; never claim data
+	// that was never written since the last (re)fill.
+	TimeRef window(nframes_t(m_buffers.at(0)->bufsize() - 1), m_outputRate);
+	TimeRef lower = m_rbFileReadPos - window;
+	if (m_rbBufferStartFilePos > lower) {
+		lower = m_rbBufferStartFilePos;
+	}
+
+	return desired >= lower && desired <= m_rbFileReadPos;
 }
 
 

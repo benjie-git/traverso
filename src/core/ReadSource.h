@@ -59,6 +59,8 @@ public :
 	int rb_read(audio_sample_t** dest, TimeRef& start, nframes_t cnt);
 	void rb_seek_to_file_position(TimeRef& position);
 	void seek_and_resync(TimeRef& position, bool force = false);
+	void cancel_pending_resync();
+	bool can_reuse_seek(const TimeRef& sheetLocation) const;
 	bool needs_sync() const {return m_needSync;}
 	
 	int file_read(DecodeBuffer* buffer, const TimeRef& start, nframes_t cnt) const;
@@ -97,6 +99,7 @@ private:
 	bool			m_silent;
 	TimeRef			m_rbFileReadPos;
 	TimeRef			m_rbRelativeFileReadPos;
+	TimeRef			m_rbBufferStartFilePos;
 	TimeRef			m_syncPos;
     volatile size_t		m_rbReady{};
     volatile size_t		m_needSync{};
