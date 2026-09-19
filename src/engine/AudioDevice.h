@@ -30,7 +30,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA.
 #include <QByteArray>
 #include <QTimer>
 #include <QVariant>
-#include <QMutex>
+#include <atomic>
 
 
 #include "RingBufferNPT.h"
@@ -159,12 +159,20 @@ private:
         AudioDeviceSetup        m_setup;
         AudioDeviceSetup        m_fallBackSetup;
         AudioBus*               m_masterOutBus;
+        // The live sink object is created and destroyed only while the engine
+        // is stopped (set_parameters()/shutdown()), so the audio thread can
+        // dereference it without a lock. Runtime enable/disable/start/stop only
+        // open/close/start/stop this stable object.
         LiveOutput*             m_liveOutput;
+        // m_liveOutputBus is owned by the audio thread: it is only ever
+        // assigned in post_run_cycle(), after any in-flight push for the cycle.
+        // The GUI hands a new value over through m_pendingLiveOutputBus and
+        // waits (when detaching) until the audio thread has applied it before
+        // deleting the bus. This mirrors TAudioDeviceClient removal.
         AudioBus*               m_liveOutputBus;
+        AudioBus*               m_pendingLiveOutputBus;
+        std::atomic<bool>       m_liveOutputBusPending;
         QString                 m_liveOutputUid;
-        // Guards m_liveOutput/m_liveOutputBus: the live sink is created and
-        // destroyed from the GUI thread while the audio thread pushes into it.
-        QMutex                  m_liveOutputMutex;
         TAudioDriver* 		m_driver;
         AudioDeviceThread* 	m_audioThread;
         APILinkedList		m_clients;
@@ -193,8 +201,7 @@ private:
 
 	int run_one_cycle(nframes_t nframes, float delayed_usecs);
 	void push_live_output(nframes_t nframes);
-	int open_live_output_locked();
-	void disable_live_output_locked();
+	int open_live_output();
 	int create_driver(const QString& driverType, bool capture, bool playback, const QString& cardDevice);	int transport_control(transport_state_t state);
 
     void post_run_cycle();

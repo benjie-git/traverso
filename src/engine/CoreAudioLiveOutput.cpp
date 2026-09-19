@@ -205,7 +205,7 @@ int CoreAudioLiveOutput::open(const QString& uid, uint rate, nframes_t bufferSiz
 		return -1;
 	}
 
-	if (!init_buffers(bufferSize, channels)) {
+	if (!ensure_buffers(bufferSize, channels)) {
 		close();
 		return -1;
 	}
@@ -217,11 +217,10 @@ int CoreAudioLiveOutput::open(const QString& uid, uint rate, nframes_t bufferSiz
 void CoreAudioLiveOutput::close()
 {
 	// Mark closed first so process() bails out even if a push is somehow
-	// in flight while the rings below are destroyed.
+	// in flight. The rings themselves are kept for the object's lifetime, so
+	// a concurrent push can never see freed storage.
 	m_open = false;
 	stop();
-
-	free_buffers();
 
 	if (m_audioUnit) {
 		AudioUnitUninitialize(m_audioUnit);
@@ -231,16 +230,19 @@ void CoreAudioLiveOutput::close()
 
 	m_deviceId = kAudioDeviceUnknown;
 	m_deviceName.clear();
-	m_open = false;
 }
 
 void CoreAudioLiveOutput::start()
 {
-	if (!m_open || started()) {
+	if (!is_open() || started()) {
 		return;
 	}
 
+	// The writer is gated while !started(), so rewinding the pointers here is
+	// safe. request_flush() makes the first callback discard whatever the
+	// writer queues in the meantime and emit zeros instead.
 	reset_buffers();
+	request_flush();
 
 	if (AudioOutputUnitStart(m_audioUnit) == noErr) {
 		set_started(true);

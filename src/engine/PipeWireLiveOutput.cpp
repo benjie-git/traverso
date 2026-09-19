@@ -164,7 +164,7 @@ int PipeWireLiveOutput::open(const QString& uid, uint rate, nframes_t bufferSize
 		return -1;
 	}
 
-	if (!init_buffers(bufferSize, channels)) {
+	if (!ensure_buffers(bufferSize, channels)) {
 		close();
 		return -1;
 	}
@@ -181,13 +181,12 @@ int PipeWireLiveOutput::open(const QString& uid, uint rate, nframes_t bufferSize
 
 void PipeWireLiveOutput::close()
 {
-	// Mark closed first so process() bails out even if a push is somehow
-	// in flight while the rings below are destroyed.
+	// Mark closed first; the rings are kept for the object's lifetime, so a
+	// concurrent push can never see freed storage.
 	m_open = false;
 	stop();
 
 	cleanup();
-	free_buffers();
 	m_deviceName.clear();
 }
 
@@ -212,11 +211,12 @@ void PipeWireLiveOutput::cleanup()
 
 void PipeWireLiveOutput::start()
 {
-	if (!m_open || started() || !m_stream || !m_threadLoop) {
+	if (!is_open() || started() || !m_stream || !m_threadLoop) {
 		return;
 	}
 
 	reset_buffers();
+	request_flush();
 
 	pw_thread_loop_lock(m_threadLoop);
 	pw_stream_set_active(m_stream, true);

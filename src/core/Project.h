@@ -25,6 +25,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA.
 #include <QString>
 #include <QList>
 #include <QDomNode>
+#include <atomic>
 #include "TSession.h"
 #include "APILinkedList.h"
 
@@ -178,7 +179,11 @@ private:
         CorrelationMeter*       m_correlationMeter;
 
         QList<AudioBus* >       m_hardwareAudioBuses;
-        AudioBus*               m_liveOutputBus{};
+        // Read on the audio thread in render_pass(). It is cleared (store
+        // nullptr) before the engine barrier in teardown_live_output_bus() /
+        // ~Project(), so the audio thread observes the detach before the bus
+        // is deleted.
+        std::atomic<AudioBus*>  m_liveOutputBus{};
 
         QHash<qint64, AudioBus* >       m_softwareAudioBuses;
         QHash<qint64, AudioChannel* >   m_softwareAudioChannels;

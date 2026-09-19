@@ -51,24 +51,40 @@ BufferedLiveOutput::BufferedLiveOutput()
 	: m_channels(0)
 	, m_bufferSize(1024)
 	, m_started(false)
+	, m_flush(false)
 {
 }
 
-bool BufferedLiveOutput::init_buffers(nframes_t bufferSize, uint channels)
+BufferedLiveOutput::~BufferedLiveOutput()
 {
 	free_buffers();
+}
 
+bool BufferedLiveOutput::ensure_buffers(nframes_t bufferSize, uint channels)
+{
 	if (bufferSize == 0 || channels == 0) {
 		return false;
+	}
+
+	// Allocate once and keep the rings for the object's lifetime. A later
+	// open() (e.g. switching the live device) may report a different channel
+	// count, but the primary audio thread may be reading m_rings at the same
+	// time, so the storage itself is never freed or reallocated here.
+	if (!m_rings.isEmpty()) {
+		m_channels = std::min<uint>(channels, uint(m_rings.size()));
+		return true;
 	}
 
 	m_bufferSize = bufferSize;
 	m_channels = channels;
 
-	for (uint i = 0; i < channels; ++i) {
+	// The live bus is stereo; allocate at least that so a mono device does
+	// not force a reallocation if a later open reports more channels.
+	const uint capacity = std::max<uint>(channels, 2);
+	for (uint i = 0; i < capacity; ++i) {
 		m_rings.append(new RingBufferNPT<audio_sample_t>(bufferSize * 8));
 	}
-	m_scratch.resize(bufferSize * channels);
+	m_scratch.resize(bufferSize * capacity);
 
 	return true;
 }
@@ -89,10 +105,23 @@ void BufferedLiveOutput::reset_buffers()
 	}
 }
 
+// Called from the device callback. Discards anything that was queued before
+// this start, so the first period is zero samples rather than stale audio.
+void BufferedLiveOutput::apply_pending_flush()
+{
+	if (!m_flush.exchange(false, std::memory_order_acq_rel)) {
+		return;
+	}
+
+	for (RingBufferNPT<audio_sample_t>* ring : m_rings) {
+		ring->increment_read_ptr(ring->read_space());
+	}
+}
+
 // Called from the primary audio thread after the live render pass.
 void BufferedLiveOutput::process(nframes_t nframes, const QList<AudioChannel*>& channels, uint channelCount)
 {
-	if (!m_open) {
+	if (!is_open()) {
 		return;
 	}
 
@@ -133,7 +162,9 @@ void BufferedLiveOutput::pull_channel(uint channel, nframes_t frames, audio_samp
 		return;
 	}
 
-	if (!m_started || channel >= m_channels || channel >= uint(m_rings.size())) {
+	apply_pending_flush();
+
+	if (!started() || channel >= m_channels || channel >= uint(m_rings.size())) {
 		std::memset(dest, 0, frames * sizeof(audio_sample_t));
 		return;
 	}
@@ -156,7 +187,9 @@ void BufferedLiveOutput::pull_interleaved(nframes_t frames, audio_sample_t* out)
 		return;
 	}
 
-	if (!m_started || count == 0 || uint(m_rings.size()) < count) {
+	apply_pending_flush();
+
+	if (!started() || count == 0 || uint(m_rings.size()) < count) {
 		std::memset(out, 0, frames * (count ? count : 1) * sizeof(audio_sample_t));
 		return;
 	}

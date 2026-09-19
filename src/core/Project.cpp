@@ -135,14 +135,15 @@ Project::~Project()
         }
 
         delete m_masterOutBusTrack;
-        if (m_liveOutputBus) {
-                // The engine's run_one_cycle() pushes this bus on the audio (IO)
-                // thread via AudioDevice::push_live_output(). Clear the engine's
-                // reference (and stop the sink) before freeing the bus, or the IO
-                // thread will dereference a dangling AudioBus during shutdown.
+        if (AudioBus* liveBus = m_liveOutputBus.load()) {
+                // render_pass() reads m_liveOutputBus on the audio (IO) thread
+                // and AudioDevice::push_live_output() pushes it. Clear both
+                // references before freeing the bus; the engine barrier in
+                // set_live_output_bus(nullptr) guarantees any in-flight use of
+                // the bus has completed.
+                m_liveOutputBus.store(nullptr);
                 audiodevice().set_live_output_bus(nullptr);
-                delete m_liveOutputBus;
-                m_liveOutputBus = nullptr;
+                delete liveBus;
         }
         delete m_hs;
 }
@@ -1706,8 +1707,10 @@ void Project::setup_live_output_bus()
         // JACK exposes the live mix as extra ports on the existing client
         // (a software bus); every other backend uses an internal bus drained
         // by a second output device. Rebuild if the kind no longer matches.
-        if (m_liveOutputBus && ((!m_liveOutputBus->is_internal_bus()) != isJack)) {
+        AudioBus* existingBus = m_liveOutputBus.load();
+        if (existingBus && ((!existingBus->is_internal_bus()) != isJack)) {
                 teardown_live_output_bus();
+                existingBus = nullptr;
         }
 
         if (!enabled) {
@@ -1716,7 +1719,7 @@ void Project::setup_live_output_bus()
         }
 
         if (isJack) {
-                if (m_liveOutputBus) {
+                if (existingBus) {
                         return;
                 }
 
@@ -1726,14 +1729,15 @@ void Project::setup_live_output_bus()
                 conf.type = "output";
                 conf.bustype = "software";
 
-                m_liveOutputBus = create_software_audio_bus(conf);
-                m_liveOutputBus->set_live_output(true);
-                m_masterOutBusTrack->add_post_send(m_liveOutputBus);
+                AudioBus* jackBus = create_software_audio_bus(conf);
+                jackBus->set_live_output(true);
+                m_masterOutBusTrack->add_post_send(jackBus);
+                m_liveOutputBus.store(jackBus);
                 return;
         }
 
-        if (m_liveOutputBus) {
-                audiodevice().set_live_output_bus(m_liveOutputBus);
+        if (existingBus) {
+                audiodevice().set_live_output_bus(existingBus);
                 audiodevice().enable_live_output(liveDevice);
                 if (m_activeSheet && m_activeSheet->is_live_transport_rolling()) {
                         audiodevice().start_live_output();
@@ -1748,12 +1752,13 @@ void Project::setup_live_output_bus()
         conf.isInternalBus = true;
         conf.channelcount = 2;
 
-        m_liveOutputBus = new AudioBus(conf);
-        m_liveOutputBus->set_live_output(true);
+        AudioBus* liveBus = new AudioBus(conf);
+        liveBus->set_live_output(true);
 
-        m_masterOutBusTrack->add_post_send(m_liveOutputBus);
+        m_masterOutBusTrack->add_post_send(liveBus);
+        m_liveOutputBus.store(liveBus);
 
-        audiodevice().set_live_output_bus(m_liveOutputBus);
+        audiodevice().set_live_output_bus(liveBus);
         audiodevice().enable_live_output(liveDevice);
         if (m_activeSheet && m_activeSheet->is_live_transport_rolling()) {
                 audiodevice().start_live_output();
@@ -1762,17 +1767,25 @@ void Project::setup_live_output_bus()
 
 void Project::teardown_live_output_bus()
 {
-        if (!m_liveOutputBus) {
+        AudioBus* liveBus = m_liveOutputBus.load();
+        if (!liveBus) {
                 return;
         }
 
-        const bool isJackBus = !m_liveOutputBus->is_internal_bus();
+        const bool isJackBus = !liveBus->is_internal_bus();
+
+        // Clear our own reference first. render_pass() reads it on the audio
+        // thread, so the store must be visible to the audio thread before the
+        // bus goes away. For the non-JACK case the engine barrier below
+        // (post_run_cycle applying the detach, after the in-flight push for the
+        // cycle) guarantees a full cycle has completed after the store.
+        m_liveOutputBus.store(nullptr);
 
         if (isJackBus) {
                 // Unregister the JACK ports; the RT thread drops the
                 // port/channel pairs asynchronously, so the AudioChannels
                 // must outlive this bus and are intentionally not deleted.
-                remove_software_audio_bus(m_liveOutputBus);
+                remove_software_audio_bus(liveBus);
         } else {
                 // Stop the engine from pushing into the bus (and wait for
                 // any in-flight push) before deleting it.
@@ -1787,24 +1800,23 @@ void Project::teardown_live_output_bus()
         // a dangling m_bus while saving the project.
         const QList<TSend*> liveSends = m_masterOutBusTrack->get_post_sends();
         for (TSend* send : liveSends) {
-                if (send->get_bus() == m_liveOutputBus) {
+                if (send->get_bus() == liveBus) {
                         send->set_bus(nullptr);
                         m_masterOutBusTrack->remove_post_send(send);
                 }
         }
 
         if (isJackBus) {
-                m_softwareAudioBuses.remove(m_liveOutputBus->get_id());
-                for (uint i = 0; i < m_liveOutputBus->get_channel_count(); ++i) {
-                        AudioChannel* channel = m_liveOutputBus->get_channel(i);
+                m_softwareAudioBuses.remove(liveBus->get_id());
+                for (uint i = 0; i < liveBus->get_channel_count(); ++i) {
+                        AudioChannel* channel = liveBus->get_channel(i);
                         if (channel) {
                                 m_softwareAudioChannels.remove(channel->get_id());
                         }
                 }
         }
 
-        delete m_liveOutputBus;
-        m_liveOutputBus = nullptr;
+        delete liveBus;
 }
 
 
@@ -1909,10 +1921,15 @@ int Project::render_pass( PlayheadId playhead, nframes_t nframes )
 {
         int result = 0;
 
-        if (playhead == LivePlayhead && m_liveOutputBus) {
-                // The Live sink is not a driver channel, so it isn't silenced
-                // by the driver. Clear it before anything is mixed into it.
-                m_liveOutputBus->silence_buffers(nframes);
+        if (playhead == LivePlayhead) {
+                // Load once: a concurrent teardown may store nullptr between
+                // two loads, and the second would then dereference a freed bus.
+                if (AudioBus* liveBus = m_liveOutputBus.load()) {
+                        // The Live sink is not a driver channel, so it isn't
+                        // silenced by the driver. Clear it before anything is
+                        // mixed into it.
+                        liveBus->silence_buffers(nframes);
+                }
         }
 
         apill_foreach(Sheet* sheet, Sheet*, m_RtSheets) {

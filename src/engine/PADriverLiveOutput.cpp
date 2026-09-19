@@ -107,7 +107,7 @@ int PADriverLiveOutput::open(const QString& uid, uint rate, nframes_t bufferSize
 
 	m_deviceName = QString::fromUtf8(info->name);
 
-	if (!init_buffers(bufferSize, outChannels)) {
+	if (!ensure_buffers(bufferSize, outChannels)) {
 		close();
 		return -1;
 	}
@@ -118,6 +118,8 @@ int PADriverLiveOutput::open(const QString& uid, uint rate, nframes_t bufferSize
 
 void PADriverLiveOutput::close()
 {
+	// Mark closed first; the rings are kept for the object's lifetime, so a
+	// concurrent push can never see freed storage.
 	m_open = false;
 	stop();
 
@@ -127,19 +129,19 @@ void PADriverLiveOutput::close()
 	}
 	Pa_Terminate();
 
-	free_buffers();
-
 	m_deviceName.clear();
-	m_open = false;
 }
 
 void PADriverLiveOutput::start()
 {
-	if (!m_open || started()) {
+	if (!is_open() || started()) {
 		return;
 	}
 
+	// Writer is gated while !started(); flush makes the first callback emit
+	// zeros rather than anything queued before the start.
 	reset_buffers();
+	request_flush();
 
 	if (Pa_StartStream(m_stream) == paNoError) {
 		set_started(true);

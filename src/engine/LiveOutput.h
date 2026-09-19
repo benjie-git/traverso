@@ -27,6 +27,7 @@
 #include <QList>
 #include <QString>
 #include <QVarLengthArray>
+#include <atomic>
 
 class AudioChannel;
 template<class T> class RingBufferNPT;
@@ -76,7 +77,7 @@ public:
 		Q_UNUSED(channelCount);
 	}
 
-	bool is_open() const { return m_open; }
+	bool is_open() const { return m_open.load(std::memory_order_acquire); }
 
 	// True while the sink is actively streaming to the device. The primary
 	// audio thread only pushes when this is true, so a stopped Live playhead
@@ -87,7 +88,7 @@ public:
 	virtual QString device_name() const { return QString(); }
 
 protected:
-	bool m_open;
+	std::atomic<bool> m_open;
 };
 
 /**
@@ -104,22 +105,33 @@ class BufferedLiveOutput : public LiveOutput
 public:
 	void process(nframes_t nframes, const QList<AudioChannel*>& channels, uint channelCount) override;
 
-	bool is_running() const override { return m_started; }
+	bool is_running() const override { return m_started.load(std::memory_order_acquire); }
 
 protected:
 	BufferedLiveOutput();
+	~BufferedLiveOutput() override;
 
 	// Allocate the per-channel rings and scratch space. Call from open()
-	// once the number of channels and the buffer size are known.
-	bool init_buffers(nframes_t bufferSize, uint channels);
+	// once the number of channels and the buffer size are known. The
+	// allocation happens only on the first call: the rings are then kept for
+	// the lifetime of the object, so the device callback and the primary
+	// audio thread always have valid storage even while a later open()/close()
+	// changes the device.
+	bool ensure_buffers(nframes_t bufferSize, uint channels);
 	void free_buffers();
 	void reset_buffers();
+
+	// Ask the device callback to discard anything queued before the next
+	// start, so that a (re)start produces a few zero samples rather than
+	// whatever was left in the rings. Applied on the reader side, which only
+	// moves the read pointer forward.
+	void request_flush() { m_flush.store(true, std::memory_order_release); }
 
 	uint channels() const { return m_channels; }
 	nframes_t buffer_size() const { return m_bufferSize; }
 
-	bool started() const { return m_started; }
-	void set_started(bool started) { m_started = started; }
+	bool started() const { return m_started.load(std::memory_order_acquire); }
+	void set_started(bool started) { m_started.store(started, std::memory_order_release); }
 
 	// Drain the rings for a device callback. `frames` is clamped to the
 	// configured buffer size; any shortfall or tail is zero-filled.
@@ -128,9 +140,13 @@ protected:
 
 	uint m_channels;
 	nframes_t m_bufferSize;
-	bool m_started;
+	std::atomic<bool> m_started;
+	std::atomic<bool> m_flush;
 	QList<RingBufferNPT<audio_sample_t>*> m_rings;
 	QVarLengthArray<audio_sample_t> m_scratch;
+
+private:
+	void apply_pending_flush();
 };
 
 // Factory: returns an implementation for the given driver type ("CoreAudio",

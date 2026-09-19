@@ -60,6 +60,7 @@ RELAYTOOL_JACK
 
 //#include <sys/mman.h>
 #include <QDebug>
+#include <unistd.h>
 
 // Always put me below _all_ includes, this is needed
 // in case we run with memory leak detection enabled!
@@ -162,6 +163,8 @@ AudioDevice::AudioDevice()
     m_masterOutBus = nullptr;
     m_liveOutput = nullptr;
     m_liveOutputBus = nullptr;
+    m_pendingLiveOutputBus = nullptr;
+    m_liveOutputBusPending = false;
     m_liveOutputUid = QString();
     m_audioThread = nullptr;
     m_bufferSize = 1024;
@@ -343,6 +346,14 @@ void AudioDevice::set_parameters(AudioDeviceSetup ads)
 
     m_driver->attach();
 
+    // Create the live sink once for the lifetime of this driver setup. The
+    // audio thread dereferences it without a lock; runtime enable/disable only
+    // open/close it. It is deleted in shutdown() after the driver has stopped.
+    m_liveOutput = create_live_output(ads.driverType);
+    if (m_liveOutput && !m_liveOutput->is_supported()) {
+        delete m_liveOutput;
+        m_liveOutput = nullptr;
+    }
 
     emit driverParamsChanged();
 
@@ -561,10 +572,6 @@ int AudioDevice::shutdown( )
     }
 
 
-    if (m_liveOutput || m_liveOutputBus) {
-        set_live_output_bus(nullptr);
-    }
-
     if (m_driver) {
         m_driver->stop();
 
@@ -577,6 +584,19 @@ int AudioDevice::shutdown( )
         delete m_driver;
         m_driver = nullptr;
     }
+
+    // The engine is fully stopped now (audio thread and driver), so no callback
+    // can call push_live_output() any more. Tear the live sink down directly.
+    if (m_liveOutput) {
+        m_liveOutput->stop();
+        m_liveOutput->close();
+        delete m_liveOutput;
+        m_liveOutput = nullptr;
+    }
+    m_liveOutputBus = nullptr;
+    m_pendingLiveOutputBus = nullptr;
+    m_liveOutputBusPending = false;
+    m_liveOutputUid = QString();
 
     return r;
 }
@@ -681,11 +701,31 @@ void AudioDevice::send_to_master_out(AudioChannel* channel, nframes_t nframes)
 
 void AudioDevice::set_live_output_bus(AudioBus* bus)
 {
-    QMutexLocker locker(&m_liveOutputMutex);
-    m_liveOutputBus = bus;
-    if (!bus) {
-        disable_live_output_locked();
+    // Hand the bus over to the audio thread. It is applied in post_run_cycle(),
+    // which always runs after the push for the current cycle, so once the audio
+    // thread has applied a detach no push can still be using the old bus.
+    m_pendingLiveOutputBus = bus;
+    m_liveOutputBusPending.store(true, std::memory_order_release);
+
+    if (bus) {
+        // The audio thread will pick it up on the next cycle.
+        return;
     }
+
+    // Detaching: if the sink is running, wait (bounded, like
+    // Project::disconnect_from_audio_device) for the audio thread to drop the
+    // bus before the caller deletes it.
+    if (m_liveOutput && m_liveOutput->is_running()) {
+        for (int i = 0; i < 100 && m_liveOutputBusPending.load(std::memory_order_acquire); ++i) {
+            usleep(20 * 1000);
+        }
+    } else {
+        // Engine not cycling: apply the hand-off ourselves.
+        m_liveOutputBus = nullptr;
+        m_liveOutputBusPending.store(false, std::memory_order_release);
+    }
+
+    disable_live_output();
 }
 
 int AudioDevice::enable_live_output(const QString& uid)
@@ -696,20 +736,19 @@ int AudioDevice::enable_live_output(const QString& uid)
         return 0;
     }
 
-    QMutexLocker locker(&m_liveOutputMutex);
     if (!uid.isEmpty() && uid != "none") {
         if (m_liveOutput && m_liveOutput->is_open() && m_liveOutputUid == uid) {
             return 0;
         }
-        if (m_liveOutput) {
-            // Switching to a different device: tear the old sink down first.
-            disable_live_output_locked();
+        if (m_liveOutput && m_liveOutput->is_open()) {
+            // Switching to a different device: close the old sink first.
+            m_liveOutput->stop();
+            m_liveOutput->close();
         }
         m_liveOutputUid = uid;
-        const int openResult = open_live_output_locked();
+        const int openResult = open_live_output();
         if (openResult < 0) {
             m_liveOutputUid = QString();
-            locker.unlock();
             if (openResult == -1) {
                 emit driverSetupMessage(tr("The Live Play Head output is not supported by this audio backend."),
                                         DRIVER_SETUP_FAILURE);
@@ -720,42 +759,39 @@ int AudioDevice::enable_live_output(const QString& uid)
             return -1;
         }
         const QString liveName = m_liveOutput->device_name();
-        locker.unlock();
         emit driverSetupMessage(tr("Live Audio Output: %1").arg(liveName.isEmpty() ? uid : liveName),
                                 DRIVER_SETUP_SUCCESS);
         return 0;
     }
-    disable_live_output_locked();
+
+    disable_live_output();
     return 0;
 }
 
-int AudioDevice::open_live_output_locked()
+int AudioDevice::open_live_output()
 {
-    // Caller must hold m_liveOutputMutex and must have set m_liveOutputUid.
     // Returns 0 on success, -1 if the backend has no live-output support,
-    // -2 if the device could not be opened.
+    // -2 if the device could not be opened. The sink object itself is created
+    // in set_parameters() and reused here for the driver's lifetime.
     if (m_liveOutput && m_liveOutput->is_open()) {
         return 0;
     }
-    if (m_liveOutput) {
-        delete m_liveOutput;
-        m_liveOutput = nullptr;
+    if (!m_liveOutput) {
+        m_liveOutput = create_live_output(get_driver_type());
     }
-    if (m_liveOutputUid.isEmpty() || m_liveOutputUid == "none") {
-        return -2;
-    }
-
-    m_liveOutput = create_live_output(get_driver_type());
     if (!m_liveOutput || !m_liveOutput->is_supported()) {
         delete m_liveOutput;
         m_liveOutput = nullptr;
         return -1;
     }
+    if (m_liveOutputUid.isEmpty() || m_liveOutputUid == "none") {
+        return -2;
+    }
 
-    uint channels = m_liveOutputBus ? m_liveOutputBus->get_channel_count() : 2;
+    // Read the bus via the hand-off pointer so we never touch the audio
+    // thread's copy from here. The live bus is stereo for non-Jack backends.
+    uint channels = m_pendingLiveOutputBus ? m_pendingLiveOutputBus->get_channel_count() : 2;
     if (m_liveOutput->open(m_liveOutputUid, m_rate, m_bufferSize, channels) < 0) {
-        delete m_liveOutput;
-        m_liveOutput = nullptr;
         return -2;
     }
     return 0;
@@ -763,12 +799,11 @@ int AudioDevice::open_live_output_locked()
 
 void AudioDevice::start_live_output()
 {
-    QMutexLocker locker(&m_liveOutputMutex);
-    // Stopping fully releases the second device, so re-open it on the way back
-    // up before rolling. This keeps the device free for other apps while the
+    // Stopping closes the second device, so re-open it on the way back up
+    // before rolling. This keeps the device free for other apps while the
     // Live playhead is stopped.
     if (!m_liveOutput || !m_liveOutput->is_open()) {
-        if (open_live_output_locked() < 0) {
+        if (open_live_output() < 0) {
             return;
         }
     }
@@ -777,59 +812,43 @@ void AudioDevice::start_live_output()
 
 void AudioDevice::stop_live_output()
 {
-    QMutexLocker locker(&m_liveOutputMutex);
     // Fully close the sink so the second device is released while stopped. The
     // configured uid is kept so start_live_output() can re-open it.
     if (m_liveOutput) {
         m_liveOutput->stop();
         m_liveOutput->close();
-        delete m_liveOutput;
-        m_liveOutput = nullptr;
     }
 }
 
 void AudioDevice::disable_live_output()
 {
-    QMutexLocker locker(&m_liveOutputMutex);
-    disable_live_output_locked();
-}
-
-void AudioDevice::disable_live_output_locked()
-{
     if (m_liveOutput) {
         m_liveOutput->stop();
         m_liveOutput->close();
-        delete m_liveOutput;
-        m_liveOutput = nullptr;
     }
     m_liveOutputUid = QString();
 }
 
 void AudioDevice::push_live_output(nframes_t nframes)
 {
-    // This runs on the audio (CoreAudio IO) thread. It must NEVER block on the
-    // mutex: teardown holds it while calling AudioOutputUnitStop(), which waits
-    // for this very IO thread. If we blocked here, the two would deadlock
-    // (HAL lock held by the IO thread, our mutex held by the GUI thread).
-    if (!m_liveOutputMutex.tryLock()) {
-        return; // a switch/teardown is in progress; skip this cycle
+    // Runs on the audio thread. m_liveOutput is stable for the driver's
+    // lifetime and m_liveOutputBus is owned by this thread, so no
+    // synchronization is required (and none may block here).
+    if (!m_liveOutput || !m_liveOutput->is_open() || !m_liveOutput->is_running() || !m_liveOutputBus) {
+        return;
     }
 
-    if (m_liveOutput && m_liveOutput->is_open() && m_liveOutput->is_running() && m_liveOutputBus) {
-        QList<AudioChannel*> channels;
-        uint count = m_liveOutputBus->get_channel_count();
-        for (uint i = 0; i < count; ++i) {
-            AudioChannel* channel = m_liveOutputBus->get_channel(i);
-            if (channel) {
-                channels.append(channel);
-            }
-        }
-        if (!channels.isEmpty()) {
-            m_liveOutput->process(nframes, channels, uint(channels.size()));
+    QList<AudioChannel*> channels;
+    uint count = m_liveOutputBus->get_channel_count();
+    for (uint i = 0; i < count; ++i) {
+        AudioChannel* channel = m_liveOutputBus->get_channel(i);
+        if (channel) {
+            channels.append(channel);
         }
     }
-
-    m_liveOutputMutex.unlock();
+    if (!channels.isEmpty()) {
+        m_liveOutput->process(nframes, channels, uint(channels.size()));
+    }
 }
 
 AudioChannel* AudioDevice::get_capture_channel_by_name(const QString &name)
@@ -970,6 +989,14 @@ float AudioDevice::get_cpu_time( )
 
 void AudioDevice::post_run_cycle( )
 {
+    // Apply a pending live-output bus change on the audio thread. This runs
+    // after run_one_cycle()'s push_live_output(), so any in-flight push has
+    // completed and the GUI may safely delete a detached bus once it observes
+    // the hand-off done.
+    if (m_liveOutputBusPending.exchange(false, std::memory_order_acq_rel)) {
+        m_liveOutputBus = m_pendingLiveOutputBus;
+    }
+
     tsar().process_events();
 
     apill_foreach(TAudioDeviceClient* client, TAudioDeviceClient*, m_clients) {
