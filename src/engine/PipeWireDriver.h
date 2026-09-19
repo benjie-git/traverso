@@ -16,7 +16,7 @@
     You should have received a copy of the GNU General Public License
     along with this program; if not, write to the Free Software
     Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA.
- */
+*/
 
 #ifndef PIPEWIREDRIVER_H
 #define PIPEWIREDRIVER_H
@@ -25,19 +25,19 @@
 
 #include "TAudioDriver.h"
 #include "defines.h"
-#include "RingBufferNPT.h"
 
 #include <pipewire/pipewire.h>
 #include <pipewire/stream.h>
+#include <pipewire/loop.h>
 #include <pipewire/main-loop.h>
 #include <pipewire/core.h>
 #include <spa/param/audio/format-utils.h>
-#include <spa/param/props.h>
+#include <spa/param/audio/layout.h>
 
 #include <QObject>
 #include <QStringList>
+#include <QSocketNotifier>
 #include <atomic>
-#include <memory>
 
 class PipeWireDriver : public TAudioDriver
 {
@@ -46,9 +46,9 @@ public:
     explicit PipeWireDriver(AudioDevice* device, uint rate, nframes_t bufferSize);
     ~PipeWireDriver() override;
 
-    int _run_cycle() override { return 1; }
-    int _read(nframes_t nframes) override { Q_UNUSED(nframes); return 1; }
-    int _write(nframes_t nframes) override { Q_UNUSED(nframes); return 1; }
+    int process_callback();
+    int process_capture_callback();
+
     int setup(bool capture = true, bool playback = true, const QString& cardDevice = "");
     int attach() override;
     int start() override;
@@ -65,50 +65,37 @@ public:
         return false;
     }
 
+protected:
+    int _run_cycle() override;
+    int _read(nframes_t nframes) override;
+    int _write(nframes_t nframes) override;
+
 private:
     std::atomic<size_t>                 m_running{0};
-    struct pw_thread_loop*              m_threadLoop{nullptr};
-    struct pw_stream*                   m_playbackStream{nullptr};
-    struct pw_stream*                   m_captureStream{nullptr};
-    struct pw_stream_events             m_playbackEvents{};
-    struct pw_stream_events             m_captureEvents{};
 
-    struct spa_io_position*             m_ioPosition{nullptr};
+    struct pw_loop*                     m_pwLoop{nullptr};
+    struct pw_stream*                   m_playbackStream{nullptr};
+    struct pw_stream_events             m_playbackStreamEvents{};
+    struct pw_stream*                   m_captureStream{nullptr};
+    struct pw_stream_events             m_captureStreamEvents{};
+
+    QSocketNotifier*                    m_notifier{nullptr};
 
     bool                                m_enableCapture{true};
     bool                                m_enablePlayback{true};
     QString                             m_cardDevice;
-    bool                                m_pwInitialized{false};
 
-    std::unique_ptr<RingBufferNPT<audio_sample_t>> m_captureRingBuffer;
-    std::unique_ptr<audio_sample_t[]>              m_captureProcessBuffer;
+    int setup_failed(const QString& message);
 
-    void run_engine_cycle(nframes_t nframes);
-    void drain_capture_ringbuffer(nframes_t nframes);
-    void cleanup();
-    int fail_setup(const QString& message);
-    struct pw_stream* create_stream(
-        const char* streamName,
-        const char* nodeName,
-        const char* nodeDescription,
-        const char* mediaCategory,
-        enum pw_direction direction,
-        uint32_t channelCount,
-        const struct pw_stream_events* events,
-        const QString& targetDevice = QString()
-    );
-    void on_stream_state_changed(const char* streamName, enum pw_stream_state oldState, enum pw_stream_state state, const char *error);
+    // callback functions for pipewire
+    static void _on_process_playback(void* userdata);
+    static void _on_process_capture(void* userdata);
+    static void _on_state_changed(void* userdata, enum pw_stream_state old_state, enum pw_stream_state state, const char* error);
 
-    static void _on_playback_destroy(void *data);
-    static void _on_playback_state_changed(void *data, enum pw_stream_state oldState, enum pw_stream_state state, const char *error);
-    static void _on_playback_process(void *data);
+    void handle_state_changed(enum pw_stream_state old_state, enum pw_stream_state state, const char* error);
 
-    static void _on_capture_destroy(void *data);
-    static void _on_capture_state_changed(void *data, enum pw_stream_state oldState, enum pw_stream_state state, const char *error);
-    static void _on_capture_process(void *data);
-
-    static void _on_io_changed(void *data, uint32_t id, void *area, uint32_t size);
-    static void _on_param_changed(void *data, uint32_t id, const struct spa_pod *param);
+private slots:
+    void handle_pipewire_events();
 
 signals:
     void pipewireShutDown();
