@@ -734,10 +734,18 @@ BufferStatus* ReadSource::get_buffer_status()
 	bool transportBeforeSyncStartLocation = transport < (syncstartlocation - (3 * UNIVERSAL_SAMPLE_RATE));
 	bool transportAfterClipEndLocation = transport > (m_clip->get_track_end_location() + (3 * UNIVERSAL_SAMPLE_RATE));
 			
-	if (m_rbFileReadPos >= m_length || !m_active || transportBeforeSyncStartLocation || transportAfterClipEndLocation) {
+	if (!m_active || transportBeforeSyncStartLocation || transportAfterClipEndLocation) {
 		m_bufferstatus->fillStatus =  100;
 		freespace = 0;
 		m_bufferstatus->needSync = false;
+	} else if (m_rbFileReadPos >= m_length) {
+		// Read-ahead has latched EOF. If the reader has since requested a
+		// resync (rb_read() -> start_resync()), keep reporting it: otherwise
+		// DiskIO never rewinds the read position and the source stays silent
+		// forever (e.g. a clip moved to a later position after it played).
+		m_bufferstatus->fillStatus =  100;
+		freespace = 0;
+		m_bufferstatus->needSync = m_needSync;
 	} else {
 		m_bufferstatus->fillStatus = (int) (((float)freespace / m_bufferSize) * 100);
 		m_bufferstatus->needSync = m_needSync;
