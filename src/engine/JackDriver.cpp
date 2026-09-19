@@ -294,7 +294,7 @@ int JackDriver::_bufsize_callback( nframes_t nframes, void * arg )
         JackDriver* driver  = static_cast<JackDriver *> (arg);
         driver->device->set_buffer_size( nframes );
 
-        emit driver->device->driverParamsChanged();
+        RT_THREAD_EMIT(driver->device, nullptr, driverParamsChanged())
         return 0;
 }
 
