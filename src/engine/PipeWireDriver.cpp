@@ -195,7 +195,28 @@ PipeWireDriver::PipeWireDriver(AudioDevice* device, uint rate, nframes_t bufferS
 PipeWireDriver::~PipeWireDriver()
 {
     PENTERDES;
-    stop();
+
+    if (!m_pwLoop) {
+        return;
+    }
+
+    if (m_notifier) {
+        m_notifier->setEnabled(false);
+        disconnect(m_notifier, &QSocketNotifier::activated, this, &PipeWireDriver::handle_pipewire_events);
+        m_notifier->deleteLater();
+        m_notifier = nullptr;
+    }
+    if (m_playbackStream) {
+        pw_stream_destroy(m_playbackStream);
+        m_playbackStream = nullptr;
+    }
+    if (m_captureStream) {
+        pw_stream_destroy(m_captureStream);
+        m_captureStream = nullptr;
+    }
+    pw_loop_destroy(m_pwLoop);
+    m_pwLoop = nullptr;
+    pw_deinit();
 }
 
 int PipeWireDriver::setup_failed(const QString& message)
@@ -247,26 +268,34 @@ int PipeWireDriver::setup(bool capture, bool playback, const QString& cardDevice
 
     const struct spa_pod *duplexParameter = spa_format_audio_raw_build(&b, SPA_PARAM_EnumFormat, &info);
     const struct spa_pod *streamParameters[] = { duplexParameter };
+    const enum pw_stream_flags streamFlags = static_cast<enum pw_stream_flags>(
+        PW_STREAM_FLAG_MAP_BUFFERS |
+        PW_STREAM_FLAG_AUTOCONNECT |
+        PW_STREAM_FLAG_RT_PROCESS |
+        PW_STREAM_FLAG_INACTIVE
+        );
+
+    struct pw_properties *baseProps = pw_properties_new(
+        "application.name", "Traverso DAW",
+        "application.icon-name", "Traverso",
+        "media.type", "Audio",
+        "node.link-group", "Traverso_DSP_Group",
+        "node.force-quantum", std::to_string(frames_per_cycle).c_str(),
+        "node.force-rate", std::to_string(frame_rate).c_str(),
+        "node.lock-quantum", "true",
+        "node.lock-rate", "true",
+        "node.latency", std::string(std::to_string(frames_per_cycle) + "/" + std::to_string(frame_rate)).c_str(),
+        "node.rate", std::string("1/" + std::to_string(frame_rate)).c_str(),
+        nullptr
+        );
 
     if (m_enablePlayback) {
-        struct pw_properties *playbackProperties = pw_properties_new(
-            "application.name", "Traverso DAW",
-            "application.icon-name", "Traverso",
-            "media.name", "Traverso Audio Output",
-            "media.type", "Audio",
-            "media.category", "Playback",
-            "media.class", "Stream/Output/Audio",
-            "node.name", "TraversoDAW Playback",
-            "node.description", "Traverso DAW Playback",
-
-            "node.link-group", "Traverso_DSP_Group",
-
-            "node.force-quantum", std::to_string(frames_per_cycle).c_str(),
-            "node.force-rate", std::to_string(frame_rate).c_str(),
-            "node.lock-quantum", "true",
-            "node.lock-rate", "true",
-            nullptr
-            );
+        struct pw_properties *playbackProperties = pw_properties_copy(baseProps);
+        pw_properties_set(playbackProperties, "media.name", "Traverso Audio Output");
+        pw_properties_set(playbackProperties, "media.category", "Playback");
+        pw_properties_set(playbackProperties, "media.class", "Stream/Output/Audio");
+        pw_properties_set(playbackProperties, "node.name", "TraversoDAW Playback");
+        pw_properties_set(playbackProperties, "node.description", "Traverso DAW Playback");
 
         if (!m_cardDevice.isEmpty() &&
             m_cardDevice != QStringLiteral("default") &&
@@ -296,7 +325,7 @@ int PipeWireDriver::setup(bool capture, bool playback, const QString& cardDevice
             m_playbackStream,
             PW_DIRECTION_OUTPUT,
             PW_ID_ANY,
-            static_cast<enum pw_stream_flags>(PW_STREAM_FLAG_AUTOCONNECT | PW_STREAM_FLAG_RT_PROCESS),
+            streamFlags,
             streamParameters,
             1
             );
@@ -309,24 +338,12 @@ int PipeWireDriver::setup(bool capture, bool playback, const QString& cardDevice
     }
 
     if (m_enableCapture) {
-        struct pw_properties *captureProps = pw_properties_new(
-            "application.name", "Traverso DAW",
-            "application.icon-name", "Traverso",
-            "media.name", "Traverso Audio Input",
-            "media.type", "Audio",
-            "media.category", "Capture",
-            "media.class", "Stream/Input/Audio",
-            "node.name", "TraversoDAW Capture",
-            "node.description", "Traverso DAW Input",
-
-            "node.link-group", "Traverso_DSP_Group",
-
-            "node.force-quantum", std::to_string(frames_per_cycle).c_str(),
-            "node.force-rate", std::to_string(frame_rate).c_str(),
-            "node.lock-quantum", "true",
-            "node.lock-rate", "true",
-            nullptr
-            );
+        struct pw_properties *captureProps = pw_properties_copy(baseProps);
+        pw_properties_set(captureProps, "media.name", "Traverso Audio Input");
+        pw_properties_set(captureProps, "media.category", "Capture");
+        pw_properties_set(captureProps, "media.class", "Stream/Input/Audio");
+        pw_properties_set(captureProps, "node.name", "TraversoDAW Capture");
+        pw_properties_set(captureProps, "node.description", "Traverso DAW Input");
 
         if (!m_cardDevice.isEmpty() &&
             m_cardDevice != QStringLiteral("default") &&
@@ -355,15 +372,19 @@ int PipeWireDriver::setup(bool capture, bool playback, const QString& cardDevice
             m_captureStream,
             PW_DIRECTION_INPUT,
             PW_ID_ANY,
-            static_cast<enum pw_stream_flags>(PW_STREAM_FLAG_AUTOCONNECT | PW_STREAM_FLAG_RT_PROCESS),
+            streamFlags,
             streamParameters,
             1
             );
 
         if (res < 0) {
             return setup_failed(tr("Could not connect capture stream to server"));
+        } else {
+            device->driverSetupMessage(tr("Capture Stream connected to server"), AudioDevice::DRIVER_SETUP_SUCCESS);
         }
     }
+
+    pw_properties_free(baseProps);
 
     int pipewire_fd = pw_loop_get_fd(m_pwLoop);
     m_notifier = new QSocketNotifier(pipewire_fd, QSocketNotifier::Read, this);
@@ -407,8 +428,16 @@ int PipeWireDriver::start()
     if (m_notifier) {
         m_notifier->setEnabled(true);
     }
+    if (m_playbackStream) {
+        pw_stream_set_active(m_playbackStream, true);
+    }
+    if (m_captureStream) {
+        pw_stream_set_active(m_captureStream, true);
+    }
 
     m_running.store(1);
+
+    TAudioDriver::start();
 
     device->driverSetupMessage(tr("Successfully connected to PipeWire server!"), AudioDevice::DRIVER_SETUP_SUCCESS);
 
@@ -425,31 +454,26 @@ int PipeWireDriver::stop()
         return 1;
     }
 
-    if (m_notifier) {
-        m_notifier->setEnabled(false);
-        disconnect(m_notifier, &QSocketNotifier::activated, this, &PipeWireDriver::handle_pipewire_events);
-        m_notifier->deleteLater();
-        m_notifier = nullptr;
-    }
     if (m_playbackStream) {
-        pw_stream_destroy(m_playbackStream);
-        m_playbackStream = nullptr;
+        pw_stream_set_active(m_playbackStream, false);
     }
     if (m_captureStream) {
-        pw_stream_destroy(m_captureStream);
-        m_captureStream = nullptr;
+        pw_stream_set_active(m_captureStream, false);
     }
-    if (m_pwLoop) {
-        pw_loop_destroy(m_pwLoop);
-        m_pwLoop = nullptr;
+
+    if (m_notifier) {
+        m_notifier->setEnabled(false);
     }
-    pw_deinit();
+
+    TAudioDriver::stop();
 
     return 1;
 }
 
 int PipeWireDriver::process_callback()
 {
+    device->transport_cycle_start(get_microseconds());
+
     device->run_cycle(frames_per_cycle, 0.0);
 
     device->transport_cycle_end(get_microseconds());
@@ -477,6 +501,9 @@ int PipeWireDriver::_write(nframes_t nframes)
 
     struct spa_buffer* buf = b->buffer;
     uint channelCount = static_cast<uint>(m_playbackChannels.size());
+    if (buf->n_datas < channelCount) {
+        channelCount = buf->n_datas;
+    }
 
     nframes_t available = nframes;
     for (uint chan = 0; chan < channelCount; ++chan) {
@@ -484,10 +511,6 @@ int PipeWireDriver::_write(nframes_t nframes)
     }
 
     for (uint chan = 0; chan < channelCount; ++chan) {
-        if (chan >= buf->n_datas) {
-            break;
-        }
-
         float* dst = static_cast<float*>(buf->datas[chan].data);
 
         if (dst) {
@@ -497,13 +520,15 @@ int PipeWireDriver::_write(nframes_t nframes)
             }
         }
 
-        m_playbackChannels.at(chan)->silence_buffer(available);
-
         if (buf->datas[chan].chunk) {
             buf->datas[chan].chunk->offset = 0;
             buf->datas[chan].chunk->stride = sizeof(float);
             buf->datas[chan].chunk->size = nframes * sizeof(float);
         }
+    }
+
+    for (uint chan = 0; chan < static_cast<uint>(m_playbackChannels.size()); ++chan) {
+        m_playbackChannels.at(chan)->silence_buffer(nframes);
     }
 
     pw_stream_queue_buffer(m_playbackStream, b);
@@ -535,8 +560,6 @@ int PipeWireDriver::process_capture_callback()
         return 0;
     }
 
-    device->transport_cycle_start(get_microseconds());
-
     struct pw_buffer* b = pw_stream_dequeue_buffer(m_captureStream);
     if (!b) {
         return 0;
@@ -544,9 +567,12 @@ int PipeWireDriver::process_capture_callback()
 
     struct spa_buffer* buf = b->buffer;
     uint channelCount = static_cast<uint>(m_captureChannels.size());
+    if (buf->n_datas < channelCount) {
+        channelCount = buf->n_datas;
+    }
 
     for (uint chan = 0; chan < channelCount; ++chan) {
-        if (chan < buf->n_datas && buf->datas[chan].data) {
+        if (buf->datas[chan].data) {
             float* src = static_cast<float*>(buf->datas[chan].data);
             m_captureChannels.at(chan)->read_from_hardware_port(src, frames_per_cycle);
         }
@@ -571,6 +597,26 @@ void PipeWireDriver::handle_state_changed(enum pw_stream_state old_state, enum p
 {
     Q_UNUSED(old_state)
     PENTER;
+
+    switch (state) {
+    case PW_STREAM_STATE_ERROR:
+        device->driverSetupMessage(tr("Stream Error: %1").arg(error ? error : "unknown"), AudioDevice::DRIVER_SETUP_INFO);
+        break;
+    case PW_STREAM_STATE_UNCONNECTED:
+        device->driverSetupMessage(tr("Stream Unconnected"), AudioDevice::DRIVER_SETUP_INFO);
+        break;
+    case PW_STREAM_STATE_CONNECTING:
+        device->driverSetupMessage(tr("Stream Connecting"), AudioDevice::DRIVER_SETUP_INFO);
+        break;
+    case PW_STREAM_STATE_PAUSED:
+        device->driverSetupMessage(tr("Stream Paused"), AudioDevice::DRIVER_SETUP_INFO);
+        break;
+    case PW_STREAM_STATE_STREAMING:
+        device->driverSetupMessage(tr("Stream Running"), AudioDevice::DRIVER_SETUP_INFO);
+        break;
+    default:
+        break;
+    }
 
     bool shutdown = false;
     if (state == PW_STREAM_STATE_ERROR) {
